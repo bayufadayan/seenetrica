@@ -4,6 +4,8 @@ const ALLOWED_WRITE_ACTIONS = new Set([
     "createMovie",
     "updateMovie",
     "addViewing",
+    "createMemory",
+    "updateMemory",
 ]);
 
 function safeCompare(firstValue, secondValue) {

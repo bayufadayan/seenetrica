@@ -5,6 +5,9 @@
   const HISTORY_KEY =
     "seenetrica-watch-history";
 
+  const MEMORIES_KEY =
+    "seenetrica-movie-memories";
+
   const SEARCH_HISTORY_KEY =
     "seenetrica-search-history";
 
@@ -364,6 +367,7 @@
   function cacheData(
     movies,
     history,
+    memories,
   ) {
     localStorage.setItem(
       MOVIES_KEY,
@@ -374,6 +378,11 @@
       HISTORY_KEY,
       JSON.stringify(history),
     );
+
+    localStorage.setItem(
+      MEMORIES_KEY,
+      JSON.stringify(memories),
+    );
   }
 
   function clearDataCache() {
@@ -383,6 +392,10 @@
 
     localStorage.removeItem(
       HISTORY_KEY,
+    );
+
+    localStorage.removeItem(
+      MEMORIES_KEY,
     );
 
     searchableMovies = [];
@@ -424,6 +437,12 @@
     const history =
       result.data?.watch_history;
 
+    const memories = Array.isArray(
+      result.data?.movie_memories,
+    )
+      ? result.data.movie_memories
+      : [];
+
     if (
       !Array.isArray(movies) ||
       !Array.isArray(history)
@@ -433,12 +452,18 @@
       );
     }
 
-    cacheData(movies, history);
+    cacheData(
+      movies,
+      history,
+      memories,
+    );
+
     searchableMovies = movies;
 
     return {
       movies,
       history,
+      memories,
     };
   }
 
@@ -451,6 +476,9 @@
 
       const cachedHistory =
         readStorage(HISTORY_KEY);
+
+      const cachedMemories =
+        readStorage(MEMORIES_KEY) || [];
 
       if (
         cachedMovies &&
@@ -467,6 +495,7 @@
         return {
           movies: cachedMovies,
           history: cachedHistory,
+          memories: cachedMemories,
         };
       }
 
@@ -539,13 +568,13 @@
     );
   }
 
-  async function writeData(
-    action,
-    data,
+  async function authenticatedPost(
+    url,
+    payload,
     pin,
   ) {
     const response = await fetch(
-      "/api/data",
+      url,
       {
         method: "POST",
 
@@ -558,8 +587,7 @@
         },
 
         body: JSON.stringify({
-          action,
-          data,
+          ...payload,
           pin,
         }),
       },
@@ -576,7 +604,7 @@
     ) {
       const message =
         result.message ||
-        "The data could not be saved.";
+        "The request could not be completed.";
 
       if (
         getSessionPin() === String(pin || "").trim() &&
@@ -589,9 +617,25 @@
     }
 
     rememberSessionPin(pin);
-    clearDataCache();
-
     return result.data;
+  }
+
+  async function writeData(
+    action,
+    data,
+    pin,
+  ) {
+    const result = await authenticatedPost(
+      "/api/data",
+      {
+        action,
+        data,
+      },
+      pin,
+    );
+
+    clearDataCache();
+    return result;
   }
 
   function askForPin() {
@@ -1266,6 +1310,7 @@
     detailLink,
     getData,
     writeData,
+    authenticatedPost,
     askForPin,
     today,
     formatDate,

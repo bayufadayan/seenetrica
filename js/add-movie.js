@@ -42,6 +42,9 @@
   const speechStatus = document.querySelector("#speechStatus");
   const speechIndicator = document.querySelector("#speechIndicator");
   const saveButton = document.querySelector("#saveMovieButton");
+  const memoryFiles = document.querySelector("#memoryFiles");
+  const memoryDrafts = document.querySelector("#memoryDrafts");
+  const memoryStatus = document.querySelector("#memoryStatus");
 
   const modeToggleButton = document.querySelector("#modeToggleButton");
   const modeToggleLabel = document.querySelector("#modeToggleLabel");
@@ -97,6 +100,13 @@
     today,
     writeData,
   } = window.Seenetrica;
+
+  const memoryComposer = new window.SeenetricaMemories.MemoryComposer({
+    input: memoryFiles,
+    list: memoryDrafts,
+    status: memoryStatus,
+    maxFiles: 5,
+  });
 
   function createClientId() {
     if (window.crypto?.randomUUID) {
@@ -401,6 +411,7 @@
 
   function clearSelection() {
     stopSpeechRecognition();
+    memoryComposer.clear();
     state.selected = null;
     movieForm.reset();
     movieForm.hidden = true;
@@ -413,6 +424,7 @@
 
   function openForm(movie) {
     stopSpeechRecognition();
+    memoryComposer.clear();
     state.selected = movie;
     selectionEmpty.hidden = true;
     movieForm.hidden = false;
@@ -1242,12 +1254,68 @@
 
     try {
       const saved = await writeData("createMovie", { movie, viewing }, pin);
+      let memoryResult = {
+        saved: [],
+        failures: [],
+      };
+
+      if (memoryComposer.hasItems()) {
+        saveOverlayMessage.textContent = "Movie saved. Preparing your memories…";
+        saveOverlayDetail.textContent = "Keeping the images HD while reducing unnecessary file size.";
+
+        memoryResult = await memoryComposer.uploadAll(
+          saved.movie.id,
+          pin,
+          {
+            onProgress: ({ index, total, draft, stage }) => {
+              const position = `${index + 1} of ${total}`;
+
+              if (stage === "preparing") {
+                saveOverlayMessage.textContent = `Preparing memory ${position}…`;
+                saveOverlayDetail.textContent = draft.file.name;
+              } else if (stage === "done") {
+                saveOverlayMessage.textContent = `Saved memory ${position}.`;
+                saveOverlayDetail.textContent = "Finishing the movie entry…";
+              } else if (stage === "error") {
+                saveOverlayMessage.textContent = `Memory ${position} could not be saved.`;
+                saveOverlayDetail.textContent = "The movie is safe. You can retry from its detail page.";
+              }
+            },
+          },
+        );
+      }
+
       saveOverlayMessage.textContent = "Movie saved. Opening the detail page…";
-      showToast("Movie added to Seenetrica.");
+
+      const destination = new URL(
+        detailLink(saved.movie.id),
+        window.location.href,
+      );
+
+      if (memoryResult.saved.length) {
+        destination.searchParams.set(
+          "memory_saved",
+          String(memoryResult.saved.length),
+        );
+      }
+
+      if (memoryResult.failures.length) {
+        destination.searchParams.set(
+          "memory_failed",
+          String(memoryResult.failures.length),
+        );
+      }
+
+      showToast(
+        memoryResult.failures.length
+          ? "Movie saved. Some memories need to be retried."
+          : "Movie added to Seenetrica.",
+        memoryResult.failures.length ? "error" : "success",
+      );
 
       window.setTimeout(() => {
-        window.location.href = detailLink(saved.movie.id);
-      }, 450);
+        window.location.href = destination.href;
+      }, 650);
     } catch (error) {
       console.error(error);
       showToast(error.message, "error");

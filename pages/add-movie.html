@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="../css/components.css" />
     <link rel="stylesheet" href="../css/pages.css" />
     <link rel="stylesheet" href="../css/add-movie.css" />
+    <link rel="stylesheet" href="../css/memories.css" />
 
     <script
       src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
@@ -26,6 +27,7 @@
     ></script>
 
     <script src="../js/common.js" defer></script>
+    <script src="../js/memories.js" defer></script>
     <script src="../js/add-movie.js" defer></script>
   </head>
 
@@ -258,6 +260,38 @@
                 </p>
               </div>
             </div>
+
+            <section class="memory-entry-block" aria-labelledby="add-memory-heading">
+              <div class="memory-entry-heading">
+                <div>
+                  <p class="section-kicker">Optional memories</p>
+                  <h3 id="add-memory-heading">Add photos from this experience</h3>
+                  <p>
+                    Tickets, cinema photos, posters, or screenshots. The movie is
+                    saved first, then these images are attached to it.
+                  </p>
+                </div>
+
+                <label class="secondary-button memory-file-button" for="memoryFiles">
+                  <i data-lucide="image-plus" aria-hidden="true"></i>
+                  Choose photos
+                </label>
+
+                <input
+                  class="sr-only"
+                  id="memoryFiles"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                />
+              </div>
+
+              <div class="memory-drafts" id="memoryDrafts" aria-live="polite"></div>
+
+              <p class="memory-helper" id="memoryStatus" role="status">
+                Images stay HD up to 3200 px and are converted to an efficient web format.
+              </p>
+            </section>
 
             <div class="form-actions">
               <button
