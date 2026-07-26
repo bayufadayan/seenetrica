@@ -59,6 +59,11 @@
         "Planned",
         "pages/planned.html",
       ],
+      [
+        "add-movie",
+        "Add Movie",
+        "pages/add-movie.html",
+      ],
     ];
 
     const header =
