@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Movie details in Seenetrica." />
+    <title>Movie detail — Seenetrica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/pages.css" />
+    <script
+      src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
+      defer
+    ></script>
+    <script src="../js/common.js" defer></script>
+    <script src="../js/movie-detail.js" defer></script>
+  </head>
+
+  <body data-root=".." data-page="detail">
+    <main class="detail-page page-shell">
+      <a class="detail-back" href="../index.html">
+        <i data-lucide="arrow-left" aria-hidden="true"></i>
+        Back to archive
+      </a>
+
+      <div id="detailStatus" class="loading-state" role="status">
+        Loading title…
+      </div>
+      <article id="movieDetail" class="detail-layout" hidden></article>
+    </main>
+  </body>
+</html>

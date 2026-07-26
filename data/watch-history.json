@@ -1,0 +1,44 @@
+[
+  {
+    "id": "HIS-20260720-Q4",
+    "movie_id": "MOV-20260701-A7",
+    "watched_at": "2026-07-20",
+    "watched_in_theater": true,
+    "created_at": "2026-07-20T22:10:00+07:00"
+  },
+  {
+    "id": "HIS-20260705-R3",
+    "movie_id": "MOV-20260614-K2",
+    "watched_at": "2026-07-05",
+    "watched_in_theater": true,
+    "created_at": "2026-07-05T23:20:00+07:00"
+  },
+  {
+    "id": "HIS-20260614-F8",
+    "movie_id": "MOV-20260614-K2",
+    "watched_at": "2026-06-14",
+    "watched_in_theater": false,
+    "created_at": "2026-06-14T21:00:00+07:00"
+  },
+  {
+    "id": "HIS-20260503-N6",
+    "movie_id": "MOV-20260503-M4",
+    "watched_at": "2026-05-03",
+    "watched_in_theater": false,
+    "created_at": "2026-05-03T19:30:00+07:00"
+  },
+  {
+    "id": "HIS-20260412-J2",
+    "movie_id": "MOV-20260412-P9",
+    "watched_at": "2026-04-12",
+    "watched_in_theater": true,
+    "created_at": "2026-04-12T22:00:00+07:00"
+  },
+  {
+    "id": "HIS-20260308-L7",
+    "movie_id": "MOV-20260308-D8",
+    "watched_at": "2026-03-08",
+    "watched_in_theater": false,
+    "created_at": "2026-03-08T23:00:00+07:00"
+  }
+]

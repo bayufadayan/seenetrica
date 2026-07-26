@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Seenetrica complete watch history." />
+    <title>History — Seenetrica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../css/base.css" />
+    <link rel="stylesheet" href="../css/components.css" />
+    <link rel="stylesheet" href="../css/pages.css" />
+    <script
+      src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
+      defer
+    ></script>
+    <script src="../js/common.js" defer></script>
+    <script src="../js/history.js" defer></script>
+  </head>
+
+  <body data-root=".." data-page="history">
+    <main>
+      <section class="page-hero page-shell">
+        <div>
+          <p class="eyebrow">Every screening, in order</p>
+          <h1>Watch <span>history.</span></h1>
+          <p class="page-hero-description">
+            A timeline of films and series, organized by the moments you watched
+            them.
+          </p>
+        </div>
+        <div class="page-stat">
+          <strong id="historyCount">—</strong>
+          <span>viewing entries</span>
+        </div>
+      </section>
+
+      <section class="page-content page-shell">
+        <div class="collection-tools">
+          <label class="archive-search" for="historyPageSearch">
+            <i data-lucide="search" aria-hidden="true"></i>
+            <span class="sr-only">Search history</span>
+            <input
+              id="historyPageSearch"
+              type="search"
+              autocomplete="off"
+              placeholder="Search watch history"
+            />
+          </label>
+          <button
+            class="filter-toggle"
+            type="button"
+            aria-expanded="true"
+            data-filter-toggle
+          >
+            <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+            Filters
+          </button>
+        </div>
+
+        <div class="history-filters is-open" data-filter-panel>
+          <label>
+            <span>Specific date</span>
+            <input type="date" id="dateFilter" />
+          </label>
+          <label>
+            <span>Month</span>
+            <select id="monthFilter">
+              <option value="">All months</option>
+              <option value="01">January</option>
+              <option value="02">February</option>
+              <option value="03">March</option>
+              <option value="04">April</option>
+              <option value="05">May</option>
+              <option value="06">June</option>
+              <option value="07">July</option>
+              <option value="08">August</option>
+              <option value="09">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </label>
+          <label>
+            <span>Year</span>
+            <select id="yearFilter">
+              <option value="">All years</option>
+            </select>
+          </label>
+          <button class="text-button" type="button" id="clearFilters">
+            Clear filters
+          </button>
+        </div>
+
+        <div id="historyStatus" class="loading-state" role="status">
+          Loading watch history…
+        </div>
+        <div id="historyGroups" class="history-groups" hidden></div>
+      </section>
+    </main>
+  </body>
+</html>
