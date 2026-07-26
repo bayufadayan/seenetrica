@@ -1,0 +1,383 @@
+/*
+  Styles khusus halaman Add Movie.
+
+  File ini sengaja dipisahkan agar loading state
+  dan speech input tidak mengubah komponen global
+  di halaman lain.
+*/
+
+body.is-saving {
+    overflow: hidden;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.tmdb-result:disabled,
+.speech-button:disabled,
+.speech-language:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
+}
+
+.primary-button.is-loading,
+.tmdb-result.is-loading {
+    pointer-events: none;
+}
+
+.primary-button.is-loading>[data-lucide] {
+    display: none;
+}
+
+.button-spinner,
+.result-spinner,
+.loading-spinner {
+    display: inline-block;
+    border-style: solid;
+    border-radius: 50%;
+    animation: loading-spin 720ms linear infinite;
+}
+
+.button-spinner {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+    border-color: rgba(255,
+            255,
+            255,
+            0.35);
+    border-top-color: currentColor;
+}
+
+.tmdb-results.is-busy .tmdb-result:not(.is-loading) {
+    opacity: 0.48;
+}
+
+.tmdb-result-action {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+}
+
+.tmdb-result-action svg {
+    width: 16px;
+    height: 16px;
+    color: var(--muted);
+}
+
+.result-spinner {
+    display: none;
+    width: 17px;
+    height: 17px;
+    border-width: 2px;
+    border-color: rgba(23,
+            23,
+            21,
+            0.18);
+    border-top-color: var(--ink);
+}
+
+.tmdb-result.is-loading .result-arrow {
+    display: none;
+}
+
+.tmdb-result.is-loading .result-spinner {
+    display: inline-block;
+}
+
+.tmdb-result-skeleton {
+    display: grid;
+    grid-template-columns:
+        58px minmax(0, 1fr) 22px;
+    gap: 13px;
+    align-items: center;
+    min-height: 96px;
+    padding: 9px;
+    border-radius: 12px;
+    background: rgba(255,
+            254,
+            250,
+            0.42);
+}
+
+.skeleton-block {
+    display: block;
+    overflow: hidden;
+    border-radius: 7px;
+    background: var(--paper-deep);
+}
+
+.skeleton-block::after {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(255, 255, 255, 0.68),
+            transparent);
+    content: "";
+    transform: translateX(-100%);
+    animation: skeleton-shimmer 1.15s ease-in-out infinite;
+}
+
+.skeleton-poster {
+    width: 58px;
+    aspect-ratio: 2 / 3;
+}
+
+.skeleton-copy {
+    display: grid;
+    gap: 10px;
+}
+
+.skeleton-title {
+    width: min(82%, 260px);
+    height: 13px;
+}
+
+.skeleton-meta {
+    width: min(44%, 130px);
+    height: 9px;
+}
+
+.skeleton-meta-2 {
+    width: min(58%, 170px);
+}
+
+.skeleton-meta-3 {
+    width: min(38%, 110px);
+}
+
+.skeleton-meta-4 {
+    width: min(50%, 145px);
+}
+
+.skeleton-icon {
+    width: 17px;
+    height: 17px;
+    border-radius: 50%;
+}
+
+.review-field {
+    gap: 9px;
+}
+
+.review-field-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.speech-tools {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.speech-language {
+    min-height: 36px;
+    padding: 0 30px 0 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    outline: 0;
+    color: var(--ink-soft);
+    background: var(--surface);
+    font-size: 0.7rem;
+    font-weight: 700;
+}
+
+.speech-language:focus {
+    border-color: var(--ink);
+}
+
+.speech-button {
+    display: inline-flex;
+    min-height: 36px;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 0 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--ink-soft);
+    background: var(--surface);
+    font-size: 0.7rem;
+    font-weight: 800;
+    transition:
+        color 160ms ease,
+        border-color 160ms ease,
+        background 160ms ease,
+        transform 160ms ease;
+}
+
+.speech-button:hover:not( :disabled) {
+    border-color: var(--ink);
+    transform: translateY(-1px);
+}
+
+.speech-button.is-listening {
+    border-color: rgba(201,
+            79,
+            56,
+            0.36);
+    color: var(--white);
+    background: var(--accent);
+}
+
+.speech-button svg {
+    width: 15px;
+    height: 15px;
+}
+
+.review-input-wrap {
+    position: relative;
+}
+
+.review-input-wrap textarea {
+    padding-bottom: 42px;
+}
+
+.speech-live-indicator {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    color: var(--accent-dark);
+    background: rgba(243,
+            240,
+            232,
+            0.94);
+    font-size: 0.64rem;
+    font-weight: 800;
+    box-shadow: 0 4px 14px rgba(23, 23, 21, 0.08);
+}
+
+.speech-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: recording-pulse 1.15s ease-in-out infinite;
+}
+
+.speech-status {
+    margin-bottom: 0;
+    color: var(--muted);
+    font-size: 0.69rem;
+    line-height: 1.55;
+}
+
+.save-overlay {
+    position: fixed;
+    z-index: 200;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(23,
+            23,
+            21,
+            0.58);
+    backdrop-filter: blur(8px);
+}
+
+.save-overlay-card {
+    display: grid;
+    width: min(100%, 360px);
+    place-items: center;
+    gap: 15px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: var(--radius-md);
+    color: var(--white);
+    background: var(--ink);
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.loading-spinner {
+    width: 34px;
+    height: 34px;
+    border-width: 3px;
+    border-color: rgba(255,
+            255,
+            255,
+            0.2);
+    border-top-color: var(--white);
+}
+
+.save-overlay-card strong {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    font-weight: 500;
+}
+
+.save-overlay-card p {
+    margin-bottom: 0;
+    color: rgba(255,
+            255,
+            255,
+            0.66);
+    font-size: 0.76rem;
+}
+
+@keyframes loading-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@keyframes skeleton-shimmer {
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes recording-pulse {
+
+    0%,
+    100% {
+        opacity: 0.45;
+        transform: scale(0.82);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.12);
+    }
+}
+
+@media (max-width: 620px) {
+    .review-field-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .speech-tools {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .speech-language,
+    .speech-button {
+        min-height: 40px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .button-spinner,
+    .result-spinner,
+    .loading-spinner,
+    .skeleton-block::after,
+    .speech-live-dot {
+        animation-duration: 1.8s;
+    }
+}

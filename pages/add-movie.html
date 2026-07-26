@@ -4,20 +4,27 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="Add a movie or series to Seenetrica." />
+
     <title>Add a movie — Seenetrica</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&display=swap"
       rel="stylesheet"
     />
+
     <link rel="stylesheet" href="../css/base.css" />
     <link rel="stylesheet" href="../css/components.css" />
     <link rel="stylesheet" href="../css/pages.css" />
+    <link rel="stylesheet" href="../css/add-movie.css" />
+
     <script
       src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
       defer
     ></script>
+
     <script src="../js/common.js" defer></script>
     <script src="../js/add-movie.js" defer></script>
   </head>
@@ -27,7 +34,9 @@
       <section class="page-hero page-shell">
         <div>
           <p class="eyebrow">Grow your archive</p>
+
           <h1>Add a <span>title.</span></h1>
+
           <p class="page-hero-description">
             Search TMDB for the basic details, then make the entry yours.
           </p>
@@ -37,9 +46,14 @@
       <section class="add-layout page-shell">
         <div class="add-panel">
           <p class="section-kicker">Step 01</p>
+
           <h2>Find on TMDB</h2>
+
           <form class="tmdb-search-form" id="tmdbSearchForm">
-            <label class="sr-only" for="tmdbQuery">Movie or series title</label>
+            <label class="sr-only" for="tmdbQuery">
+              Movie or series title
+            </label>
+
             <input
               id="tmdbQuery"
               type="search"
@@ -48,17 +62,34 @@
               placeholder="Try Interstellar or Dark"
               required
             />
-            <button class="primary-button" type="submit">
+
+            <button
+              class="primary-button"
+              id="tmdbSearchButton"
+              type="submit"
+              aria-busy="false"
+            >
               <i data-lucide="search" aria-hidden="true"></i>
-              Search
+
+              <span class="button-spinner" data-button-spinner hidden></span>
+
+              <span data-button-label>Search</span>
             </button>
           </form>
+
           <p class="collection-status" id="tmdbStatus" role="status">
             Search for a movie or series to begin.
           </p>
-          <div class="tmdb-results" id="tmdbResults"></div>
+
+          <div
+            class="tmdb-results"
+            id="tmdbResults"
+            aria-live="polite"
+            aria-busy="false"
+          ></div>
 
           <div class="manual-divider">or</div>
+
           <button class="secondary-button" type="button" id="manualEntryButton">
             <i data-lucide="pen-line" aria-hidden="true"></i>
             Enter details manually
@@ -67,6 +98,7 @@
 
         <div class="add-panel is-sticky">
           <p class="section-kicker">Step 02</p>
+
           <h2>Complete the entry</h2>
 
           <div id="selectionEmpty" class="empty-state">
@@ -80,6 +112,7 @@
                 src="https://placehold.co/500x750/191917/F4F0E7?text=No+Poster"
                 alt=""
               />
+
               <div>
                 <h3 id="previewTitle">Untitled</h3>
                 <p id="previewMeta">Manual entry</p>
@@ -89,21 +122,28 @@
             <div class="form-grid">
               <label class="form-field is-full">
                 <span>Title</span>
+
                 <input id="title" name="title" type="text" required />
               </label>
+
               <label class="form-field">
                 <span>Type</span>
+
                 <select id="mediaType" name="media_type" required>
                   <option value="movie">Movie</option>
                   <option value="series">Series</option>
                 </select>
               </label>
+
               <label class="form-field">
                 <span>Release date</span>
+
                 <input id="releaseDate" name="release_date" type="date" />
               </label>
+
               <label class="form-field">
                 <span>Runtime (minutes)</span>
+
                 <input
                   id="runtime"
                   name="runtime_minutes"
@@ -111,20 +151,26 @@
                   min="1"
                 />
               </label>
+
               <label class="form-field">
                 <span>Status</span>
+
                 <select id="status" name="status" required>
                   <option value="watchlist">Watchlist</option>
                   <option value="plan">Planned</option>
                   <option value="watched">Watched</option>
                 </select>
               </label>
+
               <label class="form-field is-full">
                 <span>Poster URL</span>
+
                 <input id="posterUrl" name="poster_url" type="url" />
               </label>
+
               <label class="form-field">
                 <span>Your rating (0–10)</span>
+
                 <input
                   id="rating"
                   name="rating"
@@ -134,33 +180,95 @@
                   step="0.1"
                 />
               </label>
+
               <label class="form-field watched-only" hidden>
                 <span>Watched on</span>
+
                 <input id="watchedAt" name="watched_at" type="date" />
               </label>
+
               <label class="checkbox-field watched-only is-full" hidden>
                 <input
                   id="watchedInTheater"
                   name="watched_in_theater"
                   type="checkbox"
                 />
+
                 Watched in a theater
               </label>
-              <label class="form-field is-full">
-                <span>Review or impression</span>
-                <textarea
-                  id="review"
-                  name="review"
-                  placeholder="What stayed with you?"
-                ></textarea>
-              </label>
+
+              <div class="form-field is-full review-field">
+                <div class="review-field-header">
+                  <label class="form-label" for="review">
+                    Review or impression
+                  </label>
+
+                  <div class="speech-tools">
+                    <label class="sr-only" for="speechLanguage">
+                      Speech language
+                    </label>
+
+                    <select
+                      class="speech-language"
+                      id="speechLanguage"
+                      aria-label="Speech language"
+                    >
+                      <option value="id-ID">Bahasa Indonesia</option>
+
+                      <option value="en-US">English</option>
+                    </select>
+
+                    <button
+                      class="speech-button"
+                      id="speechButton"
+                      type="button"
+                      aria-pressed="false"
+                    >
+                      <i data-lucide="mic" aria-hidden="true"></i>
+
+                      <span id="speechButtonLabel"> Speak review </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="review-input-wrap">
+                  <textarea
+                    id="review"
+                    name="review"
+                    placeholder="What stayed with you?"
+                  ></textarea>
+
+                  <div
+                    class="speech-live-indicator"
+                    id="speechIndicator"
+                    aria-hidden="true"
+                    hidden
+                  >
+                    <span class="speech-live-dot"></span>
+                    Listening
+                  </div>
+                </div>
+
+                <p class="speech-status" id="speechStatus" role="status">
+                  Press the microphone and start speaking.
+                </p>
+              </div>
             </div>
 
             <div class="form-actions">
-              <button class="primary-button" type="submit">
+              <button
+                class="primary-button"
+                id="saveMovieButton"
+                type="submit"
+                aria-busy="false"
+              >
                 <i data-lucide="plus" aria-hidden="true"></i>
-                Add to Seenetrica
+
+                <span class="button-spinner" data-button-spinner hidden></span>
+
+                <span data-button-label> Add to Seenetrica </span>
               </button>
+
               <button class="text-button" type="button" id="cancelSelection">
                 Cancel
               </button>
@@ -169,5 +277,22 @@
         </div>
       </section>
     </main>
+
+    <div
+      class="save-overlay"
+      id="saveOverlay"
+      role="status"
+      aria-live="assertive"
+      aria-hidden="true"
+      hidden
+    >
+      <div class="save-overlay-card">
+        <span class="loading-spinner" aria-hidden="true"></span>
+
+        <strong id="saveOverlayMessage"> Saving your movie… </strong>
+
+        <p>Please keep this page open.</p>
+      </div>
+    </div>
   </body>
 </html>
