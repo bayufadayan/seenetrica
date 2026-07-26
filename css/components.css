@@ -480,6 +480,7 @@ kbd {
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .movie-subtitle {
@@ -594,6 +595,7 @@ kbd {
   line-height: 1.35;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
 }
 
 .compact-copy p,
