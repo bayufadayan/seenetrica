@@ -59,11 +59,6 @@
         "Planned",
         "pages/planned.html",
       ],
-      [
-        "add-movie",
-        "Add Movie",
-        "pages/add-movie.html",
-      ],
     ];
 
     const header =
@@ -73,17 +68,35 @@
 
     header.innerHTML = `
       <nav class="floating-nav" aria-label="Primary navigation">
-        <a class="brand" href="${link("index.html")}" aria-label="Seenetrica home">
-          <span class="brand-mark" aria-hidden="true">S</span>
-          <span class="brand-name">Seenetrica</span>
+        <a
+          class="brand"
+          href="${link("index.html")}"
+          aria-label="Seenetrica home"
+        >
+          <span
+            class="brand-mark"
+            aria-hidden="true"
+          >
+            S
+          </span>
+
+          <span class="brand-name">
+            Seenetrica
+          </span>
         </a>
 
-        <div class="nav-links" data-nav-links>
+        <div
+          class="nav-links"
+          data-nav-links
+        >
           ${navItems
         .map(
           ([page, label, path]) => `
                 <a
-                  class="nav-link ${activePage === page ? "is-active" : ""}"
+                  class="nav-link ${activePage === page
+              ? "is-active"
+              : ""
+            }"
                   href="${link(path)}"
                 >
                   ${label}
@@ -94,13 +107,28 @@
         </div>
 
         <div class="nav-actions">
+          <a
+            class="icon-button"
+            href="${link("pages/add-movie.html")}"
+            aria-label="Add movie"
+            title="Add movie"
+          >
+            <i
+              data-lucide="plus"
+              aria-hidden="true"
+            ></i>
+          </a>
+
           <button
             class="icon-button"
             type="button"
             aria-label="Search archive"
             data-search-open
           >
-            <i data-lucide="search" aria-hidden="true"></i>
+            <i
+              data-lucide="search"
+              aria-hidden="true"
+            ></i>
           </button>
 
           <button
@@ -110,7 +138,10 @@
             aria-expanded="false"
             data-menu-toggle
           >
-            <i data-lucide="menu" aria-hidden="true"></i>
+            <i
+              data-lucide="menu"
+              aria-hidden="true"
+            ></i>
           </button>
         </div>
       </nav>
@@ -124,20 +155,33 @@
     footer.innerHTML = `
       <div class="page-shell footer-inner">
         <div>
-          <a class="footer-brand" href="${link("index.html")}">
+          <a
+            class="footer-brand"
+            href="${link("index.html")}"
+          >
             Seenetrica
           </a>
-          <p>A quiet place for the stories that stay.</p>
+
+          <p>
+            A quiet place for the stories that stay.
+          </p>
         </div>
 
-        <div class="footer-socials" aria-label="Social links">
+        <div
+          class="footer-socials"
+          aria-label="Social links"
+        >
           <a
             href="https://instagram.com/bayufadayan"
             target="_blank"
             rel="noreferrer"
           >
             Instagram
-            <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+
+            <i
+              data-lucide="arrow-up-right"
+              aria-hidden="true"
+            ></i>
           </a>
 
           <a
@@ -146,7 +190,11 @@
             rel="noreferrer"
           >
             GitHub
-            <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+
+            <i
+              data-lucide="arrow-up-right"
+              aria-hidden="true"
+            ></i>
           </a>
         </div>
 
@@ -155,6 +203,7 @@
             src="https://www.themoviedb.org/assets/2/v4/logos/v2/blue_square_1-5bd31c45a7e02d9b36e700afdc2f5911c72cd6ca3099434fb8441c5c4e342e53.svg"
             alt="TMDB"
           />
+
           <p>
             This product uses the TMDB API but is not endorsed or certified by TMDB.
           </p>
@@ -189,8 +238,13 @@
       >
         <div class="search-dialog-header">
           <div>
-            <p class="section-kicker">Search Seenetrica</p>
-            <h2 id="search-dialog-title">Find a title</h2>
+            <p class="section-kicker">
+              Search Seenetrica
+            </p>
+
+            <h2 id="search-dialog-title">
+              Find a title
+            </h2>
           </div>
 
           <button
@@ -199,13 +253,23 @@
             aria-label="Close search"
             data-search-close
           >
-            <i data-lucide="x" aria-hidden="true"></i>
+            <i
+              data-lucide="x"
+              aria-hidden="true"
+            ></i>
           </button>
         </div>
 
         <label class="modal-search-field">
-          <i data-lucide="search" aria-hidden="true"></i>
-          <span class="sr-only">Search all saved titles</span>
+          <i
+            data-lucide="search"
+            aria-hidden="true"
+          ></i>
+
+          <span class="sr-only">
+            Search all saved titles
+          </span>
+
           <input
             type="search"
             autocomplete="off"
@@ -214,10 +278,17 @@
           />
         </label>
 
-        <div class="search-content" data-recent-searches>
+        <div
+          class="search-content"
+          data-recent-searches
+        >
           <div class="search-subheading">
             <h3>Recent searches</h3>
-            <button type="button" data-clear-searches>
+
+            <button
+              type="button"
+              data-clear-searches
+            >
               Clear
             </button>
           </div>
@@ -239,14 +310,19 @@
     const toastRegion =
       document.createElement("div");
 
-    toastRegion.className = "toast-region";
+    toastRegion.className =
+      "toast-region";
+
     toastRegion.setAttribute(
       "aria-live",
       "polite",
     );
-    toastRegion.dataset.toastRegion = "";
+
+    toastRegion.dataset.toastRegion =
+      "";
 
     body.prepend(header);
+
     body.append(
       footer,
       modal,
@@ -277,6 +353,7 @@
         : null;
     } catch {
       localStorage.removeItem(key);
+
       return null;
     }
   }
@@ -297,8 +374,13 @@
   }
 
   function clearDataCache() {
-    localStorage.removeItem(MOVIES_KEY);
-    localStorage.removeItem(HISTORY_KEY);
+    localStorage.removeItem(
+      MOVIES_KEY,
+    );
+
+    localStorage.removeItem(
+      HISTORY_KEY,
+    );
 
     searchableMovies = [];
     dataPromise = null;
@@ -309,9 +391,11 @@
       "/api/data",
       {
         method: "GET",
+
         headers: {
           Accept: "application/json",
         },
+
         cache: "no-store",
       },
     );
@@ -395,12 +479,13 @@
     }
 
     if (!dataPromise) {
-      dataPromise = loadData().catch(
-        (error) => {
-          dataPromise = null;
-          throw error;
-        },
-      );
+      dataPromise =
+        loadData().catch(
+          (error) => {
+            dataPromise = null;
+            throw error;
+          },
+        );
     }
 
     return dataPromise;
@@ -415,11 +500,15 @@
       "/api/data",
       {
         method: "POST",
+
         headers: {
           "Content-Type":
             "application/json",
-          Accept: "application/json",
+
+          Accept:
+            "application/json",
         },
+
         body: JSON.stringify({
           action,
           data,
@@ -457,7 +546,8 @@
       return null;
     }
 
-    const cleanedPin = pin.trim();
+    const cleanedPin =
+      pin.trim();
 
     if (!cleanedPin) {
       showToast(
@@ -491,7 +581,8 @@
   ) {
     if (!value) {
       return (
-        options.fallback || "TBA"
+        options.fallback ||
+        "TBA"
       );
     }
 
@@ -499,10 +590,16 @@
       "en-US",
       {
         month:
-          options.month || "short",
-        day: options.day || "numeric",
+          options.month ||
+          "short",
+
+        day:
+          options.day ||
+          "numeric",
+
         year:
-          options.year || "numeric",
+          options.year ||
+          "numeric",
       },
     ).format(
       new Date(
@@ -520,7 +617,8 @@
       return "N/A";
     }
 
-    const number = Number(value);
+    const number =
+      Number(value);
 
     return Number.isInteger(number)
       ? String(number)
@@ -536,7 +634,8 @@
       minutes / 60,
     );
 
-    const rest = minutes % 60;
+    const rest =
+      minutes % 60;
 
     return hours
       ? `${hours}h ${rest}m`
@@ -549,18 +648,32 @@
   ) {
     const subtitle =
       options.subtitle ||
-      `${movie.media_type} · ${movie.release_date?.slice(0, 4) || "TBA"}`;
+      `${movie.media_type} · ${movie.release_date?.slice(
+        0,
+        4,
+      ) || "TBA"
+      }`;
 
     const dateBadge =
       options.dateBadge
-        ? `<span class="planned-date">${escapeHtml(options.dateBadge)}</span>`
+        ? `
+          <span class="planned-date">
+            ${escapeHtml(
+          options.dateBadge,
+        )}
+          </span>
+        `
         : "";
 
     const cinemaBadge =
       options.inTheater
         ? `
           <span class="cinema-badge">
-            <i data-lucide="clapperboard" aria-hidden="true"></i>
+            <i
+              data-lucide="clapperboard"
+              aria-hidden="true"
+            ></i>
+
             In theaters
           </span>
         `
@@ -575,11 +688,15 @@
         >
           <div class="poster-frame">
             <img
-              src="${escapeHtml(movie.poster_url || FALLBACK_POSTER)}"
+              src="${escapeHtml(
+      movie.poster_url ||
+      FALLBACK_POSTER,
+    )}"
               alt="${escapeHtml(movie.title)} poster"
               loading="lazy"
               onerror="this.onerror=null;this.src='${FALLBACK_POSTER}'"
             />
+
             ${cinemaBadge}
             ${dateBadge}
           </div>
@@ -603,7 +720,11 @@
             class="rating"
             aria-label="Rating ${formatRating(movie.rating)}"
           >
-            <i data-lucide="star" aria-hidden="true"></i>
+            <i
+              data-lucide="star"
+              aria-hidden="true"
+            ></i>
+
             ${formatRating(movie.rating)}
           </span>
         </div>
@@ -628,14 +749,23 @@
       document.createElement("div");
 
     toast.className =
-      `toast ${type === "error" ? "is-error" : ""}`;
+      `toast ${type === "error"
+        ? "is-error"
+        : ""
+      }`;
 
     toast.innerHTML = `
       <i
-        data-lucide="${type === "error" ? "circle-alert" : "circle-check"}"
+        data-lucide="${type === "error"
+        ? "circle-alert"
+        : "circle-check"
+      }"
         aria-hidden="true"
       ></i>
-      <span>${escapeHtml(message)}</span>
+
+      <span>
+        ${escapeHtml(message)}
+      </span>
     `;
 
     region.append(toast);
@@ -668,7 +798,8 @@
   }
 
   function saveSearchTerm(term) {
-    const cleanTerm = term.trim();
+    const cleanTerm =
+      term.trim();
 
     if (!cleanTerm) {
       return;
@@ -719,18 +850,28 @@
                   type="button"
                   data-recent-term="${escapeHtml(term)}"
                 >
-                  <i data-lucide="history" aria-hidden="true"></i>
+                  <i
+                    data-lucide="history"
+                    aria-hidden="true"
+                  ></i>
+
                   ${escapeHtml(term)}
                 </button>
               `,
           )
           .join("")
-        : '<p class="no-recent-searches">No recent searches yet.</p>';
+        : `
+          <p class="no-recent-searches">
+            No recent searches yet.
+          </p>
+        `;
 
     refreshIcons();
   }
 
-  function renderSearchResults(query) {
+  function renderSearchResults(
+    query,
+  ) {
     const results =
       document.querySelector(
         "[data-global-search-results]",
@@ -753,6 +894,7 @@
       results.hidden = true;
       recent.hidden = false;
       results.innerHTML = "";
+
       return;
     }
 
@@ -779,26 +921,44 @@
                   data-search-result="${escapeHtml(movie.title)}"
                 >
                   <img
-                    src="${escapeHtml(movie.poster_url || FALLBACK_POSTER)}"
+                    src="${escapeHtml(
+              movie.poster_url ||
+              FALLBACK_POSTER,
+            )}"
                     alt=""
                     loading="lazy"
                     onerror="this.onerror=null;this.src='${FALLBACK_POSTER}'"
                   />
 
                   <div>
-                    <h3>${escapeHtml(movie.title)}</h3>
+                    <h3>
+                      ${escapeHtml(movie.title)}
+                    </h3>
+
                     <p>
-                      ${escapeHtml(movie.media_type)} ·
-                      ${movie.release_date?.slice(0, 4) || "TBA"}
+                      ${escapeHtml(movie.media_type)}
+                      ·
+                      ${movie.release_date?.slice(
+              0,
+              4,
+            ) || "TBA"
+              }
                     </p>
                   </div>
 
-                  <i data-lucide="arrow-up-right" aria-hidden="true"></i>
+                  <i
+                    data-lucide="arrow-up-right"
+                    aria-hidden="true"
+                  ></i>
                 </a>
               `,
           )
           .join("")
-        : '<p class="search-empty">No title found in your archive.</p>';
+        : `
+          <p class="search-empty">
+            No title found in your archive.
+          </p>
+        `;
 
     refreshIcons();
   }
@@ -826,6 +986,7 @@
 
     function openSearch() {
       modal.hidden = false;
+
       body.classList.add(
         "is-modal-open",
       );
@@ -840,11 +1001,13 @@
 
     function closeSearch() {
       modal.hidden = true;
+
       body.classList.remove(
         "is-modal-open",
       );
 
       input.value = "";
+
       renderSearchResults("");
     }
 
@@ -881,9 +1044,12 @@
     input.addEventListener(
       "keydown",
       (event) => {
-        if (event.key === "Enter") {
+        if (
+          event.key === "Enter"
+        ) {
           saveSearchTerm(
-            event.currentTarget.value,
+            event.currentTarget
+              .value,
           );
         }
       },
@@ -1046,6 +1212,7 @@
     escapeHtml,
     refreshIcons,
     showToast,
+
     fallbackPoster:
       FALLBACK_POSTER,
   };
