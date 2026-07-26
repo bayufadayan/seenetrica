@@ -8,6 +8,9 @@
   const SEARCH_HISTORY_KEY =
     "seenetrica-search-history";
 
+  const SESSION_PIN_KEY =
+    "seenetrica-session-pin";
+
   const MAX_RECENT_SEARCHES = 5;
 
   const FALLBACK_POSTER =
@@ -491,6 +494,51 @@
     return dataPromise;
   }
 
+  function getSessionPin() {
+    try {
+      const pin = window.sessionStorage.getItem(
+        SESSION_PIN_KEY,
+      );
+
+      return pin?.trim() || null;
+    } catch {
+      return null;
+    }
+  }
+
+  function rememberSessionPin(pin) {
+    const cleanedPin = String(pin || "").trim();
+
+    if (!cleanedPin) {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(
+        SESSION_PIN_KEY,
+        cleanedPin,
+      );
+    } catch {
+      // The save still succeeds when sessionStorage is unavailable.
+    }
+  }
+
+  function forgetSessionPin() {
+    try {
+      window.sessionStorage.removeItem(
+        SESSION_PIN_KEY,
+      );
+    } catch {
+      // Ignore storage restrictions.
+    }
+  }
+
+  function isPinAuthenticationError(message) {
+    return /pin|unauthori[sz]ed|forbidden|authentication/i.test(
+      String(message || ""),
+    );
+  }
+
   async function writeData(
     action,
     data,
@@ -526,18 +574,33 @@
       !response.ok ||
       !result.success
     ) {
-      throw new Error(
+      const message =
         result.message ||
-        "The data could not be saved.",
-      );
+        "The data could not be saved.";
+
+      if (
+        getSessionPin() === String(pin || "").trim() &&
+        isPinAuthenticationError(message)
+      ) {
+        forgetSessionPin();
+      }
+
+      throw new Error(message);
     }
 
+    rememberSessionPin(pin);
     clearDataCache();
 
     return result.data;
   }
 
   function askForPin() {
+    const sessionPin = getSessionPin();
+
+    if (sessionPin) {
+      return sessionPin;
+    }
+
     const pin = window.prompt(
       "Enter your Seenetrica PIN to save this change:",
     );

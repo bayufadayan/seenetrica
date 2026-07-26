@@ -18,11 +18,19 @@ module.exports = async function handler(request, response) {
     });
   }
 
+  const pageValue = String(request.query.page || "1").trim();
+  if (!/^\d+$/.test(pageValue) || Number(pageValue) < 1) {
+    return response.status(400).json({
+      error: "Search page must be a positive integer.",
+    });
+  }
+
+  const page = Number(pageValue);
   const params = new URLSearchParams({
     query,
     include_adult: "false",
     language: "en-US",
-    page: "1",
+    page: String(page),
   });
 
   try {
@@ -43,9 +51,8 @@ module.exports = async function handler(request, response) {
       });
     }
 
-    const results = payload.results
+    const results = (payload.results || [])
       .filter((item) => item.media_type === "movie" || item.media_type === "tv")
-      .slice(0, 12)
       .map((item) => ({
         external_source: "tmdb",
         external_id: item.id,
@@ -61,7 +68,13 @@ module.exports = async function handler(request, response) {
       "Cache-Control",
       "public, s-maxage=1800, stale-while-revalidate=86400",
     );
-    return response.status(200).json({ results });
+
+    return response.status(200).json({
+      results,
+      page: Number(payload.page) || page,
+      total_pages: Math.max(1, Number(payload.total_pages) || 1),
+      total_results: Math.max(0, Number(payload.total_results) || 0),
+    });
   } catch (error) {
     console.error("TMDB search error:", error);
     return response.status(502).json({

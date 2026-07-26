@@ -1,23 +1,29 @@
+
 .hero {
   position: relative;
   overflow: hidden;
+  isolation: isolate;
   border-bottom: 1px solid var(--line);
 }
 
 .hero::before {
   position: absolute;
   z-index: -1;
-  top: 48px;
-  right: 8%;
-  width: 240px;
-  height: 300px;
-  border: 1px solid rgba(23, 23, 21, 0.09);
-  border-radius: 50% 50% 46% 54% / 59% 45% 55% 41%;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(243, 240, 232, 0.96) 0%,
+    rgba(243, 240, 232, 0.9) 34%,
+    rgba(243, 240, 232, 0.68) 66%,
+    rgba(243, 240, 232, 0.48) 100%
+  );
   content: "";
-  transform: rotate(14deg);
+  pointer-events: none;
 }
 
 .hero-inner {
+  position: relative;
+  z-index: 1;
   display: grid;
   min-height: 540px;
   grid-template-columns: minmax(0, 1fr) 230px;
@@ -102,19 +108,18 @@
 }
 
 /*
-  Slot gambar Hero.
-
-  Kontainer ini tidak ditampilkan selama masih memiliki atribut hidden.
-  Ketika foto sudah ada, masukkan <img> ke dalam .hero-media,
-  kemudian hapus atribut hidden pada HTML.
+  Hero image menjadi background penuh di belakang konten.
+  Pastikan .hero-media tetap berada di dalam elemen .hero.
 */
 .hero-media {
-  position: relative;
+  position: absolute;
+  z-index: -2;
+  inset: 0;
   overflow: hidden;
   width: 100%;
-  aspect-ratio: 16 / 6;
-  margin: 0 0 86px;
-  border-radius: var(--radius-md);
+  height: 100%;
+  margin: 0;
+  border-radius: 0;
   background: var(--paper-deep);
 }
 
@@ -122,6 +127,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  filter: saturate(0.82) contrast(0.94);
 }
 
 .archive-search-section {
@@ -595,9 +602,17 @@
     height: 220px;
   }
 
-  .hero-media {
-    aspect-ratio: 16 / 8;
-    margin-bottom: 60px;
+  .hero::before {
+    background: linear-gradient(
+      90deg,
+      rgba(243, 240, 232, 0.95) 0%,
+      rgba(243, 240, 232, 0.84) 58%,
+      rgba(243, 240, 232, 0.62) 100%
+    );
+  }
+
+  .hero-media img {
+    object-position: 58% center;
   }
 
   .home-content {
@@ -657,10 +672,16 @@
     display: none;
   }
 
-  .hero-media {
-    aspect-ratio: 4 / 3;
-    margin-bottom: 52px;
-    border-radius: var(--radius-sm);
+  .hero::before {
+    background: linear-gradient(
+      180deg,
+      rgba(243, 240, 232, 0.9) 0%,
+      rgba(243, 240, 232, 0.78) 100%
+    );
+  }
+
+  .hero-media img {
+    object-position: 60% center;
   }
 
   .archive-search-section {

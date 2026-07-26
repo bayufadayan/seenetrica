@@ -4,6 +4,9 @@
     movies: [],
     history: [],
     searchResults: [],
+    searchQuery: "",
+    searchPage: 0,
+    searchTotalPages: 0,
     selected: null,
     archivePromise: null,
     recognition: null,
@@ -13,6 +16,9 @@
     bulk: {
       period: "",
       searchResults: [],
+      searchQuery: "",
+      searchPage: 0,
+      searchTotalPages: 0,
       queue: [],
       editingId: null,
       isSaving: false,
@@ -212,9 +218,9 @@
     });
   }
 
-  async function fetchTmdbSearch(query) {
+  async function fetchTmdbSearch(query, page = 1) {
     const response = await fetch(
-      `/api/tmdb/search?q=${encodeURIComponent(query)}`,
+      `/api/tmdb/search?q=${encodeURIComponent(query)}&page=${encodeURIComponent(page)}`,
     );
 
     const payload = await response.json().catch(() => ({}));
@@ -223,7 +229,46 @@
       throw new Error(payload.error || "TMDB search failed.");
     }
 
-    return payload.results || [];
+    return {
+      results: Array.isArray(payload.results) ? payload.results : [],
+      page: Number(payload.page) || page,
+      totalPages: Math.max(1, Number(payload.total_pages) || 1),
+    };
+  }
+
+  function mergeTmdbResults(currentResults, nextResults) {
+    const merged = new Map();
+
+    [...currentResults, ...nextResults].forEach((item) => {
+      const key = `${item.media_type}:${item.external_id}`;
+      merged.set(key, item);
+    });
+
+    return [...merged.values()];
+  }
+
+  function searchStatusText(count, page, totalPages) {
+    const resultLabel = count === 1 ? "result" : "results";
+    const pageLabel = totalPages > 1 ? ` · page ${page} of ${totalPages}` : "";
+
+    return `${count} movie and series ${resultLabel} loaded${pageLabel}`;
+  }
+
+  function loadMoreButtonMarkup(mode) {
+    const attribute =
+      mode === "bulk" ? "data-load-more-bulk" : "data-load-more-single";
+
+    return `
+      <button
+        class="secondary-button tmdb-load-more-button"
+        type="button"
+        ${attribute}
+        aria-busy="false"
+      >
+        <span class="button-spinner" data-button-spinner hidden></span>
+        <span data-button-label>Load more results</span>
+      </button>
+    `;
   }
 
   async function fetchTmdbDetails(externalId, mediaType) {
@@ -261,14 +306,6 @@
     }
 
     return state.archivePromise;
-  }
-
-  function archiveContainsTmdbTitle(externalId) {
-    return state.movies.some(
-      (movie) =>
-        movie.external_source === "tmdb" &&
-        String(movie.external_id) === String(externalId),
-    );
   }
 
   function setMode(mode) {
@@ -397,16 +434,7 @@
   }
 
   function renderSingleResults() {
-    if (!state.searchResults.length) {
-      results.innerHTML = `
-        <div class="empty-state">
-          <p>No matching movies or series found.</p>
-        </div>
-      `;
-      return;
-    }
-
-    results.innerHTML = state.searchResults
+    const resultMarkup = state.searchResults
       .map(
         (item) => `
           <button
@@ -440,14 +468,48 @@
       )
       .join("");
 
+    const hasMore = state.searchPage < state.searchTotalPages;
+    const emptyMarkup = !resultMarkup
+      ? `
+        <div class="empty-state">
+          <p>No movie or series results have been loaded yet.</p>
+        </div>
+      `
+      : "";
+
+    results.innerHTML = `${resultMarkup || emptyMarkup}${
+      hasMore ? loadMoreButtonMarkup("single") : ""
+    }`;
+
     refreshIcons();
   }
 
-  async function searchSingleTmdb(query) {
-    searchStatus.textContent = "Searching TMDB…";
-    renderSearchSkeleton(results);
-    state.searchResults = await fetchTmdbSearch(query);
-    searchStatus.textContent = `${state.searchResults.length} results found`;
+  async function searchSingleTmdb(query, { append = false } = {}) {
+    const nextPage = append ? state.searchPage + 1 : 1;
+
+    if (!append) {
+      searchStatus.textContent = "Searching TMDB…";
+      renderSearchSkeleton(results);
+      state.searchResults = [];
+      state.searchPage = 0;
+      state.searchTotalPages = 0;
+    }
+
+    const payload = await fetchTmdbSearch(query, nextPage);
+
+    state.searchQuery = query;
+    state.searchPage = payload.page;
+    state.searchTotalPages = payload.totalPages;
+    state.searchResults = append
+      ? mergeTmdbResults(state.searchResults, payload.results)
+      : payload.results;
+
+    searchStatus.textContent = searchStatusText(
+      state.searchResults.length,
+      state.searchPage,
+      state.searchTotalPages,
+    );
+
     renderSingleResults();
   }
 
@@ -617,33 +679,10 @@
   }
 
   function renderBulkResults() {
-    if (!state.bulk.searchResults.length) {
-      bulkResults.innerHTML = `
-        <div class="empty-state">
-          <p>No matching movies or series found.</p>
-        </div>
-      `;
-      return;
-    }
-
-    bulkResults.innerHTML = state.bulk.searchResults
-      .map((item) => {
-        const queued = state.bulk.queue.some(
-          (queueItem) =>
-            String(queueItem.external_id) === String(item.external_id),
-        );
-        const archived = archiveContainsTmdbTitle(item.external_id);
-        const unavailable = queued || archived;
-        const label = archived
-          ? "Already saved"
-          : queued
-            ? "In list"
-            : "Add to list";
-
-        return `
-          <article class="tmdb-result bulk-tmdb-result ${
-            unavailable ? "is-unavailable" : ""
-          }">
+    const resultMarkup = state.bulk.searchResults
+      .map(
+        (item) => `
+          <article class="tmdb-result bulk-tmdb-result">
             <img
               src="${escapeHtml(item.poster_url || fallbackPoster)}"
               alt=""
@@ -664,25 +703,58 @@
               type="button"
               data-result-id="${item.external_id}"
               data-result-type="${item.media_type}"
-              ${unavailable ? "disabled" : ""}
             >
               <span class="result-spinner"></span>
-              <i data-lucide="${unavailable ? "check" : "plus"}" aria-hidden="true"></i>
-              <span>${label}</span>
+              <i data-lucide="plus" aria-hidden="true"></i>
+              <span>Add to list</span>
             </button>
           </article>
-        `;
-      })
+        `,
+      )
       .join("");
+
+    const hasMore = state.bulk.searchPage < state.bulk.searchTotalPages;
+    const emptyMarkup = !resultMarkup
+      ? `
+        <div class="empty-state">
+          <p>No movie or series results have been loaded yet.</p>
+        </div>
+      `
+      : "";
+
+    bulkResults.innerHTML = `${resultMarkup || emptyMarkup}${
+      hasMore ? loadMoreButtonMarkup("bulk") : ""
+    }`;
 
     refreshIcons();
   }
 
-  async function searchBulkTmdb(query) {
-    bulkSearchStatus.textContent = "Searching TMDB…";
-    renderSearchSkeleton(bulkResults);
-    state.bulk.searchResults = await fetchTmdbSearch(query);
-    bulkSearchStatus.textContent = `${state.bulk.searchResults.length} results found`;
+  async function searchBulkTmdb(query, { append = false } = {}) {
+    const nextPage = append ? state.bulk.searchPage + 1 : 1;
+
+    if (!append) {
+      bulkSearchStatus.textContent = "Searching TMDB…";
+      renderSearchSkeleton(bulkResults);
+      state.bulk.searchResults = [];
+      state.bulk.searchPage = 0;
+      state.bulk.searchTotalPages = 0;
+    }
+
+    const payload = await fetchTmdbSearch(query, nextPage);
+
+    state.bulk.searchQuery = query;
+    state.bulk.searchPage = payload.page;
+    state.bulk.searchTotalPages = payload.totalPages;
+    state.bulk.searchResults = append
+      ? mergeTmdbResults(state.bulk.searchResults, payload.results)
+      : payload.results;
+
+    bulkSearchStatus.textContent = searchStatusText(
+      state.bulk.searchResults.length,
+      state.bulk.searchPage,
+      state.bulk.searchTotalPages,
+    );
+
     renderBulkResults();
   }
 
@@ -706,21 +778,6 @@
   async function addBulkResult(externalId, mediaType, button) {
     if (!state.bulk.period) {
       showToast("Choose a month first.", "error");
-      return;
-    }
-
-    if (archiveContainsTmdbTitle(externalId)) {
-      showToast("This TMDB title already exists in Seenetrica.", "error");
-      renderBulkResults();
-      return;
-    }
-
-    const queued = state.bulk.queue.some(
-      (item) => String(item.external_id) === String(externalId),
-    );
-
-    if (queued) {
-      showToast("This title is already in the batch.", "error");
       return;
     }
 
@@ -950,26 +1007,6 @@
       return;
     }
 
-    try {
-      await ensureArchiveLoaded();
-    } catch (error) {
-      console.error(error);
-      showToast("The archive data could not be loaded.", "error");
-      return;
-    }
-
-    const duplicate = state.bulk.queue.find((item) =>
-      archiveContainsTmdbTitle(item.external_id),
-    );
-
-    if (duplicate) {
-      showToast(
-        `${duplicate.title} already exists in Seenetrica. Remove it before saving.`,
-        "error",
-      );
-      return;
-    }
-
     const pin = askForPin();
 
     if (pin === null) {
@@ -1096,6 +1133,30 @@
   });
 
   results.addEventListener("click", async (event) => {
+    const loadMoreButton = event.target.closest("[data-load-more-single]");
+
+    if (loadMoreButton) {
+      if (loadMoreButton.disabled || !state.searchQuery) {
+        return;
+      }
+
+      setButtonLoading(loadMoreButton, true, "Loading more…");
+
+      try {
+        await searchSingleTmdb(state.searchQuery, { append: true });
+      } catch (error) {
+        console.error(error);
+        searchStatus.textContent = error.message;
+        showToast(error.message, "error");
+
+        if (document.body.contains(loadMoreButton)) {
+          setButtonLoading(loadMoreButton, false);
+        }
+      }
+
+      return;
+    }
+
     const button = event.target.closest("[data-result-id]");
 
     if (!button || button.disabled) {
@@ -1143,33 +1204,8 @@
   movieForm.addEventListener("submit", async (event) => {
     event.preventDefault();
     await stopSpeechRecognitionAndWait();
-    setButtonLoading(saveButton, true, "Checking archive…");
-
-    try {
-      await ensureArchiveLoaded();
-    } catch (error) {
-      console.error(error);
-      showToast("The archive data could not be loaded.", "error");
-      setButtonLoading(saveButton, false);
-      return;
-    }
-
     const externalSource = state.selected?.external_source || "manual";
     const externalId = state.selected?.external_id ?? null;
-    const duplicate = state.movies.find(
-      (movie) =>
-        externalSource === "tmdb" &&
-        movie.external_source === "tmdb" &&
-        String(movie.external_id) === String(externalId),
-    );
-
-    if (duplicate) {
-      showToast("This TMDB title already exists in Seenetrica.", "error");
-      setButtonLoading(saveButton, false);
-      return;
-    }
-
-    setButtonLoading(saveButton, false);
     const pin = askForPin();
 
     if (pin === null) {
@@ -1277,6 +1313,30 @@
   });
 
   bulkResults.addEventListener("click", async (event) => {
+    const loadMoreButton = event.target.closest("[data-load-more-bulk]");
+
+    if (loadMoreButton) {
+      if (loadMoreButton.disabled || !state.bulk.searchQuery) {
+        return;
+      }
+
+      setButtonLoading(loadMoreButton, true, "Loading more…");
+
+      try {
+        await searchBulkTmdb(state.bulk.searchQuery, { append: true });
+      } catch (error) {
+        console.error(error);
+        bulkSearchStatus.textContent = error.message;
+        showToast(error.message, "error");
+
+        if (document.body.contains(loadMoreButton)) {
+          setButtonLoading(loadMoreButton, false);
+        }
+      }
+
+      return;
+    }
+
     const button = event.target.closest("[data-result-id]");
 
     if (!button || button.disabled) {
