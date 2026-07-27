@@ -114,6 +114,25 @@
 
         <div class="nav-actions">
           <a
+            class="nav-cinema-link ${activePage === "cinema" ? "is-active" : ""}"
+            href="${link("pages/cinema.html")}"
+            aria-label="Open cinema diary"
+            title="Cinema diary"
+          >
+            <i
+              data-lucide="ticket"
+              aria-hidden="true"
+            ></i>
+
+            <span>Cinema</span>
+          </a>
+
+          <span
+            class="nav-action-divider"
+            aria-hidden="true"
+          ></span>
+
+          <a
             class="icon-button"
             href="${link("pages/add-movie.html")}"
             aria-label="Add movie"
