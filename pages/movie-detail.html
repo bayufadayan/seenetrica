@@ -57,7 +57,7 @@
           <div>
             <p class="section-kicker">Personal archive</p>
             <h2 id="memoryUploadTitle">Add memories</h2>
-            <p>Upload tickets, cinema photos, posters, or screenshots.</p>
+            <p>Upload tickets, cinema photos, short videos, posters, or screenshots.</p>
           </div>
 
           <button
@@ -72,16 +72,16 @@
 
         <form id="detailMemoryForm">
           <label class="memory-upload-dropzone" for="detailMemoryFiles">
-            <i data-lucide="image-plus" aria-hidden="true"></i>
-            <strong>Choose up to five photos</strong>
-            <span>JPEG, PNG, or WebP · maximum 15 MB each</span>
+            <i data-lucide="images" aria-hidden="true"></i>
+            <strong>Choose up to 10 photos or videos</strong>
+            <span>JPEG, PNG, WebP, MP4, WebM, MOV, or M4V · maximum 15 MB each</span>
           </label>
 
           <input
             class="sr-only"
             id="detailMemoryFiles"
             type="file"
-            accept="image/jpeg,image/png,image/webp"
+            accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,video/x-m4v"
             multiple
           />
 
@@ -92,7 +92,7 @@
           ></div>
 
           <p class="memory-helper" id="detailMemoryStatus" role="status">
-            Images stay HD up to 3200 px and are converted to an efficient web format.
+            Photos stay HD up to 3200 px. Videos are uploaded in their original quality.
           </p>
 
           <div class="memory-modal-actions">
@@ -133,6 +133,13 @@
       <section class="memory-lightbox-dialog">
         <div class="memory-lightbox-media">
           <img id="memoryLightboxImage" src="" alt="" />
+          <video
+            id="memoryLightboxVideo"
+            controls
+            playsinline
+            preload="metadata"
+            hidden
+          ></video>
         </div>
 
         <div class="memory-lightbox-panel">
@@ -196,3 +203,4 @@
     </div>
   </body>
 </html>
+

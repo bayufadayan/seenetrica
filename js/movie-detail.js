@@ -13,6 +13,7 @@
 
   const memoryLightbox = document.querySelector("#memoryLightbox");
   const memoryLightboxImage = document.querySelector("#memoryLightboxImage");
+  const memoryLightboxVideo = document.querySelector("#memoryLightboxVideo");
   const memoryLightboxTitle = document.querySelector("#memoryLightboxTitle");
   const memoryLightboxMeta = document.querySelector("#memoryLightboxMeta");
   const memoryEditForm = document.querySelector("#memoryEditForm");
@@ -48,14 +49,16 @@
   const {
     MemoryComposer,
     cloudinaryImageUrl,
+    cloudinaryVideoPosterUrl,
     formatBytes,
+    isVideoMemory,
   } = window.SeenetricaMemories;
 
   const memoryComposer = new MemoryComposer({
     input: detailMemoryFiles,
     list: detailMemoryDrafts,
     status: detailMemoryStatus,
-    maxFiles: 5,
+    maxFiles: 10,
   });
 
   function setButtonLoading(button, isLoading, loadingLabel = "Saving…") {
@@ -167,18 +170,48 @@
     const gallery = memories.length
       ? memories
           .map((memory) => {
-            const thumbnail = cloudinaryImageUrl(memory.image_url, {
-              width: 720,
-              height: 720,
-              crop: "fill",
-              gravity: "auto",
-              quality: "q_auto:good",
-            });
+            const isVideo = isVideoMemory(memory);
+            const sourceUrl = isVideo
+              ? cloudinaryVideoPosterUrl(memory.image_url, {
+                  width: 720,
+                  height: 720,
+                  crop: "fill",
+                  gravity: "auto",
+                  quality: "q_auto:good",
+                })
+              : cloudinaryImageUrl(memory.image_url, {
+                  width: 720,
+                  height: 720,
+                  crop: "fill",
+                  gravity: "auto",
+                  quality: "q_auto:good",
+                });
 
             const caption = memory.caption || "A memory from this title";
             const date = formatDate(memory.memory_date, {
               fallback: "Date not set",
             });
+            const mediaLabel = isVideo
+              ? "video"
+              : memory.memory_type || "photo";
+
+            const mediaMarkup = `
+              <img
+                src="${escapeHtml(sourceUrl)}"
+                alt="${escapeHtml(caption)}"
+                loading="lazy"
+              />
+
+              ${
+                isVideo
+                  ? `
+                    <span class="memory-video-indicator" aria-hidden="true">
+                      <i data-lucide="play" aria-hidden="true"></i>
+                    </span>
+                  `
+                  : ""
+              }
+            `;
 
             return `
               <article class="memory-card">
@@ -189,14 +222,10 @@
                   aria-label="Open memory: ${escapeHtml(caption)}"
                 >
                   <div class="memory-card-image">
-                    <img
-                      src="${escapeHtml(thumbnail)}"
-                      alt="${escapeHtml(caption)}"
-                      loading="lazy"
-                    />
+                    ${mediaMarkup}
 
                     <span class="memory-type-badge">
-                      ${escapeHtml(memory.memory_type || "photo")}
+                      ${escapeHtml(mediaLabel)}
                     </span>
                   </div>
 
@@ -229,7 +258,7 @@
             type="button"
             data-open-memory-upload
           >
-            <i data-lucide="image-plus" aria-hidden="true"></i>
+            <i data-lucide="images" aria-hidden="true"></i>
             Add memories
           </button>
         </div>
@@ -431,16 +460,37 @@
 
     state.activeMemoryId = memory.id;
     const caption = memory.caption || `A memory from ${state.movie.title}`;
-    const imageUrl = cloudinaryImageUrl(memory.image_url, {
-      width: 2560,
-      quality: "q_auto:best",
-    });
+    const isVideo = isVideoMemory(memory);
 
-    memoryLightboxImage.src = imageUrl;
-    memoryLightboxImage.alt = caption;
+    if (isVideo) {
+      memoryLightboxImage.hidden = true;
+      memoryLightboxImage.src = "";
+      memoryLightboxImage.alt = "";
+
+      memoryLightboxVideo.hidden = false;
+      memoryLightboxVideo.src = String(memory.image_url || "");
+      memoryLightboxVideo.setAttribute("aria-label", caption);
+      memoryLightboxVideo.load();
+    } else {
+      const imageUrl = cloudinaryImageUrl(memory.image_url, {
+        width: 2560,
+        quality: "q_auto:best",
+      });
+
+      memoryLightboxVideo.pause();
+      memoryLightboxVideo.hidden = true;
+      memoryLightboxVideo.removeAttribute("src");
+      memoryLightboxVideo.removeAttribute("aria-label");
+      memoryLightboxVideo.load();
+
+      memoryLightboxImage.hidden = false;
+      memoryLightboxImage.src = imageUrl;
+      memoryLightboxImage.alt = caption;
+    }
+
     memoryLightboxTitle.textContent = caption;
     memoryLightboxMeta.textContent = [
-      memory.memory_type || "photo",
+      isVideo ? "video" : memory.memory_type || "photo",
       formatDate(memory.memory_date, { fallback: "date not set" }),
       memory.width && memory.height ? `${memory.width} × ${memory.height}` : null,
       memory.bytes ? formatBytes(memory.bytes) : null,
@@ -464,7 +514,16 @@
 
     state.activeMemoryId = null;
     memoryLightbox.hidden = true;
+    memoryLightboxImage.hidden = false;
     memoryLightboxImage.src = "";
+    memoryLightboxImage.alt = "";
+
+    memoryLightboxVideo.pause();
+    memoryLightboxVideo.hidden = true;
+    memoryLightboxVideo.removeAttribute("src");
+    memoryLightboxVideo.removeAttribute("aria-label");
+    memoryLightboxVideo.load();
+
     document.body.classList.remove("is-memory-modal-open");
   }
 
@@ -553,7 +612,7 @@
     event.preventDefault();
 
     if (!memoryComposer.hasItems()) {
-      showToast("Choose at least one memory image.", "error");
+      showToast("Choose at least one photo or video.", "error");
       detailMemoryFiles.focus();
       return;
     }
@@ -564,7 +623,7 @@
       return;
     }
 
-    setButtonLoading(uploadMemoriesButton, true, "Uploading memories…");
+    setButtonLoading(uploadMemoriesButton, true, "Uploading media…");
 
     try {
       const result = await memoryComposer.uploadAll(state.movie.id, pin, {
@@ -770,3 +829,4 @@
       `;
     });
 })();
+

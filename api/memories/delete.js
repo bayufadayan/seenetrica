@@ -80,7 +80,13 @@ module.exports = async function handler(request, response) {
       throw new Error("The stored Cloudinary asset ID is invalid.");
     }
 
-    await destroyCloudinaryAsset(publicId);
+    const resourceType = /\/video\/upload\//i.test(
+      String(memory.image_url || ""),
+    )
+      ? "video"
+      : "image";
+
+    await destroyCloudinaryAsset(publicId, resourceType);
 
     const result = await writeAppsScriptData("deleteMemory", {
       id: memoryId,
@@ -106,3 +112,4 @@ module.exports = async function handler(request, response) {
     });
   }
 };
+

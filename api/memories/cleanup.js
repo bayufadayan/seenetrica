@@ -41,6 +41,14 @@ module.exports = async function handler(request, response) {
     }
 
     const publicId = String(body.public_id || "").trim();
+    const resourceType = String(body.resource_type || "image").trim();
+
+    if (!["image", "video"].includes(resourceType)) {
+      return response.status(400).json({
+        success: false,
+        message: "Memory resource type must be image or video.",
+      });
+    }
 
     if (!/^seenetrica\/memories\/MOV-[A-Z0-9-]+\/memory-[A-Z0-9-]+$/i.test(publicId)) {
       return response.status(400).json({
@@ -49,19 +57,20 @@ module.exports = async function handler(request, response) {
       });
     }
 
-    await destroyCloudinaryAsset(publicId);
+    await destroyCloudinaryAsset(publicId, resourceType);
 
     response.setHeader("Cache-Control", "no-store");
     return response.status(200).json({
       success: true,
-      data: { public_id: publicId },
+      data: { public_id: publicId, resource_type: resourceType },
     });
   } catch (error) {
     console.error("Memory cleanup error:", error);
 
     return response.status(502).json({
       success: false,
-      message: error.message || "Could not clean up the uploaded image.",
+      message: error.message || "Could not clean up the uploaded media.",
     });
   }
 };
+

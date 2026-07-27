@@ -1,12 +1,24 @@
 (() => {
-  const MAX_FILES = 5;
+  const MAX_FILES = 10;
   const MAX_SOURCE_BYTES = 15 * 1024 * 1024;
   const MAX_LONG_EDGE = 3200;
   const OUTPUT_QUALITY = 0.9;
-  const ACCEPTED_TYPES = new Set([
+  const IMAGE_TYPES = new Set([
     "image/jpeg",
     "image/png",
     "image/webp",
+  ]);
+
+  const VIDEO_TYPES = new Set([
+    "video/mp4",
+    "video/webm",
+    "video/quicktime",
+    "video/x-m4v",
+  ]);
+
+  const ACCEPTED_TYPES = new Set([
+    ...IMAGE_TYPES,
+    ...VIDEO_TYPES,
   ]);
 
   const MEMORY_TYPES = [
@@ -31,8 +43,12 @@
     return `memory-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
   }
 
-  function guessMemoryType(fileName) {
-    const name = String(fileName || "").toLowerCase();
+  function guessMemoryType(file) {
+    const name = String(file?.name || "").toLowerCase();
+
+    if (VIDEO_TYPES.has(file?.type)) {
+      return "other";
+    }
 
     if (/ticket|tiket|receipt|struk/.test(name)) {
       return "ticket";
@@ -47,6 +63,20 @@
     }
 
     return "photo";
+  }
+
+  function mediaResourceType(value) {
+    const type = typeof value === "string"
+      ? value
+      : String(value?.type || value?.image_url || "");
+
+    return VIDEO_TYPES.has(type) || /\/video\/upload\//i.test(type)
+      ? "video"
+      : "image";
+  }
+
+  function isVideoMemory(value) {
+    return mediaResourceType(value) === "video";
   }
 
   function formatBytes(value) {
@@ -98,6 +128,49 @@
       marker,
       `${marker}${transformations.join(",")}/`,
     );
+  }
+
+  function cloudinaryVideoPosterUrl(url, options = {}) {
+    const source = String(url || "");
+    const marker = "/video/upload/";
+
+    if (!source.includes(marker)) {
+      return "";
+    }
+
+    const transformations = [
+      "so_0",
+      "f_jpg",
+      options.quality || "q_auto:good",
+    ];
+
+    if (options.width) {
+      transformations.push(`w_${Math.round(options.width)}`);
+    }
+
+    if (options.height) {
+      transformations.push(`h_${Math.round(options.height)}`);
+    }
+
+    if (options.crop) {
+      transformations.push(`c_${options.crop}`);
+    } else if (options.width || options.height) {
+      transformations.push("c_limit");
+    }
+
+    if (options.gravity) {
+      transformations.push(`g_${options.gravity}`);
+    }
+
+    const transformed = source.replace(
+      marker,
+      `${marker}${transformations.join(",")}/`,
+    );
+
+    const [path, query = ""] = transformed.split("?");
+    const posterPath = path.replace(/\.[^/.]+$/, ".jpg");
+
+    return query ? `${posterPath}?${query}` : posterPath;
   }
 
   async function loadImageSource(file) {
@@ -164,7 +237,7 @@
   }
 
   async function prepareImageFile(file) {
-    if (!ACCEPTED_TYPES.has(file.type)) {
+    if (!IMAGE_TYPES.has(file.type)) {
       throw new Error("Use a JPEG, PNG, or WebP image.");
     }
 
@@ -225,11 +298,12 @@
     }
   }
 
-  async function requestUploadSignature(movieId, pin) {
+  async function requestUploadSignature(movieId, pin, resourceType) {
     return authenticatedPost(
       "/api/memories/sign-upload",
       {
         movie_id: movieId,
+        resource_type: resourceType,
       },
       pin,
     );
@@ -258,26 +332,38 @@
 
     if (!response.ok || !result.secure_url || !result.public_id) {
       throw new Error(
-        result.error?.message || "Cloudinary could not upload the image.",
+        result.error?.message || "Cloudinary could not upload the media.",
       );
     }
 
     return result;
   }
 
-  async function cleanupUploadedAsset(publicId, pin) {
+  async function cleanupUploadedAsset(publicId, resourceType, pin) {
     return authenticatedPost(
       "/api/memories/cleanup",
       {
         public_id: publicId,
+        resource_type: resourceType,
       },
       pin,
     );
   }
 
+  async function prepareMediaFile(file) {
+    return IMAGE_TYPES.has(file.type)
+      ? prepareImageFile(file)
+      : file;
+  }
+
   async function uploadMemoryDraft(draft, movieId, pin, sortOrder = 0) {
-    const preparedFile = await prepareImageFile(draft.file);
-    const signedUpload = await requestUploadSignature(movieId, pin);
+    const resourceType = mediaResourceType(draft.file);
+    const preparedFile = await prepareMediaFile(draft.file);
+    const signedUpload = await requestUploadSignature(
+      movieId,
+      pin,
+      resourceType,
+    );
     const upload = await uploadToCloudinary(preparedFile, signedUpload);
 
     try {
@@ -302,7 +388,7 @@
 
       return saved.memory;
     } catch (error) {
-      await cleanupUploadedAsset(upload.public_id, pin).catch((cleanupError) => {
+      await cleanupUploadedAsset(upload.public_id, resourceType, pin).catch((cleanupError) => {
         console.error("Could not clean up an unlinked Cloudinary asset:", cleanupError);
       });
 
@@ -367,7 +453,7 @@
 
       files.slice(0, available).forEach((file) => {
         if (!ACCEPTED_TYPES.has(file.type)) {
-          errors.push(`${file.name}: use JPEG, PNG, or WebP.`);
+          errors.push(`${file.name}: use JPEG, PNG, WebP, MP4, WebM, MOV, or M4V.`);
           return;
         }
 
@@ -381,10 +467,10 @@
           file,
           preview_url: URL.createObjectURL(file),
           caption: "",
-          memory_type: guessMemoryType(file.name),
+          memory_type: guessMemoryType(file),
           memory_date: "",
           status: "idle",
-          status_message: "Ready",
+          status_message: isVideoMemory(file) ? "Video ready" : "Photo ready",
         });
       });
 
@@ -469,7 +555,13 @@
         const draft = drafts[index];
 
         try {
-          this.setDraftStatus(draft.client_id, "preparing", "Preparing HD image…");
+          this.setDraftStatus(
+            draft.client_id,
+            "preparing",
+            isVideoMemory(draft.file)
+              ? "Preparing video…"
+              : "Preparing HD image…",
+          );
           options.onProgress?.({
             index,
             total: drafts.length,
@@ -534,13 +626,13 @@
         this.list.innerHTML = `
           <div class="memory-drafts-empty">
             <i data-lucide="images" aria-hidden="true"></i>
-            <p>Add up to ${this.maxFiles} personal photos, tickets, or screenshots.</p>
+            <p>Add up to ${this.maxFiles} photos or short videos from this experience.</p>
           </div>
         `;
 
         if (this.status) {
           this.status.textContent =
-            "Images stay HD up to 3200 px and are converted to an efficient web format.";
+            "Photos stay HD up to 3200 px. Videos are uploaded in their original quality.";
           this.status.classList.remove("is-error");
         }
 
@@ -564,10 +656,28 @@
               data-memory-draft-id="${escapeHtml(draft.client_id)}"
             >
               <div class="memory-draft-preview">
-                <img
-                  src="${escapeHtml(draft.preview_url)}"
-                  alt="Preview of ${escapeHtml(draft.file.name)}"
-                />
+                ${
+                  isVideoMemory(draft.file)
+                    ? `
+                      <video
+                        src="${escapeHtml(draft.preview_url)}"
+                        aria-label="Preview of ${escapeHtml(draft.file.name)}"
+                        muted
+                        playsinline
+                        preload="metadata"
+                      ></video>
+
+                      <span class="memory-video-indicator" aria-hidden="true">
+                        <i data-lucide="play" aria-hidden="true"></i>
+                      </span>
+                    `
+                    : `
+                      <img
+                        src="${escapeHtml(draft.preview_url)}"
+                        alt="Preview of ${escapeHtml(draft.file.name)}"
+                      />
+                    `
+                }
 
                 <span class="memory-draft-state">
                   ${escapeHtml(draft.status_message)}
@@ -632,7 +742,7 @@
         .join("");
 
       if (this.status) {
-        this.status.textContent = `${this.drafts.length} of ${this.maxFiles} memories prepared.`;
+        this.status.textContent = `${this.drafts.length} of ${this.maxFiles} media memories prepared.`;
         this.status.classList.remove("is-error");
       }
 
@@ -643,7 +753,11 @@
   window.SeenetricaMemories = {
     MemoryComposer,
     cloudinaryImageUrl,
+    cloudinaryVideoPosterUrl,
     formatBytes,
+    isVideoMemory,
+    mediaResourceType,
     uploadMemoryDraft,
   };
 })();
+

@@ -105,7 +105,7 @@
     input: memoryFiles,
     list: memoryDrafts,
     status: memoryStatus,
-    maxFiles: 5,
+    maxFiles: 10,
   });
 
   function readLaunchPreset() {
@@ -1353,7 +1353,7 @@
 
       if (memoryComposer.hasItems()) {
         saveOverlayMessage.textContent = "Movie saved. Preparing your memories…";
-        saveOverlayDetail.textContent = "Keeping the images HD while reducing unnecessary file size.";
+        saveOverlayDetail.textContent = "Keeping photos HD and preserving each video in its original quality.";
 
         memoryResult = await memoryComposer.uploadAll(
           saved.movie.id,
@@ -1577,3 +1577,4 @@
     showToast("The archive data could not be loaded.", "error");
   });
 })();
+

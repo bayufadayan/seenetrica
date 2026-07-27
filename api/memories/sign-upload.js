@@ -54,6 +54,15 @@ module.exports = async function handler(request, response) {
       });
     }
 
+    const resourceType = String(body.resource_type || "image").trim();
+
+    if (!["image", "video"].includes(resourceType)) {
+      return response.status(400).json({
+        success: false,
+        message: "Memory resource type must be image or video.",
+      });
+    }
+
     const timestamp = Math.floor(Date.now() / 1000);
     const publicId =
       `seenetrica/memories/${movieId}/memory-${timestamp}-${crypto
@@ -80,10 +89,11 @@ module.exports = async function handler(request, response) {
         api_key: process.env.CLOUDINARY_API_KEY,
         upload_url: `https://api.cloudinary.com/v1_1/${encodeURIComponent(
           process.env.CLOUDINARY_CLOUD_NAME,
-        )}/image/upload`,
+        )}/${resourceType}/upload`,
         timestamp,
         signature,
         public_id: publicId,
+        resource_type: resourceType,
         overwrite: "false",
       },
     });
@@ -96,3 +106,4 @@ module.exports = async function handler(request, response) {
     });
   }
 };
+
