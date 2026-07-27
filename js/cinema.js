@@ -7,8 +7,10 @@
   const list = document.querySelector("#cinemaList");
   const status = document.querySelector("#cinemaStatus");
   const count = document.querySelector("#cinemaCount");
+  const addButton = document.querySelector("#addCinemaMovie");
 
   const {
+    addMovieLink,
     detailLink,
     escapeHtml,
     fallbackPoster,
@@ -17,6 +19,8 @@
     getData,
     refreshIcons,
   } = window.Seenetrica;
+
+  addButton.href = addMovieLink({ intent: "theater" });
 
   function wasWatchedInTheater(value) {
     return value === true || String(value).toLowerCase() === "true";

@@ -47,6 +47,35 @@
     return `${link("pages/movie-detail.html")}?id=${encodeURIComponent(id)}`;
   }
 
+  function addMovieLink(options = {}) {
+    const params = new URLSearchParams();
+
+    Object.entries(options).forEach(([key, value]) => {
+      if (value === null || value === undefined || value === "") {
+        return;
+      }
+
+      params.set(key, String(value));
+    });
+
+    const query = params.toString();
+
+    return `${link("pages/add-movie.html")}${query ? `?${query}` : ""}`;
+  }
+
+  function ensureFavicon() {
+    if (document.querySelector('link[rel~="icon"]')) {
+      return;
+    }
+
+    const favicon = document.createElement("link");
+    favicon.rel = "icon";
+    favicon.type = "image/svg+xml";
+    favicon.href = link("assets/favicon.svg");
+
+    document.head.append(favicon);
+  }
+
   function renderChrome() {
     const navItems = [
       ["home", "Home", "index.html"],
@@ -1311,6 +1340,7 @@
     );
   }
 
+  ensureFavicon();
   renderChrome();
   bindChrome();
   refreshIcons();
@@ -1327,6 +1357,7 @@
     root,
     link,
     detailLink,
+    addMovieLink,
     getData,
     writeData,
     authenticatedPost,

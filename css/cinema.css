@@ -13,7 +13,19 @@
 
 .cinema-section-heading .collection-status {
   flex: 0 0 auto;
-  margin-bottom: 2px;
+  margin-bottom: 0;
+}
+
+.cinema-section-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+}
+
+.cinema-add-button {
+  min-height: 42px;
+  flex: 0 0 auto;
 }
 
 .cinema-list {
@@ -180,6 +192,16 @@
 
   .cinema-section-heading .collection-status {
     margin-bottom: 0;
+  }
+
+  .cinema-section-actions {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cinema-add-button {
+    width: 100%;
   }
 
   .cinema-entry {

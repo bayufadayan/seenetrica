@@ -403,6 +403,7 @@ kbd {
 }
 
 .month-heading h3 {
+  order: 1;
   margin-bottom: 0;
   font-family: var(--font-serif);
   font-size: clamp(1.4rem, 2vw, 1.75rem);
@@ -410,6 +411,7 @@ kbd {
 }
 
 .month-heading span {
+  order: 3;
   color: var(--muted);
   font-size: 0.7rem;
   font-weight: 700;
@@ -418,10 +420,86 @@ kbd {
 }
 
 .month-heading::after {
+  order: 2;
   height: 1px;
   flex: 1;
   background: var(--line);
   content: "";
+}
+
+.group-add-button {
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  order: 4;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink-soft);
+  background: rgba(255, 254, 250, 0.48);
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.group-add-button:hover {
+  border-color: var(--ink);
+  color: var(--white);
+  background: var(--ink);
+  transform: translateY(-1px);
+}
+
+.group-add-button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.history-view-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.history-view-control {
+  display: grid;
+  gap: 5px;
+}
+
+.history-view-control span {
+  color: var(--muted);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.history-view-control select {
+  min-height: 40px;
+  padding: 0 30px 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  outline: 0;
+  color: var(--ink-soft);
+  background: var(--surface);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.history-view-control select:focus {
+  border-color: var(--ink);
+}
+
+.history-page-filters {
+  grid-template-columns: minmax(160px, 1.2fr) minmax(130px, 1fr) auto;
+}
+
+.history-ungrouped-grid {
+  padding-top: 4px;
 }
 
 .movie-grid,
@@ -984,6 +1062,7 @@ kbd {
   }
 }
 
+
 @media (max-width: 620px) {
   .nav-cinema-link {
     width: 42px;
@@ -997,6 +1076,27 @@ kbd {
 
   .nav-action-divider {
     margin-inline: 1px;
+  }
+
+  .history-view-controls {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .history-view-control {
+    flex: 1 1 120px;
+  }
+
+  .history-view-control select {
+    width: 100%;
+  }
+
+  .history-page-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .history-page-filters.is-open {
+    max-height: 300px;
   }
 }
 

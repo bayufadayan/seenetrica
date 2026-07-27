@@ -24,6 +24,7 @@
   const filterPanel = document.querySelector("[data-filter-panel]");
 
   const {
+    addMovieLink,
     detailLink,
     escapeHtml,
     fallbackPoster,
@@ -102,6 +103,18 @@
             ${monthEntries.length}
             ${monthEntries.length === 1 ? "entry" : "entries"}
           </span>
+
+          <a
+            class="group-add-button"
+            href="${addMovieLink({
+              intent: "watched",
+              period: monthKey,
+            })}"
+            aria-label="Add a watched title to ${label}"
+            title="Add to ${label}"
+          >
+            <i data-lucide="plus" aria-hidden="true"></i>
+          </a>
         </div>
 
         <div class="movie-grid">

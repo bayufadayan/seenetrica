@@ -54,9 +54,16 @@
             <h2 class="section-title">Latest screenings</h2>
           </div>
 
-          <p id="cinemaStatus" class="collection-status" role="status">
-            Loading cinema diary…
-          </p>
+          <div class="cinema-section-actions">
+            <p id="cinemaStatus" class="collection-status" role="status">
+              Loading cinema diary…
+            </p>
+
+            <a class="primary-button cinema-add-button" id="addCinemaMovie" href="./add-movie.html?intent=theater">
+              <i data-lucide="plus" aria-hidden="true"></i>
+              Add screening
+            </a>
+          </div>
         </div>
 
         <div id="cinemaList" class="cinema-list" hidden></div>

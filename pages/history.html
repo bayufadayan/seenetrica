@@ -51,18 +51,41 @@
               placeholder="Search watch history"
             />
           </label>
-          <button
-            class="filter-toggle"
-            type="button"
-            aria-expanded="true"
-            data-filter-toggle
-          >
-            <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
-            Filters
-          </button>
+          <div class="history-view-controls">
+            <label class="history-view-control">
+              <span>Year</span>
+              <select id="yearFilter" aria-label="History year"></select>
+            </label>
+
+            <label class="history-view-control">
+              <span>Group by</span>
+              <select id="groupBySelect" aria-label="Group history by">
+                <option value="month">Month</option>
+                <option value="none">No grouping</option>
+              </select>
+            </label>
+
+            <label class="history-view-control">
+              <span>Sort</span>
+              <select id="sortSelect" aria-label="Sort history">
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </select>
+            </label>
+
+            <button
+              class="filter-toggle"
+              type="button"
+              aria-expanded="true"
+              data-filter-toggle
+            >
+              <i data-lucide="sliders-horizontal" aria-hidden="true"></i>
+              Filters
+            </button>
+          </div>
         </div>
 
-        <div class="history-filters is-open" data-filter-panel>
+        <div class="history-filters history-page-filters is-open" data-filter-panel>
           <label>
             <span>Specific date</span>
             <input type="date" id="dateFilter" />
@@ -83,12 +106,6 @@
               <option value="10">October</option>
               <option value="11">November</option>
               <option value="12">December</option>
-            </select>
-          </label>
-          <label>
-            <span>Year</span>
-            <select id="yearFilter">
-              <option value="">All years</option>
             </select>
           </label>
           <button class="text-button" type="button" id="clearFilters">

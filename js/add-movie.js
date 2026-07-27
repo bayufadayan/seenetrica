@@ -108,6 +108,97 @@
     maxFiles: 5,
   });
 
+  function readLaunchPreset() {
+    const params = new URLSearchParams(window.location.search);
+    const intent = String(params.get("intent") || "").toLowerCase();
+    const requestedStatus = String(params.get("status") || "").toLowerCase();
+    const period = String(params.get("period") || "");
+    const watchedAt = String(params.get("watched_at") || "");
+    const validStatuses = new Set(["plan", "watchlist", "watched"]);
+
+    return {
+      status: validStatuses.has(requestedStatus)
+        ? requestedStatus
+        : ["watched", "theater"].includes(intent)
+          ? "watched"
+          : null,
+      inTheater:
+        intent === "theater" ||
+        params.get("theater") === "1" ||
+        params.get("theater") === "true",
+      period: /^\d{4}-\d{2}$/.test(period) ? period : null,
+      watchedAt: /^\d{4}-\d{2}-\d{2}$/.test(watchedAt)
+        ? watchedAt
+        : null,
+    };
+  }
+
+  const launchPreset = readLaunchPreset();
+
+  function formatLaunchPeriod(period) {
+    if (!period) {
+      return "";
+    }
+
+    const [year, month] = period.split("-").map(Number);
+
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      year: "numeric",
+    }).format(new Date(year, month - 1, 1));
+  }
+
+  function periodLastDate(period) {
+    const [year, month] = period.split("-").map(Number);
+    const lastDay = new Date(year, month, 0).getDate();
+
+    return `${period}-${String(lastDay).padStart(2, "0")}`;
+  }
+
+  function applyLaunchPreset() {
+    const watchedAtInput = document.querySelector("#watchedAt");
+    const theaterInput = document.querySelector("#watchedInTheater");
+
+    watchedAtInput.min = "";
+    watchedAtInput.max = "";
+
+    if (!launchPreset.status) {
+      return;
+    }
+
+    statusField.value = launchPreset.status;
+
+    if (launchPreset.status !== "watched") {
+      return;
+    }
+
+    theaterInput.checked = launchPreset.inTheater;
+
+    if (launchPreset.period) {
+      watchedAtInput.min = `${launchPreset.period}-01`;
+      watchedAtInput.max = periodLastDate(launchPreset.period);
+      watchedAtInput.value = today().startsWith(launchPreset.period)
+        ? today()
+        : "";
+      return;
+    }
+
+    watchedAtInput.value = launchPreset.watchedAt || today();
+  }
+
+  function applyLaunchContextCopy() {
+    if (launchPreset.inTheater) {
+      modeDescription.textContent =
+        "Search a title and it will be prepared as a theater viewing for today.";
+      return;
+    }
+
+    if (launchPreset.period) {
+      modeDescription.textContent =
+        `Add a watched title to ${formatLaunchPeriod(launchPreset.period)}. Choose the exact day before saving.`;
+    }
+  }
+
   function createClientId() {
     if (window.crypto?.randomUUID) {
       return window.crypto.randomUUID();
@@ -439,6 +530,7 @@
     document.querySelector("#watchedAt").value = today();
     document.querySelector("#watchedInTheater").checked = false;
     statusField.value = "watchlist";
+    applyLaunchPreset();
 
     setWatchedFields();
     updatePreview();
@@ -1477,6 +1569,7 @@
 
   initializeSpeechRecognition();
   setMode("single");
+  applyLaunchContextCopy();
   updateBulkPeriodUi();
 
   ensureArchiveLoaded().catch((error) => {
