@@ -76,17 +76,17 @@ module.exports = async function handler(request, response) {
 
     const publicId = String(memory.public_id || "").trim();
 
-    if (!publicId.startsWith("seenetrica/memories/")) {
-      throw new Error("The stored Cloudinary asset ID is invalid.");
+    // Hapus dari Cloudinary HANYA JIKA ini di-upload via Seenetrica (Cloudinary flow)
+    // Kalau link URL/Drive yang disimpan, dia punya publicId format "url-..." sehingga bakal nge-skip step ini.
+    if (publicId.startsWith("seenetrica/memories/")) {
+      const resourceType = /\/video\/upload\//i.test(
+        String(memory.image_url || ""),
+      )
+        ? "video"
+        : "image";
+
+      await destroyCloudinaryAsset(publicId, resourceType);
     }
-
-    const resourceType = /\/video\/upload\//i.test(
-      String(memory.image_url || ""),
-    )
-      ? "video"
-      : "image";
-
-    await destroyCloudinaryAsset(publicId, resourceType);
 
     const result = await writeAppsScriptData("deleteMemory", {
       id: memoryId,
@@ -112,4 +112,3 @@ module.exports = async function handler(request, response) {
     });
   }
 };
-

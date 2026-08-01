@@ -11,6 +11,14 @@
   const detailMemoryStatus = document.querySelector("#detailMemoryStatus");
   const uploadMemoriesButton = document.querySelector("#uploadMemoriesButton");
 
+  const memorySourceUpload = document.querySelector("#memorySourceUpload");
+  const memorySourceUrl = document.querySelector("#memorySourceUrl");
+  const sourceRadios = document.querySelectorAll('input[name="memorySource"]');
+  const urlMemoryLink = document.querySelector("#urlMemoryLink");
+  const urlMemoryType = document.querySelector("#urlMemoryType");
+  const urlMemoryDate = document.querySelector("#urlMemoryDate");
+  const urlMemoryCaption = document.querySelector("#urlMemoryCaption");
+
   const memoryLightbox = document.querySelector("#memoryLightbox");
   const memoryLightboxImage = document.querySelector("#memoryLightboxImage");
   const memoryLightboxVideo = document.querySelector("#memoryLightboxVideo");
@@ -59,6 +67,18 @@
     list: detailMemoryDrafts,
     status: detailMemoryStatus,
     maxFiles: 10,
+  });
+
+  sourceRadios.forEach((radio) => {
+    radio.addEventListener("change", (e) => {
+      if (e.target.value === "url") {
+        memorySourceUpload.hidden = true;
+        memorySourceUrl.hidden = false;
+      } else {
+        memorySourceUpload.hidden = false;
+        memorySourceUrl.hidden = true;
+      }
+    });
   });
 
   function setButtonLoading(button, isLoading, loadingLabel = "Saving…") {
@@ -131,89 +151,86 @@
     return `
       <div class="viewing-list">
         ${entries
-          .map(
-            (entry) => `
+        .map(
+          (entry) => `
               <div class="viewing-item">
                 <div>
                   <p>${formatDate(entry.watched_at, {
-                    fallback: "Date unknown",
-                  })}</p>
+            fallback: "Date unknown",
+          })}</p>
                   <span>
                     ${entry.watched_in_theater
-                      ? "Watched in a theater"
-                      : "Watched elsewhere"}
+              ? "Watched in a theater"
+              : "Watched elsewhere"}
                   </span>
                 </div>
 
                 <i
-                  data-lucide="${
-                    entry.watched_in_theater
-                      ? "clapperboard"
-                      : "monitor-play"
-                  }"
+                  data-lucide="${entry.watched_in_theater
+              ? "clapperboard"
+              : "monitor-play"
+            }"
                   aria-hidden="true"
                 ></i>
               </div>
             `,
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
     `;
   }
 
   function renderMemories() {
     const memories = movieMemories();
-    const countLabel = `${memories.length} ${
-      memories.length === 1 ? "memory" : "memories"
-    }`;
+    const countLabel = `${memories.length} ${memories.length === 1 ? "memory" : "memories"
+      }`;
 
     const gallery = memories.length
       ? memories
-          .map((memory) => {
-            const isVideo = isVideoMemory(memory);
-            const sourceUrl = isVideo
-              ? cloudinaryVideoPosterUrl(memory.image_url, {
-                  width: 720,
-                  height: 720,
-                  crop: "fill",
-                  gravity: "auto",
-                  quality: "q_auto:good",
-                })
-              : cloudinaryImageUrl(memory.image_url, {
-                  width: 720,
-                  height: 720,
-                  crop: "fill",
-                  gravity: "auto",
-                  quality: "q_auto:good",
-                });
-
-            const caption = memory.caption || "A memory from this title";
-            const date = formatDate(memory.memory_date, {
-              fallback: "Date not set",
+        .map((memory) => {
+          const isVideo = isVideoMemory(memory);
+          const sourceUrl = isVideo
+            ? cloudinaryVideoPosterUrl(memory.image_url, {
+              width: 720,
+              height: 720,
+              crop: "fill",
+              gravity: "auto",
+              quality: "q_auto:good",
+            })
+            : cloudinaryImageUrl(memory.image_url, {
+              width: 720,
+              height: 720,
+              crop: "fill",
+              gravity: "auto",
+              quality: "q_auto:good",
             });
-            const mediaLabel = isVideo
-              ? "video"
-              : memory.memory_type || "photo";
 
-            const mediaMarkup = `
+          const caption = memory.caption || "A memory from this title";
+          const date = formatDate(memory.memory_date, {
+            fallback: "Date not set",
+          });
+          const mediaLabel = isVideo
+            ? "video"
+            : memory.memory_type || "photo";
+
+          const mediaMarkup = `
               <img
                 src="${escapeHtml(sourceUrl)}"
                 alt="${escapeHtml(caption)}"
                 loading="lazy"
               />
 
-              ${
-                isVideo
-                  ? `
+              ${isVideo
+              ? `
                     <span class="memory-video-indicator" aria-hidden="true">
                       <i data-lucide="play" aria-hidden="true"></i>
                     </span>
                   `
-                  : ""
-              }
+              : ""
+            }
             `;
 
-            return `
+          return `
               <article class="memory-card">
                 <button
                   class="memory-card-button"
@@ -236,8 +253,8 @@
                 </button>
               </article>
             `;
-          })
-          .join("")
+        })
+        .join("")
       : `
         <div class="memory-gallery-empty">
           <p>No personal memories have been attached to this title yet.</p>
@@ -306,11 +323,10 @@
             ★ ${formatRating(movie.rating)} / 10
           </span>
 
-          ${
-            movie.external_source === "tmdb"
-              ? '<span class="detail-fact">TMDB entry</span>'
-              : '<span class="detail-fact">Manual entry</span>'
-          }
+          ${movie.external_source === "tmdb"
+        ? '<span class="detail-fact">TMDB entry</span>'
+        : '<span class="detail-fact">Manual entry</span>'
+      }
         </div>
 
         <section class="review-block">
@@ -318,11 +334,10 @@
           <h2>What stayed</h2>
 
           <p class="review-copy">
-            ${
-              movie.review
-                ? `“${escapeHtml(movie.review)}”`
-                : "No impression has been written yet."
-            }
+            ${movie.review
+        ? `“${escapeHtml(movie.review)}”`
+        : "No impression has been written yet."
+      }
           </p>
         </section>
 
@@ -375,14 +390,12 @@
                 <option value="plan" ${movie.status === "plan" ? "selected" : ""}>
                   Planned
                 </option>
-                <option value="watchlist" ${
-                  movie.status === "watchlist" ? "selected" : ""
-                }>
+                <option value="watchlist" ${movie.status === "watchlist" ? "selected" : ""
+      }>
                   Watchlist
                 </option>
-                <option value="watched" ${
-                  movie.status === "watched" ? "selected" : ""
-                }>
+                <option value="watched" ${movie.status === "watched" ? "selected" : ""
+      }>
                   Watched
                 </option>
               </select>
@@ -438,7 +451,14 @@
   function openMemoryUpload() {
     memoryUploadModal.hidden = false;
     document.body.classList.add("is-memory-modal-open");
-    window.setTimeout(() => detailMemoryFiles.focus(), 40);
+
+    // Focus depending on active tab
+    const sourceType = document.querySelector('input[name="memorySource"]:checked').value;
+    if (sourceType === 'upload') {
+      window.setTimeout(() => detailMemoryFiles.focus(), 40);
+    } else {
+      window.setTimeout(() => urlMemoryLink.focus(), 40);
+    }
   }
 
   function closeMemoryUpload(force = false) {
@@ -610,55 +630,115 @@
 
   detailMemoryForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const sourceType = document.querySelector('input[name="memorySource"]:checked').value;
 
-    if (!memoryComposer.hasItems()) {
-      showToast("Choose at least one photo or video.", "error");
-      detailMemoryFiles.focus();
-      return;
-    }
-
-    const pin = askForPin();
-
-    if (pin === null) {
-      return;
-    }
-
-    setButtonLoading(uploadMemoriesButton, true, "Uploading media…");
-
-    try {
-      const result = await memoryComposer.uploadAll(state.movie.id, pin, {
-        sortOffset: movieMemories().length,
-        onProgress: ({ index, total, draft, stage }) => {
-          detailMemoryStatus.textContent =
-            stage === "error"
-              ? `${draft.file.name} could not be saved.`
-              : `Processing ${index + 1} of ${total}: ${draft.file.name}`;
-        },
-      });
-
-      memoryComposer.removeDrafts(result.successfulIds);
-
-      if (result.saved.length) {
-        await reloadMovie();
+    if (sourceType === 'upload') {
+      if (!memoryComposer.hasItems()) {
+        showToast("Choose at least one photo or video.", "error");
+        detailMemoryFiles.focus();
+        return;
       }
 
-      if (!result.failures.length) {
-        memoryComposer.clear();
+      const pin = askForPin();
+
+      if (pin === null) {
+        return;
+      }
+
+      setButtonLoading(uploadMemoriesButton, true, "Uploading media…");
+
+      try {
+        const result = await memoryComposer.uploadAll(state.movie.id, pin, {
+          sortOffset: movieMemories().length,
+          onProgress: ({ index, total, draft, stage }) => {
+            detailMemoryStatus.textContent =
+              stage === "error"
+                ? `${draft.file.name} could not be saved.`
+                : `Processing ${index + 1} of ${total}: ${draft.file.name}`;
+          },
+        });
+
+        memoryComposer.removeDrafts(result.successfulIds);
+
+        if (result.saved.length) {
+          await reloadMovie();
+        }
+
+        if (!result.failures.length) {
+          memoryComposer.clear();
+          closeMemoryUpload(true);
+          showToast(
+            `${result.saved.length} ${result.saved.length === 1 ? "memory" : "memories"} added.`,
+          );
+        } else {
+          showToast(
+            `${result.saved.length} saved, ${result.failures.length} need to be retried.`,
+            "error",
+          );
+        }
+      } catch (error) {
+        console.error(error);
+        showToast(error.message, "error");
+      } finally {
+        setButtonLoading(uploadMemoriesButton, false);
+      }
+    } else {
+      // Logika untuk upload via URL / Google Drive
+      const rawUrl = urlMemoryLink.value.trim();
+      if (!rawUrl) {
+        showToast("Please enter an image URL.", "error");
+        urlMemoryLink.focus();
+        return;
+      }
+
+      const pin = askForPin();
+      if (pin === null) return;
+
+      setButtonLoading(uploadMemoriesButton, true, "Saving memory…");
+
+      try {
+        let finalUrl = rawUrl;
+        // Deteksi Google Drive link dan convert ke format image statis
+        const driveRegex = /drive\.google\.com\/file\/d\/([^/]+)/;
+        const match = rawUrl.match(driveRegex);
+        if (match && match[1]) {
+          finalUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        }
+
+        await writeData(
+          "createMemory",
+          {
+            memory: {
+              movie_id: state.movie.id,
+              public_id: `url-${Date.now()}`, // ID palsu biar gampang dicek backend
+              image_url: finalUrl,
+              caption: urlMemoryCaption.value.trim() || null,
+              memory_type: urlMemoryType.value,
+              memory_date: urlMemoryDate.value || null,
+              width: null,
+              height: null,
+              bytes: null,
+              sort_order: movieMemories().length,
+            },
+          },
+          pin,
+        );
+
+        // Bersihkan form
+        urlMemoryLink.value = "";
+        urlMemoryCaption.value = "";
+        urlMemoryDate.value = "";
+        urlMemoryType.value = "photo";
+
         closeMemoryUpload(true);
-        showToast(
-          `${result.saved.length} ${result.saved.length === 1 ? "memory" : "memories"} added.`,
-        );
-      } else {
-        showToast(
-          `${result.saved.length} saved, ${result.failures.length} need to be retried.`,
-          "error",
-        );
+        await reloadMovie();
+        showToast("Memory added via URL.");
+      } catch (error) {
+        console.error(error);
+        showToast(error.message, "error");
+      } finally {
+        setButtonLoading(uploadMemoriesButton, false);
       }
-    } catch (error) {
-      console.error(error);
-      showToast(error.message, "error");
-    } finally {
-      setButtonLoading(uploadMemoriesButton, false);
     }
   });
 
@@ -711,7 +791,7 @@
     }
 
     const confirmed = window.confirm(
-      "Delete this memory from Seenetrica and Cloudinary? This cannot be undone.",
+      "Delete this memory from Seenetrica? This cannot be undone.",
     );
 
     if (!confirmed) {
@@ -829,4 +909,3 @@
       `;
     });
 })();
-
