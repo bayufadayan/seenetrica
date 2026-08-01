@@ -59,6 +59,9 @@
     cloudinaryImageUrl,
     cloudinaryVideoPosterUrl,
     formatBytes,
+    googleDriveFile,
+    googleDriveImageUrl,
+    isGoogleDriveUrl,
     isVideoMemory,
   } = window.SeenetricaMemories;
 
@@ -697,13 +700,19 @@
       setButtonLoading(uploadMemoriesButton, true, "Saving memory…");
 
       try {
-        let finalUrl = rawUrl;
-        // Deteksi Google Drive link dan convert ke format image statis
-        const driveRegex = /drive\.google\.com\/file\/d\/([^/]+)/;
-        const match = rawUrl.match(driveRegex);
-        if (match && match[1]) {
-          finalUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+        const parsedUrl = new URL(rawUrl);
+
+        if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+          throw new Error("Image URL must start with http:// or https://.");
         }
+
+        if (isGoogleDriveUrl(rawUrl) && !googleDriveFile(rawUrl)) {
+          throw new Error(
+            "Use a Google Drive file link, not a folder or Drive page link.",
+          );
+        }
+
+        const finalUrl = googleDriveImageUrl(rawUrl, { width: 3200 });
 
         await writeData(
           "createMemory",

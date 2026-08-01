@@ -93,8 +93,84 @@
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
+  function googleDriveFile(value) {
+    const source = String(value || "").trim();
+
+    if (!source) {
+      return null;
+    }
+
+    let url;
+
+    try {
+      url = new URL(source);
+    } catch {
+      return null;
+    }
+
+    const hostname = url.hostname.toLowerCase().replace(/^www\./, "");
+    const supportedHosts = new Set([
+      "drive.google.com",
+      "drive.usercontent.google.com",
+      "lh3.googleusercontent.com",
+    ]);
+
+    if (!supportedHosts.has(hostname)) {
+      return null;
+    }
+
+    const pathMatch = url.pathname.match(/\/(?:file\/)?d\/([A-Za-z0-9_-]+)/i);
+    const id = pathMatch?.[1] || url.searchParams.get("id") || "";
+
+    if (!/^[A-Za-z0-9_-]{10,}$/.test(id)) {
+      return null;
+    }
+
+    return {
+      id,
+      resourceKey: url.searchParams.get("resourcekey") || "",
+    };
+  }
+
+  function isGoogleDriveUrl(value) {
+    try {
+      const hostname = new URL(String(value || "").trim())
+        .hostname
+        .toLowerCase()
+        .replace(/^www\./, "");
+
+      return hostname === "drive.google.com" ||
+        hostname === "drive.usercontent.google.com";
+    } catch {
+      return false;
+    }
+  }
+
+  function googleDriveImageUrl(value, options = {}) {
+    const source = String(value || "").trim();
+    const driveFile = googleDriveFile(source);
+
+    if (!driveFile) {
+      return source;
+    }
+
+    const requestedWidth = Number(options.width) || MAX_LONG_EDGE;
+    const width = Math.min(4096, Math.max(32, Math.round(requestedWidth)));
+    const directUrl = new URL(
+      `https://lh3.googleusercontent.com/d/${encodeURIComponent(driveFile.id)}=w${width}`,
+    );
+
+    if (driveFile.resourceKey) {
+      directUrl.searchParams.set("resourcekey", driveFile.resourceKey);
+    }
+
+    return directUrl.toString();
+  }
+
   function cloudinaryImageUrl(url, options = {}) {
-    const source = String(url || "");
+    const source = googleDriveImageUrl(url, {
+      width: options.width || MAX_LONG_EDGE,
+    });
     const marker = "/image/upload/";
 
     if (!source.includes(marker)) {
@@ -755,9 +831,11 @@
     cloudinaryImageUrl,
     cloudinaryVideoPosterUrl,
     formatBytes,
+    googleDriveFile,
+    googleDriveImageUrl,
+    isGoogleDriveUrl,
     isVideoMemory,
     mediaResourceType,
     uploadMemoryDraft,
   };
 })();
-

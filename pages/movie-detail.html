@@ -71,24 +71,42 @@
         </div>
 
         <form id="detailMemoryForm">
-          <div
-            style="
-              display: flex;
-              gap: 20px;
-              margin-bottom: 20px;
-              padding-bottom: 20px;
-              border-bottom: 1px solid var(--line);
-            "
-          >
-            <label class="checkbox-field">
-              <input type="radio" name="memorySource" value="upload" checked />
-              Upload Media
+          <fieldset class="memory-source-switch">
+            <legend class="sr-only">Choose a memory source</legend>
+
+            <label class="memory-source-choice">
+              <input
+                class="sr-only"
+                type="radio"
+                name="memorySource"
+                value="upload"
+                checked
+              />
+              <span class="memory-source-option">
+                <i data-lucide="upload-cloud" aria-hidden="true"></i>
+                <span>
+                  <strong>Upload media</strong>
+                  <small>From your device</small>
+                </span>
+              </span>
             </label>
-            <label class="checkbox-field">
-              <input type="radio" name="memorySource" value="url" />
-              Link URL / Drive
+
+            <label class="memory-source-choice">
+              <input
+                class="sr-only"
+                type="radio"
+                name="memorySource"
+                value="url"
+              />
+              <span class="memory-source-option">
+                <i data-lucide="link" aria-hidden="true"></i>
+                <span>
+                  <strong>URL / Google Drive</strong>
+                  <small>Paste a shared link</small>
+                </span>
+              </span>
             </label>
-          </div>
+          </fieldset>
 
           <div id="memorySourceUpload">
             <label class="memory-upload-dropzone" for="detailMemoryFiles">
@@ -123,7 +141,15 @@
           <div id="memorySourceUrl" class="form-grid" hidden>
             <label class="form-field is-full">
               <span>Image URL (Direct or Google Drive)</span>
-              <input type="url" id="urlMemoryLink" placeholder="https://..." />
+              <input
+                type="url"
+                id="urlMemoryLink"
+                placeholder="https://drive.google.com/file/d/.../view"
+              />
+              <small>
+                For Google Drive, set access to “Anyone with the link”. The
+                sharing link will be converted to a direct image URL.
+              </small>
             </label>
 
             <label class="form-field">
