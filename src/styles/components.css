@@ -32,16 +32,10 @@
 }
 
 .brand-mark {
-  display: grid;
+  display: block;
   width: 34px;
   height: 34px;
-  place-items: center;
-  border-radius: 50%;
-  color: var(--ink);
-  background: var(--paper);
-  font-family: var(--font-serif);
-  font-size: 1.22rem;
-  font-weight: 600;
+  flex-shrink: 0;
 }
 
 .brand-name {

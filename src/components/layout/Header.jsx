@@ -15,9 +15,12 @@ export function Header({ onSearch }) {
     <header className="site-header">
       <nav className="floating-nav" aria-label="Primary navigation">
         <Link className="brand" to="/" aria-label="Seenetrica home">
-          <span className="brand-mark" aria-hidden="true">
-            S
-          </span>
+          <img
+            className="brand-mark"
+            src="/assets/favicon.svg"
+            alt=""
+            aria-hidden="true"
+          />
           <span className="brand-name">Seenetrica</span>
         </Link>
         <div className={`nav-links ${open ? "is-open" : ""}`}>
