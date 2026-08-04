@@ -2,7 +2,6 @@ export function getEligibleTitles(titles) {
   const titleMap = new Map(titles.map((title) => [title.id, title]));
   return titles.filter((title) => {
     if (title.isWatched) return false;
-    if (title.type === "movie") return true;
     return (title.prerequisiteIds || []).every((id) => titleMap.get(id)?.isWatched === true);
   });
 }

@@ -6,7 +6,7 @@ import { getEligibleTitles, pickUniqueRecommendation } from "../utils/recommenda
 import { getTmdbImageUrl } from "../utils/tmdb-image.util";
 
 function titleMeta(title) {
-  return [title.type, title.releaseDate?.slice(0, 4), title.runtimeMinutes ? `${title.runtimeMinutes} min` : null].filter(Boolean).join(" · ");
+  return [title.type, title.seasonNumber ? `Season ${title.seasonNumber}` : null, title.releaseDate?.slice(0, 4), title.runtimeMinutes ? `${title.runtimeMinutes} min` : null].filter(Boolean).join(" · ");
 }
 
 export function SurpriseModal({ titles, history, setHistory, onClose, onPlay, busy }) {
@@ -20,7 +20,7 @@ export function SurpriseModal({ titles, history, setHistory, onClose, onPlay, bu
   return (
     <Modal title={current ? "Tonight's feature" : "No eligible feature"} onClose={onClose} busy={busy} className="wm-surprise-modal">
       {!current ? (
-        <div className="wm-modal-empty"><p>Every title is watched, or a series still has unfinished prerequisites.</p><Link className="secondary-button" to="/watch-marvel/settings">Review library</Link></div>
+        <div className="wm-modal-empty"><p>Every title is watched, or a title still has unfinished prerequisites.</p><Link className="secondary-button" to="/watch-marvel/settings">Review library</Link></div>
       ) : (
         <>
           <div className="wm-surprise-art" style={{ "--wm-backdrop": `url(${getTmdbImageUrl(current.backdropPath, "original")})` }}>

@@ -41,22 +41,43 @@ module.exports = async function handler(request, response) {
       });
     }
 
+    const posterUrl = (path) => path
+      ? `https://image.tmdb.org/t/p/w500${path}`
+      : null;
+    const backdropUrl = item.backdrop_path
+      ? `https://image.tmdb.org/t/p/original${item.backdrop_path}`
+      : null;
+    const seasons = type === "series" && Array.isArray(item.seasons)
+      ? item.seasons
+          .filter((season) => Number.isInteger(season.season_number) && season.season_number > 0)
+          .sort((left, right) => left.season_number - right.season_number)
+          .map((season) => ({
+            id: season.id,
+            season_number: season.season_number,
+            name: season.name || `Season ${season.season_number}`,
+            air_date: season.air_date || null,
+            episode_count: Number(season.episode_count) || 0,
+            poster_path: season.poster_path || null,
+            poster_url: posterUrl(season.poster_path || item.poster_path),
+          }))
+      : [];
     const result = {
       external_source: "tmdb",
       external_id: item.id,
       title: item.title || item.name,
-      poster_url: item.poster_path
-        ? `https://image.tmdb.org/t/p/w500${item.poster_path}`
-        : null,
-      release_date: item.release_date || item.first_air_date || null,
-      media_type: type,
-      original_title: item.original_title || item.original_name || null,
+      original_title: item.original_title || item.original_name || item.title || item.name,
       poster_path: item.poster_path || null,
       backdrop_path: item.backdrop_path || null,
+      poster_url: posterUrl(item.poster_path),
+      backdrop_url: backdropUrl,
+      release_date: item.release_date || item.first_air_date || null,
+      media_type: type,
       runtime_minutes:
         type === "series"
           ? item.episode_run_time?.find((value) => value > 0) || null
           : item.runtime || null,
+      number_of_seasons: type === "series" ? Number(item.number_of_seasons) || seasons.length : null,
+      seasons,
     };
 
     response.setHeader(

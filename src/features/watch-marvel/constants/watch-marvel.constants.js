@@ -1,5 +1,5 @@
 export const WATCH_MARVEL_DB_NAME = "seenetrica-watch-marvel";
-export const WATCH_MARVEL_DB_VERSION = 1;
+export const WATCH_MARVEL_DB_VERSION = 2;
 
 export const DEFAULT_WATCH_MARVEL_SETTINGS = Object.freeze({
   id: "default",

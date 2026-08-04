@@ -5,23 +5,51 @@ import {
   createDefaultSettings,
 } from "../constants/watch-marvel.constants";
 import { normalizeSettings } from "../utils/settings.util";
+import {
+  createTitleIdentityKey,
+  normalizeLegacyTitle,
+} from "../utils/title-draft.util";
 
 let databasePromise;
 
 function getDatabase() {
   if (!databasePromise) {
     databasePromise = openDB(WATCH_MARVEL_DB_NAME, WATCH_MARVEL_DB_VERSION, {
-      upgrade(database) {
-        const titles = database.createObjectStore("titles", { keyPath: "id" });
-        titles.createIndex("tmdbId", "tmdbId");
-        titles.createIndex("type", "type");
-        titles.createIndex("isWatched", "isWatched");
-        titles.createIndex("releaseDate", "releaseDate");
-        titles.createIndex("createdAt", "createdAt");
-        database.createObjectStore("settings", { keyPath: "id" }).put(createDefaultSettings());
-        database.createObjectStore("localSources", { keyPath: "id" });
-        database.createObjectStore("youtubeChannels", { keyPath: "id" });
-        database.createObjectStore("sessions", { keyPath: "id" });
+      upgrade(database, oldVersion, _newVersion, transaction) {
+        const titles = database.objectStoreNames.contains("titles")
+          ? transaction.objectStore("titles")
+          : database.createObjectStore("titles", { keyPath: "id" });
+        const indexes = [
+          ["tmdbId", "tmdbId"],
+          ["type", "type"],
+          ["isWatched", "isWatched"],
+          ["releaseDate", "releaseDate"],
+          ["createdAt", "createdAt"],
+          ["identityKey", "identityKey"],
+          ["baseTitle", "baseTitle"],
+          ["seasonNumber", "seasonNumber"],
+        ];
+        for (const [name, keyPath] of indexes) {
+          if (!titles.indexNames.contains(name)) titles.createIndex(name, keyPath);
+        }
+        if (!database.objectStoreNames.contains("settings")) {
+          database.createObjectStore("settings", { keyPath: "id" }).put(createDefaultSettings());
+        }
+        for (const storeName of ["localSources", "youtubeChannels", "sessions"]) {
+          if (!database.objectStoreNames.contains(storeName)) {
+            database.createObjectStore(storeName, { keyPath: "id" });
+          }
+        }
+        if (oldVersion < 2) {
+          titles.openCursor().then(function migrate(cursor) {
+            if (!cursor) return;
+            cursor.update(normalizeLegacyTitle(cursor.value));
+            return cursor.continue().then(migrate);
+          }).catch((error) => {
+            console.error("Watch Marvel title migration failed:", error);
+            try { transaction.abort(); } catch { /* The transaction already failed. */ }
+          });
+        }
       },
       blocked() {
         console.warn("Watch Marvel database upgrade is blocked by another tab.");
@@ -59,33 +87,41 @@ function dependsOn(sourceId, targetId, titleMap, visited = new Set()) {
   return (source?.prerequisiteIds || []).some((nextId) => dependsOn(nextId, targetId, titleMap, visited));
 }
 
-async function prepareTitle(payload, existing = null) {
+export function normalizeTitlePayload(payload, existing = null) {
   validateTitlePayload(payload);
-  const database = await getDatabase();
-  const titles = await database.getAll("titles");
-  const duplicate = titles.find(
-    (title) => Number(title.tmdbId) === Number(payload.tmdbId) && title.type === payload.type && title.id !== existing?.id,
-  );
-  if (duplicate) throw new Error("This TMDB title is already in the Marvel library.");
-  const prerequisiteIds = payload.type === "series" ? [...new Set(payload.prerequisiteIds || [])] : [];
+  const type = payload.type;
+  const seasonValue = Number(payload.seasonNumber);
+  const seasonNumber = type === "series" && Number.isInteger(seasonValue) && seasonValue > 0
+    ? seasonValue
+    : null;
+  const prerequisiteIds = [...new Set(
+    (Array.isArray(payload.prerequisiteIds) ? payload.prerequisiteIds : []).filter(Boolean),
+  )];
   const recordId = existing?.id || id();
-  if (prerequisiteIds.includes(recordId)) throw new Error("A series cannot require itself.");
-  const titleMap = new Map(titles.map((title) => [title.id, title]));
-  if (existing) titleMap.set(existing.id, { ...existing, ...payload, prerequisiteIds });
-  for (const prerequisiteId of prerequisiteIds) {
-    if (!titleMap.has(prerequisiteId)) throw new Error("A selected prerequisite no longer exists.");
-    if (dependsOn(prerequisiteId, recordId, titleMap)) throw new Error("This prerequisite would create a circular dependency.");
-  }
   const timestamp = now();
+  const title = payload.title.trim();
+  const baseTitle = String(payload.baseTitle || existing?.baseTitle || title).trim();
+  if (!baseTitle) throw new Error("Base title is required.");
+  const identityKey = existing?.identityKey || createTitleIdentityKey({
+    type,
+    tmdbId: payload.tmdbId,
+    seasonNumber,
+  });
   return {
     ...existing,
     ...payload,
     id: recordId,
     tmdbId: Number(payload.tmdbId),
-    title: payload.title.trim(),
+    title,
+    baseTitle,
     originalTitle: String(payload.originalTitle || payload.title).trim(),
     releaseDate: payload.releaseDate || null,
-    type: payload.type,
+    type,
+    seasonNumber,
+    seasonTmdbId: seasonNumber && Number.isInteger(Number(payload.seasonTmdbId)) && Number(payload.seasonTmdbId) > 0
+      ? Number(payload.seasonTmdbId)
+      : null,
+    identityKey,
     isWatched: Boolean(payload.isWatched),
     prerequisiteIds,
     posterPath: payload.posterPath || null,
@@ -96,6 +132,59 @@ async function prepareTitle(payload, existing = null) {
   };
 }
 
+function assertUniqueIdentities(records, existingTitles = [], ignoredId = null) {
+  const existingByIdentity = new Map(
+    existingTitles
+      .filter((title) => title.id !== ignoredId)
+      .map((title) => [title.identityKey || normalizeLegacyTitle(title).identityKey, title]),
+  );
+  const batch = new Map();
+  for (const record of records) {
+    if (existingByIdentity.has(record.identityKey)) {
+      throw new Error(`${record.title} is already in the Marvel library.`);
+    }
+    if (batch.has(record.identityKey)) {
+      throw new Error(`${record.title} appears more than once in this batch.`);
+    }
+    batch.set(record.identityKey, record);
+  }
+}
+
+export function validateTitleRelationships(records, existingTitles, { requireExistingPrerequisites = false } = {}) {
+  const existingIds = new Set(existingTitles.map((title) => title.id));
+  const titleMap = new Map(existingTitles.map((title) => [title.id, title]));
+  for (const record of records) titleMap.set(record.id, record);
+  for (const record of records) {
+    if (record.prerequisiteIds.includes(record.id)) throw new Error("A title cannot require itself.");
+    for (const prerequisiteId of record.prerequisiteIds) {
+      if (!titleMap.has(prerequisiteId) || (requireExistingPrerequisites && !existingIds.has(prerequisiteId))) {
+        throw new Error("One or more prerequisites no longer exist.");
+      }
+      if (dependsOn(prerequisiteId, record.id, titleMap)) {
+        throw new Error("This prerequisite would create a circular dependency.");
+      }
+    }
+  }
+}
+
+async function createRecords(payloads) {
+  if (!Array.isArray(payloads) || !payloads.length) throw new Error("Add at least one title before saving.");
+  const database = await getDatabase();
+  const transaction = database.transaction("titles", "readwrite");
+  try {
+    const existingTitles = await transaction.store.getAll();
+    const records = payloads.map((payload) => normalizeTitlePayload(payload));
+    assertUniqueIdentities(records, existingTitles);
+    validateTitleRelationships(records, existingTitles, { requireExistingPrerequisites: true });
+    await Promise.all(records.map((record) => transaction.store.add(record)));
+    await transaction.done;
+    return records;
+  } catch (error) {
+    try { transaction.abort(); } catch { /* The transaction already failed. */ }
+    throw error;
+  }
+}
+
 export const watchMarvelDb = {
   async getTitles() {
     return (await getDatabase()).getAll("titles");
@@ -104,25 +193,52 @@ export const watchMarvelDb = {
     return (await getDatabase()).get("titles", titleId);
   },
   async createTitle(payload) {
-    const record = await prepareTitle(payload);
-    await (await getDatabase()).add("titles", record);
-    return record;
+    return (await createRecords([payload]))[0];
+  },
+  async createTitles(payloads) {
+    return createRecords(payloads);
   },
   async updateTitle(titleId, payload) {
     const database = await getDatabase();
-    const existing = await database.get("titles", titleId);
-    if (!existing) throw new Error("Marvel title was not found.");
-    const record = await prepareTitle({ ...existing, ...payload }, existing);
-    await database.put("titles", record);
-    return record;
+    const transaction = database.transaction("titles", "readwrite");
+    try {
+      const titles = await transaction.store.getAll();
+      const existing = titles.find((title) => title.id === titleId);
+      if (!existing) throw new Error("Marvel title was not found.");
+      const record = normalizeTitlePayload({ ...existing, ...payload }, existing);
+      assertUniqueIdentities([record], titles, existing.id);
+      validateTitleRelationships([record], titles.filter((title) => title.id !== existing.id));
+      await transaction.store.put(record);
+      await transaction.done;
+      return record;
+    } catch (error) {
+      try { transaction.abort(); } catch { /* The transaction already failed. */ }
+      throw error;
+    }
+  },
+  async getTitleDependents(titleId) {
+    const titles = await (await getDatabase()).getAll("titles");
+    return titles.filter((title) => title.prerequisiteIds?.includes(titleId));
   },
   async deleteTitle(titleId) {
     const database = await getDatabase();
-    const titles = await database.getAll("titles");
-    if (titles.some((title) => title.prerequisiteIds?.includes(titleId))) {
-      throw new Error("Remove this title from other series prerequisites first.");
+    const transaction = database.transaction("titles", "readwrite");
+    try {
+      const titles = await transaction.store.getAll();
+      const dependents = titles.filter((title) => title.prerequisiteIds?.includes(titleId));
+      const timestamp = now();
+      await Promise.all(dependents.map((title) => transaction.store.put({
+        ...title,
+        prerequisiteIds: title.prerequisiteIds.filter((idValue) => idValue !== titleId),
+        updatedAt: timestamp,
+      })));
+      await transaction.store.delete(titleId);
+      await transaction.done;
+      return { removedPrerequisiteCount: dependents.length };
+    } catch (error) {
+      try { transaction.abort(); } catch { /* The transaction already failed. */ }
+      throw error;
     }
-    await database.delete("titles", titleId);
   },
   async setTitleWatched(titleId, isWatched) {
     return this.updateTitle(titleId, { isWatched: Boolean(isWatched) });

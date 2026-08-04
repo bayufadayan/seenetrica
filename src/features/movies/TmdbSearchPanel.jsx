@@ -3,7 +3,7 @@ import { useState } from "react";
 import { tmdbService } from "../../services/tmdb.service";
 import { Poster } from "../../components/ui/Poster";
 
-export function TmdbSearchPanel({ bulk = false, disabled = false, onSelect }) {
+export function TmdbSearchPanel({ bulk = false, disabled = false, getActions, onSelect }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [page, setPage] = useState(0);
@@ -48,16 +48,16 @@ export function TmdbSearchPanel({ bulk = false, disabled = false, onSelect }) {
     }
   }
 
-  async function select(item) {
+  async function select(item, action = null) {
     if (selecting) return;
-    setSelecting(`${item.media_type}:${item.external_id}`);
+    setSelecting(`${item.media_type}:${item.external_id}:${action || "default"}`);
     setStatus("Loading title details…");
     try {
       const details = await tmdbService.getDetails(
         item.external_id,
         item.media_type,
       );
-      await onSelect(details);
+      await onSelect(details, action);
       setStatus(
         bulk
           ? `${details.title} added to the list.`
@@ -137,7 +137,33 @@ export function TmdbSearchPanel({ bulk = false, disabled = false, onSelect }) {
               </div>
             ))
           : results.map((item) =>
-              bulk ? (
+              getActions ? (
+                <article
+                  className="tmdb-result wm-tmdb-result"
+                  key={`${item.media_type}:${item.external_id}`}
+                >
+                  <Poster src={item.poster_url} alt="" loading="lazy" />
+                  <div>
+                    <h3>{item.title}</h3>
+                    <p>{item.media_type} · {item.release_date?.slice(0, 4) || "TBA"}</p>
+                  </div>
+                  <div className="wm-tmdb-actions">
+                    {getActions(item).map((action) => (
+                      <button
+                        className="secondary-button"
+                        type="button"
+                        disabled={Boolean(selecting)}
+                        key={action.id}
+                        onClick={() => select(item, action.id).catch(() => {})}
+                      >
+                        {selecting === `${item.media_type}:${item.external_id}:${action.id}`
+                          ? "Loadingâ€¦"
+                          : action.label}
+                      </button>
+                    ))}
+                  </div>
+                </article>
+              ) : bulk ? (
                 <article
                   className="tmdb-result bulk-tmdb-result"
                   key={`${item.media_type}:${item.external_id}`}
@@ -151,7 +177,7 @@ export function TmdbSearchPanel({ bulk = false, disabled = false, onSelect }) {
                     </p>
                   </div>
                   <button
-                    className={`bulk-add-result-button ${selecting === `${item.media_type}:${item.external_id}` ? "is-loading" : ""}`}
+                    className={`bulk-add-result-button ${selecting === `${item.media_type}:${item.external_id}:default` ? "is-loading" : ""}`}
                     type="button"
                     disabled={Boolean(selecting)}
                     onClick={() => select(item).catch(() => {})}
@@ -163,7 +189,7 @@ export function TmdbSearchPanel({ bulk = false, disabled = false, onSelect }) {
                 </article>
               ) : (
                 <button
-                  className={`tmdb-result ${selecting === `${item.media_type}:${item.external_id}` ? "is-loading is-selected" : ""}`}
+                  className={`tmdb-result ${selecting === `${item.media_type}:${item.external_id}:default` ? "is-loading is-selected" : ""}`}
                   type="button"
                   disabled={Boolean(selecting)}
                   key={`${item.media_type}:${item.external_id}`}
