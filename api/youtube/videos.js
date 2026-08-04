@@ -4,6 +4,19 @@ function durationSeconds(value) {
   return Number(match[1] || 0) * 86400 + Number(match[2] || 0) * 3600 + Number(match[3] || 0) * 60 + Number(match[4] || 0);
 }
 
+function isLikelyShort(item, seconds) {
+  const metadata = [
+    item.snippet?.title,
+    item.snippet?.description,
+    ...(item.snippet?.tags || []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  const hasShortsMarker = /(^|[\s#_-])(shorts?|ytshorts|youtubeshorts)(?=$|[\s#_-])/.test(metadata);
+  return seconds <= 60 || hasShortsMarker;
+}
+
 async function youtube(path, parameters, apiKey) {
   const params = new URLSearchParams({ ...parameters, key: apiKey });
   const result = await fetch(`https://www.googleapis.com/youtube/v3/${path}?${params}`);
@@ -37,15 +50,16 @@ module.exports = async function handler(request, response) {
     const details = await youtube("videos", { part: "snippet,contentDetails,status", id: ids.join(",") }, apiKey);
     const videos = (details.items || [])
       .filter((item) => item.status?.privacyStatus === "public" && item.status?.embeddable && item.snippet?.liveBroadcastContent === "none")
-      .map((item) => ({
+      .map((item) => ({ item, seconds: durationSeconds(item.contentDetails?.duration) }))
+      .filter(({ item, seconds }) => seconds > 0 && !isLikelyShort(item, seconds))
+      .map(({ item, seconds }) => ({
         videoId: item.id,
         title: item.snippet?.title || "Trailer",
         thumbnailUrl: item.snippet?.thumbnails?.medium?.url || item.snippet?.thumbnails?.default?.url || null,
         publishedAt: item.snippet?.publishedAt || null,
-        durationSeconds: durationSeconds(item.contentDetails?.duration),
+        durationSeconds: seconds,
         embedUrl: `https://www.youtube.com/embed/${encodeURIComponent(item.id)}?enablejsapi=1&playsinline=1&rel=0`,
       }))
-      .filter((item) => item.durationSeconds > 0)
       .sort((first, second) => String(second.publishedAt).localeCompare(String(first.publishedAt)))
       .slice(0, requestedLimit);
     response.setHeader("Cache-Control", "public, s-maxage=21600, stale-while-revalidate=86400");

@@ -3,6 +3,7 @@ import { calculateScheduledStart } from "../utils/broadcast-time.util";
 import { buildCommercialBreakpoints } from "../utils/breakpoint.util";
 import { buildCommercialPlan, buildPreShowPlan } from "../utils/commercial-plan.util";
 import { createSeededRandom } from "../utils/seeded-random.util";
+import { isLikelyYouTubeShort } from "../utils/youtube-video.util";
 import { localMediaService } from "./local-media.service";
 import { watchMarvelDb } from "./watch-marvel-db.service";
 
@@ -15,6 +16,7 @@ function mediaPool(settings, localSource, channels, phase = "preShow") {
     ? channels
         .filter((channel) => channel.enabled)
         .flatMap((channel) => channel.latestVideos || [])
+        .filter((video) => !isLikelyYouTubeShort(video))
         .map((video) => ({ ...video, kind: "youtube", id: `youtube:${video.videoId}` }))
     : [];
   return [...local, ...youtube];
