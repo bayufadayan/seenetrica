@@ -8,6 +8,10 @@ import CinemaPage from "../pages/CinemaPage";
 import AddMoviePage from "../pages/AddMoviePage";
 import MovieDetailPage from "../pages/MovieDetailPage";
 import NotFoundPage from "../pages/NotFoundPage";
+import WatchMarvelPage from "../pages/WatchMarvelPage";
+import WatchMarvelSettingsPage from "../pages/WatchMarvelSettingsPage";
+import WatchMarvelPlayerPage from "../pages/WatchMarvelPlayerPage";
+import { WatchMarvelFeatureLayout } from "../features/watch-marvel/components/WatchMarvelFeatureLayout";
 
 function LegacyDetailRedirect() {
   const [params] = useSearchParams();
@@ -31,6 +35,10 @@ export function AppRoutes() {
         <Route path="cinema" element={<CinemaPage />} />
         <Route path="add-movie" element={<AddMoviePage />} />
         <Route path="movies/:movieId" element={<MovieDetailPage />} />
+        <Route path="watch-marvel" element={<WatchMarvelFeatureLayout />}>
+          <Route index element={<WatchMarvelPage />} />
+          <Route path="settings" element={<WatchMarvelSettingsPage />} />
+        </Route>
         <Route
           path="pages/history.html"
           element={<Navigate replace to="/history" />}
@@ -54,6 +62,7 @@ export function AppRoutes() {
         />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
+      <Route path="watch-marvel/player/:sessionId" element={<WatchMarvelPlayerPage />} />
     </Routes>
   );
 }

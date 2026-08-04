@@ -50,6 +50,9 @@ module.exports = async function handler(request, response) {
         : null,
       release_date: item.release_date || item.first_air_date || null,
       media_type: type,
+      original_title: item.original_title || item.original_name || null,
+      poster_path: item.poster_path || null,
+      backdrop_path: item.backdrop_path || null,
       runtime_minutes:
         type === "series"
           ? item.episode_run_time?.find((value) => value > 0) || null

@@ -1,0 +1,1 @@
+export function PlayerGuide() { return <aside className="wm-player-guide"><p>Player controls</p><dl><div><dt>↑ / +</dt><dd>Volume up</dd></div><div><dt>↓ / −</dt><dd>Volume down</dd></div><div><dt>M</dt><dd>Mute</dd></div><div><dt>F</dt><dd>Fullscreen</dd></div><div><dt>Esc</dt><dd>Exit fullscreen</dd></div></dl></aside>; }
