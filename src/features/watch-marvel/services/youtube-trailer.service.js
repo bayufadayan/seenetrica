@@ -1,4 +1,5 @@
 import { parseJson } from "../../../services/http";
+import { isEligibleYouTubeTrailer } from "../utils/youtube-video.util";
 
 export const youtubeTrailerService = {
   async resolveChannel(channelUrl) {
@@ -10,6 +11,6 @@ export const youtubeTrailerService = {
     if (force) params.set("refresh", String(Date.now()));
     const response = await fetch(`/api/youtube/videos?${params}`);
     const result = await parseJson(response);
-    return Array.isArray(result.videos) ? result.videos : [];
+    return Array.isArray(result.videos) ? result.videos.filter(isEligibleYouTubeTrailer) : [];
   },
 };

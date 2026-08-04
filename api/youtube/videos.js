@@ -51,7 +51,7 @@ module.exports = async function handler(request, response) {
     const videos = (details.items || [])
       .filter((item) => item.status?.privacyStatus === "public" && item.status?.embeddable && item.snippet?.liveBroadcastContent === "none")
       .map((item) => ({ item, seconds: durationSeconds(item.contentDetails?.duration) }))
-      .filter(({ item, seconds }) => seconds > 0 && !isLikelyShort(item, seconds))
+      .filter(({ item, seconds }) => seconds > 0 && seconds <= 240 && !isLikelyShort(item, seconds))
       .map(({ item, seconds }) => ({
         videoId: item.id,
         title: item.snippet?.title || "Trailer",

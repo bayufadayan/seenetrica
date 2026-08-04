@@ -1,5 +1,7 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import { YOUTUBE_CACHE_MAX_AGE_MS } from "../constants/watch-marvel.constants";
 import { watchMarvelDb } from "../services/watch-marvel-db.service";
+import { youtubeTrailerService } from "../services/youtube-trailer.service";
 
 const WatchMarvelContext = createContext(null);
 
@@ -7,6 +9,9 @@ export function WatchMarvelProvider({ children }) {
   const [data, setData] = useState({ titles: [], settings: null, localSource: null, youtubeChannels: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const dataRef = useRef(data);
+  const refreshingChannels = useRef(new Set());
+  dataRef.current = data;
 
   async function refresh() {
     try {
@@ -29,6 +34,7 @@ export function WatchMarvelProvider({ children }) {
   }
 
   useEffect(() => {
+    if (loading) return undefined;
     let active = true;
     Promise.all([
       watchMarvelDb.getTitles(),
@@ -43,6 +49,43 @@ export function WatchMarvelProvider({ children }) {
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
+    };
+  }, [loading]);
+
+  useEffect(() => {
+    let active = true;
+    async function refreshStaleChannels() {
+      const channels = dataRef.current.youtubeChannels || [];
+      const stale = channels.filter((channel) => {
+        const fetchedAt = new Date(channel.fetchedAt || 0).getTime();
+        return channel.enabled
+          && !refreshingChannels.current.has(channel.id)
+          && (!Number.isFinite(fetchedAt) || Date.now() - fetchedAt >= YOUTUBE_CACHE_MAX_AGE_MS);
+      });
+      await Promise.all(stale.map(async (channel) => {
+        refreshingChannels.current.add(channel.id);
+        try {
+          const latestVideos = await youtubeTrailerService.getLatestVideos(channel.channelId);
+          const updated = await watchMarvelDb.updateYouTubeChannel(channel.id, {
+            latestVideos,
+            fetchedAt: new Date().toISOString(),
+          });
+          if (active) setData((current) => ({
+            ...current,
+            youtubeChannels: current.youtubeChannels.map((item) => item.id === updated.id ? updated : item),
+          }));
+        } catch (refreshError) {
+          console.warn(`Could not refresh YouTube channel ${channel.title}:`, refreshError);
+        } finally {
+          refreshingChannels.current.delete(channel.id);
+        }
+      }));
+    }
+    refreshStaleChannels();
+    const interval = window.setInterval(refreshStaleChannels, 15 * 60 * 1000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
     };
   }, []);
 

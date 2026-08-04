@@ -1,6 +1,5 @@
 import { RefreshCw, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { YOUTUBE_CACHE_MAX_AGE_MS } from "../constants/watch-marvel.constants";
+import { useState } from "react";
 import { watchMarvelDb } from "../services/watch-marvel-db.service";
 import { youtubeTrailerService } from "../services/youtube-trailer.service";
 
@@ -14,12 +13,6 @@ export function YouTubeChannelsSettings({ channels, refresh, toast }) {
       await refresh(); if (!quiet) toast("Trailer channel refreshed.");
     } catch (error) { if (!quiet) toast(error.message, "error"); }
   }
-  useEffect(() => {
-    const stale = channels.filter((channel) => channel.enabled && (!channel.fetchedAt || Date.now() - new Date(channel.fetchedAt).getTime() > YOUTUBE_CACHE_MAX_AGE_MS));
-    stale.forEach((channel) => refreshChannel(channel, true));
-    // A stale cache is refreshed at most when the loaded channel list changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [channels.length]);
   async function add(event) {
     event.preventDefault(); setBusy(true);
     try { const resolved = await youtubeTrailerService.resolveChannel(url); const channel = await watchMarvelDb.saveYouTubeChannel({ ...resolved, channelUrl: url }); await refreshChannel(channel, true, true); setUrl(""); await refresh(); toast("Trailer channel added."); } catch (error) { toast(error.message, "error"); } finally { setBusy(false); }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isLikelyYouTubeShort } from "./youtube-video.util";
+import { isEligibleYouTubeTrailer, isLikelyYouTubeShort } from "./youtube-video.util";
 
 describe("isLikelyYouTubeShort", () => {
   it("filters very short vertical-style uploads", () => {
@@ -12,5 +12,13 @@ describe("isLikelyYouTubeShort", () => {
 
   it("keeps ordinary trailers longer than one minute", () => {
     expect(isLikelyYouTubeShort({ title: "Official Teaser Trailer", durationSeconds: 92 })).toBe(false);
+  });
+
+  it("accepts trailers up to four minutes", () => {
+    expect(isEligibleYouTubeTrailer({ title: "Official Trailer", durationSeconds: 240 })).toBe(true);
+  });
+
+  it("rejects videos longer than four minutes", () => {
+    expect(isEligibleYouTubeTrailer({ title: "Full interview", durationSeconds: 241 })).toBe(false);
   });
 });
