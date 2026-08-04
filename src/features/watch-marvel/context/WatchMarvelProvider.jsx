@@ -34,7 +34,6 @@ export function WatchMarvelProvider({ children }) {
   }
 
   useEffect(() => {
-    if (loading) return undefined;
     let active = true;
     Promise.all([
       watchMarvelDb.getTitles(),
@@ -50,9 +49,10 @@ export function WatchMarvelProvider({ children }) {
     return () => {
       active = false;
     };
-  }, [loading]);
+  }, []);
 
   useEffect(() => {
+    if (loading) return undefined;
     let active = true;
     async function refreshStaleChannels() {
       const channels = dataRef.current.youtubeChannels || [];
@@ -87,7 +87,7 @@ export function WatchMarvelProvider({ children }) {
       active = false;
       window.clearInterval(interval);
     };
-  }, []);
+  }, [loading]);
 
   return (
     <WatchMarvelContext.Provider value={{ ...data, loading, error, refresh }}>
