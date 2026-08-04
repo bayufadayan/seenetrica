@@ -86,7 +86,12 @@
 .wm-player-error h1,.wm-ending h1 { max-width: 800px; margin-bottom: 16px; font-family: var(--font-serif); font-size: clamp(3rem,8vw,7rem); font-weight: 400; line-height: .88; }
 .wm-player-error>p:not(.section-kicker),.wm-ending>p:not(.section-kicker) { max-width: 640px; color: rgba(255,255,255,.6); }
 .wm-player-error .secondary-button,.wm-player-error .text-button { color: #fff; border-color: rgba(255,255,255,.3); }
-.wm-movie-video,.wm-ad-video,.wm-broadcast-layer,.wm-youtube-frame,.wm-youtube-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wm-movie-video,.wm-ad-video,.wm-broadcast-layer,.wm-youtube-shell,.wm-youtube-shell iframe { position: absolute; inset: 0; width: 100%; height: 100%; }
+.wm-youtube-shell { overflow: hidden; background: #050505; }
+.wm-youtube-shell iframe { z-index: 1; border: 0; }
+.wm-youtube-loading { position: absolute; z-index: 0; inset: 0; display: grid; place-content: center; justify-items: center; gap: 8px; padding: 28px; text-align: center; }
+.wm-youtube-loading span { color: rgba(255,255,255,.5); font-size: .62rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+.wm-youtube-loading strong { max-width: 620px; font-family: var(--font-serif); font-size: clamp(2rem,5vw,4rem); font-weight: 400; line-height: 1; }
 .wm-movie-video,.wm-ad-video { object-fit: contain; background: #000; }
 .wm-movie-video { visibility: hidden; opacity: 0; }
 .wm-movie-video.is-visible { visibility: visible; opacity: 1; }
