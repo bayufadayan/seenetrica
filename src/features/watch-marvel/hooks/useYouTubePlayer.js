@@ -1,20 +1,44 @@
 import { useEffect, useRef } from "react";
 
 let apiPromise;
+let apiUnavailableUntil = 0;
+const YOUTUBE_API_URL = "https://www.youtube.com/iframe_api";
+
 function loadYouTubeApi() {
   if (window.YT?.Player) return Promise.resolve(window.YT);
+  if (Date.now() < apiUnavailableUntil) {
+    return Promise.reject(new Error("The YouTube Player API is temporarily unavailable."));
+  }
   if (!apiPromise) apiPromise = new Promise((resolve, reject) => {
     const previous = window.onYouTubeIframeAPIReady;
-    window.onYouTubeIframeAPIReady = () => { previous?.(); resolve(window.YT); };
-    const existing = document.querySelector('script[src="https://www.youtube.com/iframe_api"]');
-    if (existing) return;
+    const orphaned = document.querySelector(`script[src="${YOUTUBE_API_URL}"]`);
+    orphaned?.remove();
     const script = document.createElement("script");
-    script.src = "https://www.youtube.com/iframe_api";
-    script.async = true;
-    script.onerror = () => {
+    let settled = false;
+    const fail = (message) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      script.remove();
       apiPromise = undefined;
-      reject(new Error("The YouTube Player API could not be loaded."));
+      apiUnavailableUntil = Date.now() + 60_000;
+      reject(new Error(message));
     };
+    const timeout = window.setTimeout(
+      () => fail("The YouTube Player API did not load in time."),
+      7000,
+    );
+    window.onYouTubeIframeAPIReady = () => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timeout);
+      apiUnavailableUntil = 0;
+      previous?.();
+      resolve(window.YT);
+    };
+    script.src = YOUTUBE_API_URL;
+    script.async = true;
+    script.onerror = () => fail("The YouTube Player API could not be loaded.");
     document.head.appendChild(script);
   });
   return apiPromise;
