@@ -1,5 +1,5 @@
 import { Captions, Expand, Volume2, VolumeX } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { BroadcastCountdown } from "../features/watch-marvel/components/BroadcastCountdown";
 import { BroadcastMedia } from "../features/watch-marvel/components/BroadcastMedia";
@@ -10,6 +10,9 @@ import { useBroadcastSession } from "../features/watch-marvel/hooks/useBroadcast
 import { useKeyboardPlayerControls } from "../features/watch-marvel/hooks/useKeyboardPlayerControls";
 import { localMediaService } from "../features/watch-marvel/services/local-media.service";
 import { watchMarvelDb } from "../features/watch-marvel/services/watch-marvel-db.service";
+
+const loadCinemaOpening = () => import("../features/watch-marvel/components/CinemaOpening");
+const CinemaOpening = lazy(() => loadCinemaOpening().then((module) => ({ default: module.CinemaOpening })));
 
 function errorMessage(error) { return error?.message || "The feature could not be played."; }
 
@@ -22,8 +25,13 @@ export default function WatchMarvelPlayerPage() {
   const [volume, setVolume] = useState(0.8); const [muted, setMuted] = useState(false); const [showGuide, setShowGuide] = useState(true);
   const [embeddedTracks, setEmbeddedTracks] = useState([]); const [subtitleSelection, setSubtitleSelection] = useState("off");
   const [externalSubtitle, setExternalSubtitle] = useState(null); const [externalUrl, setExternalUrl] = useState(null);
+  const [openingActive, setOpeningActive] = useState(false);
+  const [subtitlePanelOpen, setSubtitlePanelOpen] = useState(false);
+  const [subtitlePanelSeconds, setSubtitlePanelSeconds] = useState(10);
   const initializedSession = useRef(null);
   const breakEndTargets = useRef(new Map());
+  const subtitlePanelDeadline = useRef(0);
+  const subtitlePanelInitialized = useRef(false);
   const toggleFullscreen = useKeyboardPlayerControls({ volume, setVolume, muted, setMuted, containerRef });
 
   useEffect(() => { watchMarvelDb.getLocalSource().then(setLocalSource).catch(() => setLocalSource(null)); }, []);
@@ -31,6 +39,7 @@ export default function WatchMarvelPlayerPage() {
   useEffect(() => { if (!movieFile) return undefined; const url = URL.createObjectURL(movieFile); setMovieUrl(url); return () => { URL.revokeObjectURL(url); setMovieUrl(null); localMediaService.forgetSessionFile(sessionId); }; }, [movieFile, sessionId]);
   useEffect(() => { if (!externalSubtitle) return undefined; const url = URL.createObjectURL(new Blob([externalSubtitle.text], { type: "text/vtt" })); setExternalUrl(url); return () => { URL.revokeObjectURL(url); setExternalUrl(null); }; }, [externalSubtitle]);
   useEffect(() => { const timeout = window.setTimeout(() => setShowGuide(false), 8000); return () => window.clearTimeout(timeout); }, []);
+  useEffect(() => { if (machine.status === PLAYER_STATES.PRE_SHOW) loadCinemaOpening(); }, [machine.status]);
   useEffect(() => { if (movieRef.current) { movieRef.current.volume = volume; movieRef.current.muted = muted; } }, [muted, volume]);
 
   const filmVisible = [PLAYER_STATES.STARTING_MOVIE, PLAYER_STATES.PLAYING_MOVIE, PLAYER_STATES.RESUMING_MOVIE].includes(machine.status);
@@ -44,9 +53,31 @@ export default function WatchMarvelPlayerPage() {
 
   useEffect(() => {
     if (machine.status !== PLAYER_STATES.PRE_SHOW || !session) return undefined;
-    const check = () => { if (Date.now() >= new Date(session.scheduledStartAt).getTime()) dispatch({ type: "SCHEDULE_REACHED" }); };
+    const check = () => {
+      const remaining = new Date(session.scheduledStartAt).getTime() - Date.now();
+      if (remaining <= 15_000 && remaining > 0) setOpeningActive(true);
+      if (remaining <= 0) dispatch({ type: "SCHEDULE_REACHED" });
+    };
     check(); const id = window.setInterval(check, 250); return () => window.clearInterval(id);
   }, [dispatch, machine.status, session]);
+  useEffect(() => {
+    if (machine.status !== PLAYER_STATES.PRE_SHOW || subtitlePanelInitialized.current) return;
+    subtitlePanelInitialized.current = true;
+    subtitlePanelDeadline.current = Date.now() + 10_000;
+    setSubtitlePanelSeconds(10);
+    setSubtitlePanelOpen(true);
+  }, [machine.status]);
+  useEffect(() => {
+    if (!subtitlePanelOpen) return undefined;
+    const update = () => {
+      const seconds = Math.max(0, Math.ceil((subtitlePanelDeadline.current - Date.now()) / 1000));
+      setSubtitlePanelSeconds(seconds);
+      if (!seconds) setSubtitlePanelOpen(false);
+    };
+    update();
+    const timer = window.setInterval(update, 250);
+    return () => window.clearInterval(timer);
+  }, [subtitlePanelOpen]);
   useEffect(() => {
     if (machine.status !== PLAYER_STATES.STARTING_MOVIE || !movieRef.current) return;
     const video = movieRef.current; internalAction.current = true; video.currentTime = Math.max(0, session.currentMovieTime || 0); video.playbackRate = 1;
@@ -81,6 +112,8 @@ export default function WatchMarvelPlayerPage() {
   async function movieEnded() { if (machine.status !== PLAYER_STATES.PLAYING_MOVIE) return; try { await complete(); } catch (error) { dispatch({ type: "PLAYBACK_ERROR", error }); } }
   function selectSubtitle(value) { if (value === "external" && !externalSubtitle) return; setSubtitleSelection(value); persist({ activeSubtitle: { value, language: value.startsWith("embedded:") ? embeddedTracks.find((track) => track.index === Number(value.split(":")[1]))?.language : externalSubtitle?.language || null } }, true); }
   function addExternal(subtitle) { setExternalSubtitle(subtitle); setSubtitleSelection("external"); persist({ activeSubtitle: { value: "external", language: subtitle.language, fileName: subtitle.fileName } }, true); }
+  function openSubtitlePanel() { subtitlePanelDeadline.current = Date.now() + 10_000; setSubtitlePanelSeconds(10); setSubtitlePanelOpen(true); }
+  function extendSubtitlePanel() { subtitlePanelDeadline.current = Date.now() + 10_000; setSubtitlePanelSeconds(10); }
 
   if (player.loadingError || machine.status === PLAYER_STATES.ERROR) return <main className="wm-player-error"><p className="section-kicker">Broadcast interrupted</p><h1>Unable to continue</h1><p>{errorMessage(player.loadingError || machine.error)}</p><Link className="secondary-button" to="/watch-marvel">Return to Watch Marvel</Link></main>;
   if (!session) return <main className="wm-player-loading">Opening broadcast session…</main>;
@@ -91,9 +124,10 @@ export default function WatchMarvelPlayerPage() {
   const preItem = session.preShowPlan[machine.preShowIndex] || { kind: "countdown", durationSeconds: Math.max(1, Math.ceil((new Date(session.scheduledStartAt).getTime() - Date.now()) / 1000)) };
   return <main className="wm-player" ref={containerRef}>
     <video ref={movieRef} className={`wm-movie-video ${filmVisible ? "is-visible" : ""}`} src={movieUrl || undefined} playsInline preload="auto" disablePictureInPicture controlsList="nodownload noplaybackrate nofullscreen" onLoadedMetadata={loadedMetadata} onTimeUpdate={movieTimeUpdate} onPause={moviePaused} onSeeking={movieSeeking} onRateChange={() => { if (movieRef.current.playbackRate !== 1) movieRef.current.playbackRate = 1; }} onEnded={movieEnded} onError={() => movieUrl && dispatch({ type: "PLAYBACK_ERROR", error: new Error("The selected movie could not be played by this browser.") })}>{externalUrl && <track kind="subtitles" src={externalUrl} srcLang={externalSubtitle?.language || "und"} label={externalSubtitle?.language || "External subtitle"} />}</video>
-    {machine.status === PLAYER_STATES.PRE_SHOW && <div className="wm-broadcast-layer"><BroadcastMedia key={`pre-${machine.preShowIndex}`} item={preItem} source={localSource} volume={volume} muted={muted} onEnded={() => dispatch({ type: "PRE_SHOW_MEDIA_ENDED" })} /><BroadcastCountdown target={session.scheduledStartAt} /><div className="wm-feature-time">FEATURE BEGINS AT {new Date(session.scheduledStartAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div><SubtitleSelector embeddedTracks={embeddedTracks} selection={subtitleSelection} onSelection={selectSubtitle} onExternal={addExternal} unavailable={!embeddedTracks.length} />{showGuide && <PlayerGuide />}</div>}
+    {machine.status === PLAYER_STATES.PRE_SHOW && <div className="wm-broadcast-layer">{openingActive ? <Suspense fallback={<div className="wm-opening-fallback" />}><CinemaOpening scheduledStartAt={session.scheduledStartAt} /></Suspense> : <BroadcastMedia key={`pre-${machine.preShowIndex}`} item={preItem} source={localSource} volume={volume} muted={muted} onEnded={() => dispatch({ type: "PRE_SHOW_MEDIA_ENDED" })} />}<BroadcastCountdown target={session.scheduledStartAt} /><div className="wm-feature-time">FEATURE BEGINS AT {new Date(session.scheduledStartAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>{showGuide && <PlayerGuide />}</div>}
     {[PLAYER_STATES.STARTING_BREAK, PLAYER_STATES.PLAYING_BREAK].includes(machine.status) && <div className="wm-broadcast-layer"><BroadcastMedia key={`break-${machine.breakIndex}-${machine.breakMediaIndex}`} item={breakItem || { kind: "countdown", durationSeconds: 1 }} source={localSource} volume={volume} muted={muted} onEnded={breakMediaEnded} /><BroadcastCountdown target={breakEndTargets.current.get(currentBreak?.id)} label="FEATURE RESUMES IN" /><div className="wm-break-label">COMMERCIAL BREAK<span>Feature resumes after this break</span></div></div>}
     {machine.status === PLAYER_STATES.COMPLETED && <div className="wm-ending"><p className="section-kicker">Broadcast complete</p><h1>{session.mode === "test" ? "Testing finished." : "Feature presentation concluded."}</h1><p>{session.mode === "test" ? "Watched status was not changed." : "This title is now marked as watched."}</p><Link className="primary-button" to="/watch-marvel">Return to Watch Marvel</Link></div>}
-    {!([PLAYER_STATES.COMPLETED, PLAYER_STATES.ERROR].includes(machine.status)) && <div className="wm-player-controls"><button type="button" aria-label={muted ? "Unmute" : "Mute"} onClick={() => setMuted((value) => !value)}>{muted ? <VolumeX /> : <Volume2 />}</button><input type="range" min="0" max="1" step="0.05" value={volume} aria-label="Volume" onChange={(e) => setVolume(Number(e.target.value))} /><button type="button" aria-label="Toggle fullscreen" onClick={toggleFullscreen}><Expand /></button><span title="Subtitles selected"><Captions /> {subtitleSelection === "off" ? "Off" : "On"}</span></div>}
+    {subtitlePanelOpen && !([PLAYER_STATES.COMPLETED, PLAYER_STATES.ERROR].includes(machine.status)) && <SubtitleSelector embeddedTracks={embeddedTracks} selection={subtitleSelection} onSelection={selectSubtitle} onExternal={addExternal} unavailable={!embeddedTracks.length} secondsRemaining={subtitlePanelSeconds} onInteract={extendSubtitlePanel} onClose={() => setSubtitlePanelOpen(false)} />}
+    {!([PLAYER_STATES.COMPLETED, PLAYER_STATES.ERROR].includes(machine.status)) && <div className="wm-player-controls"><button type="button" aria-label={muted ? "Unmute" : "Mute"} onClick={() => setMuted((value) => !value)}>{muted ? <VolumeX /> : <Volume2 />}</button><input type="range" min="0" max="1" step="0.05" value={volume} aria-label="Volume" onChange={(e) => setVolume(Number(e.target.value))} /><button type="button" aria-label="Toggle fullscreen" onClick={toggleFullscreen}><Expand /></button><button type="button" className={subtitleSelection === "off" ? "" : "is-active"} aria-label="Open subtitle selector" onClick={openSubtitlePanel}><Captions /> <span>{subtitleSelection === "off" ? "Off" : "On"}</span></button></div>}
   </main>;
 }

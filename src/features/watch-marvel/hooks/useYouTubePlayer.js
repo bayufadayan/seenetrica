@@ -69,7 +69,6 @@ export function useYouTubePlayer({ elementRef, videoId, volume, muted, onStarted
           controls: 0,
           disablekb: 1,
           fs: 0,
-          modestbranding: 1,
           mute: 1,
           origin: window.location.origin,
           playsinline: 1,
