@@ -47,8 +47,8 @@
   line-height: 1.05;
 }
 
-.memory-entry-heading p:not(.section-kicker),
-.memories-heading p:not(.section-kicker) {
+.memory-entry-heading p,
+.memories-heading p {
   max-width: 620px;
   margin-bottom: 0;
   color: var(--muted);
@@ -408,7 +408,7 @@
   letter-spacing: -0.035em;
 }
 
-.memory-modal-header p:not(.section-kicker) {
+.memory-modal-header p {
   margin-bottom: 0;
   color: var(--muted);
   font-size: 0.72rem;

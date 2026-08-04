@@ -106,8 +106,7 @@ p {
   border: 0;
 }
 
-.eyebrow,
-.section-kicker {
+.eyebrow {
   margin-bottom: 8px;
   color: var(--accent);
   font-size: 0.72rem;

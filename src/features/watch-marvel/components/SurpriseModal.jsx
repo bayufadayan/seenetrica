@@ -18,7 +18,7 @@ export function SurpriseModal({ titles, history, setHistory, onClose, onPlay, bu
     if (next) setHistory((items) => [...items, next]);
   }
   return (
-    <Modal title={current ? "Tonight's feature" : "No eligible feature"} eyebrow={`Surprise ${history.length || "—"} of ${Math.min(3, eligible.length) || "—"}`} onClose={onClose} busy={busy} className="wm-surprise-modal">
+    <Modal title={current ? "Tonight's feature" : "No eligible feature"} onClose={onClose} busy={busy} className="wm-surprise-modal">
       {!current ? (
         <div className="wm-modal-empty"><p>Every title is watched, or a series still has unfinished prerequisites.</p><Link className="secondary-button" to="/watch-marvel/settings">Review library</Link></div>
       ) : (

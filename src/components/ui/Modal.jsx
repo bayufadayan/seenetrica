@@ -4,7 +4,7 @@ import { useBodyLock } from "../../hooks/useBodyLock";
 
 const focusable = "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
-export function Modal({ title, eyebrow, children, onClose, busy = false, className = "" }) {
+export function Modal({ title, children, onClose, busy = false, className = "" }) {
   const dialogRef = useRef(null);
   const previousFocus = useRef(document.activeElement);
   useBodyLock(true);
@@ -41,7 +41,7 @@ export function Modal({ title, eyebrow, children, onClose, busy = false, classNa
       <button className="wm-modal-backdrop" type="button" aria-label="Close dialog" disabled={busy} onClick={onClose} />
       <section className="wm-modal-dialog" ref={dialogRef}>
         <header className="wm-modal-header">
-          <div>{eyebrow && <p className="section-kicker">{eyebrow}</p>}<h2 id="wm-modal-title">{title}</h2></div>
+          <h2 id="wm-modal-title">{title}</h2>
           <button className="wm-modal-close" type="button" aria-label="Close dialog" disabled={busy} onClick={onClose}><X aria-hidden="true" /></button>
         </header>
         {children}

@@ -309,7 +309,7 @@ body.is-saving {
   letter-spacing: -0.035em;
 }
 
-.bulk-period-card p:not(.section-kicker) {
+.bulk-period-card p {
   max-width: 650px;
   margin-bottom: 0;
   color: var(--muted);

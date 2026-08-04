@@ -113,7 +113,6 @@ export function MemoryViewerModal({ memory, movieTitle, onClose, onSaved }) {
         <div className="memory-lightbox-panel">
           <div className="memory-lightbox-header">
             <div className="memory-lightbox-copy">
-              <p className="section-kicker">Personal memory</p>
               <h2 id="memory-lightbox-title">{caption}</h2>
               <p>
                 {[

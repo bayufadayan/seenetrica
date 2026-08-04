@@ -12,7 +12,6 @@ export function MemoryGallery({ memories, onAdd, onOpen }) {
     <section className="memories-block">
       <div className="memories-heading">
         <div>
-          <p className="section-kicker">Personal gallery</p>
           <h2>Memories</h2>
           <p className="memory-count">
             {memories.length} {memories.length === 1 ? "memory" : "memories"}

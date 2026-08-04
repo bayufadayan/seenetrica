@@ -32,7 +32,7 @@ export function MarvelTitleForm({ existing, titles, onSave, onClose }) {
   }
   const prerequisites = titles.filter((title) => title.id !== existing?.id);
   return (
-    <Modal title={existing ? "Edit Marvel title" : "Add Marvel title"} eyebrow="Marvel Library" onClose={onClose} busy={busy} className="wm-title-modal">
+    <Modal title={existing ? "Edit Marvel title" : "Add Marvel title"} onClose={onClose} busy={busy} className="wm-title-modal">
       {!existing && !draft && <TmdbSearchPanel onSelect={(details) => setDraft(fromDetails(details))} />}
       {draft && (
         <form className="wm-title-form" onSubmit={submit}>

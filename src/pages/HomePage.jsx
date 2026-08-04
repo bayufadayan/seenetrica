@@ -141,10 +141,7 @@ export default function HomePage() {
       <section className="home-content page-shell">
         <div className="history-panel">
           <div className="history-heading">
-            <div>
-              <p className="section-kicker">Watch history</p>
-              <h2 className="section-title">Recently watched</h2>
-            </div>
+            <h2 className="section-title">Recently watched</h2>
             <button
               className="filter-toggle"
               type="button"
@@ -209,14 +206,12 @@ export default function HomePage() {
         </div>
         <aside className="home-aside" aria-label="Saved titles">
           <CompactSection
-            kicker="Coming up"
             title="Planned"
             items={planned}
             planned
             to="/planned"
           />
           <CompactSection
-            kicker="Saved for later"
             title="Watchlist"
             items={watchlist}
             to="/watchlist"
@@ -227,14 +222,11 @@ export default function HomePage() {
   );
 }
 
-function CompactSection({ kicker, title, items, planned = false, to }) {
+function CompactSection({ title, items, planned = false, to }) {
   return (
     <section className="aside-section">
       <div className="aside-heading">
-        <div>
-          <p className="section-kicker">{kicker}</p>
-          <h2>{title}</h2>
-        </div>
+        <h2>{title}</h2>
         <Link to={to}>View all</Link>
       </div>
       <div className="compact-list">

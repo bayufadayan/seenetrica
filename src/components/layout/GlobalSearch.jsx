@@ -84,10 +84,7 @@ export function GlobalSearch({ open, onClose, onOpen }) {
         aria-labelledby="search-dialog-title"
       >
         <div className="search-dialog-header">
-          <div>
-            <p className="section-kicker">Search Seenetrica</p>
-            <h2 id="search-dialog-title">Find a title</h2>
-          </div>
+          <h2 id="search-dialog-title">Find a title</h2>
           <button
             className="icon-button light-icon-button"
             type="button"

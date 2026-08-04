@@ -142,7 +142,6 @@ export function MemoryUploadModal({ movieId, sortOffset, onClose, onSaved }) {
       <div className="memory-modal-dialog">
         <div className="memory-modal-header">
           <div>
-            <p className="section-kicker">Personal gallery</p>
             <h2 id="memory-upload-title">Add memories</h2>
             <p>
               Attach photos, short videos, tickets, posters, or screenshots.

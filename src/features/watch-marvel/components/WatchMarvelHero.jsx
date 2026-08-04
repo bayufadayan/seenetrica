@@ -10,7 +10,6 @@ export function WatchMarvelHero({ titles, onSurprise }) {
   return (
     <section className={`wm-hero ${artwork ? "has-artwork" : ""}`} style={artwork ? { "--wm-backdrop": `url(${getTmdbImageUrl(artwork, "original")})` } : undefined}>
       <div className="wm-hero-copy">
-        <p className="section-kicker">Personal broadcast archive</p>
         <h1>Tonight, the archive <em>chooses.</em></h1>
         <p>Pick a local feature, line up trailers and advertisements, then begin at the next five-minute broadcast mark.</p>
         <div className="button-row">

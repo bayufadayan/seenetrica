@@ -278,7 +278,6 @@ export default function AddMoviePage() {
       {mode === "single" ? (
         <section className="add-layout page-shell">
           <div className="add-panel">
-            <p className="section-kicker">Step 01</p>
             <h2>Find on TMDB</h2>
             <TmdbSearchPanel onSelect={openForm} />
             <div className="manual-divider">or</div>
@@ -292,7 +291,6 @@ export default function AddMoviePage() {
             </button>
           </div>
           <div className="add-panel is-sticky">
-            <p className="section-kicker">Step 02</p>
             <h2>Complete the entry</h2>
             {!selected ? (
               <div className="empty-state">
@@ -503,7 +501,6 @@ function SingleForm({
       >
         <div className="memory-entry-heading">
           <div>
-            <p className="section-kicker">Optional memories</p>
             <h3 id="add-memory-heading">Add media from this experience</h3>
             <p>
               Tickets, cinema photos, short videos, posters, or screenshots. The
@@ -678,7 +675,6 @@ function BulkMode({ onOverlay }) {
     <section className="bulk-add-shell page-shell">
       <div className="bulk-period-card">
         <div>
-          <p className="section-kicker">Step 01</p>
           <h2>Choose the viewing month</h2>
           <p>
             Every title in this batch will be saved as watched during this
@@ -697,14 +693,12 @@ function BulkMode({ onOverlay }) {
       </div>
       <div className="bulk-workspace">
         <div className="add-panel">
-          <p className="section-kicker">Step 02</p>
           <h2>Find titles</h2>
           <TmdbSearchPanel bulk disabled={!period || saving} onSelect={add} />
         </div>
         <div className="add-panel bulk-queue-panel is-sticky">
           <div className="bulk-queue-heading">
             <div>
-              <p className="section-kicker">Step 03</p>
               <h2>Review the batch</h2>
             </div>
             <span className="bulk-count">
@@ -850,7 +844,6 @@ function BatchEdit({ item, period, onClose, onSave }) {
       <div className="batch-edit-dialog">
         <div className="batch-edit-header">
           <div>
-            <p className="section-kicker">Edit batch item</p>
             <h2 id="batchEditTitle">Adjust this title</h2>
           </div>
           <button

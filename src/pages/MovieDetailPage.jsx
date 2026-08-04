@@ -201,7 +201,6 @@ export default function MovieDetailPage() {
             </span>
           </div>
           <section className="review-block">
-            <p className="section-kicker">Review & impression</p>
             <h2>What stayed</h2>
             <p className="review-copy">
               {movie.review
@@ -215,7 +214,6 @@ export default function MovieDetailPage() {
             onOpen={setActiveMemory}
           />
           <section className="viewing-block">
-            <p className="section-kicker">Screenings</p>
             <h2>Viewing history</h2>
             {viewings.length ? (
               <div className="viewing-list">
@@ -290,7 +288,6 @@ export default function MovieDetailPage() {
           </section>
           {edit && (
             <section className="edit-block">
-              <p className="section-kicker">Personal notes</p>
               <h2>Edit this entry</h2>
               <form className="form-grid" onSubmit={saveEdit}>
                 <label className="form-field is-full">

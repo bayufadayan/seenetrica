@@ -32,10 +32,7 @@ export default function CinemaPage() {
       />
       <section className="page-content page-shell cinema-page-content">
         <div className="cinema-section-heading">
-          <div>
-            <p className="section-kicker">In theaters</p>
-            <h2 className="section-title">Latest screenings</h2>
-          </div>
+          <h2 className="section-title">Latest screenings</h2>
           <div className="cinema-section-actions">
             <p className="collection-status" role="status">
               {loading
