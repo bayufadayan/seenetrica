@@ -1,9 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mock = vi.hoisted(() => {
-  const state = { data: [] };
+  const state = {
+    data: [],
+    settings: { id: "default", keep: true },
+    otherStores: {
+      localSources: [{ id: "local-ads" }],
+      youtubeChannels: [{ id: "channel" }],
+      sessions: [{ id: "session" }],
+    },
+  };
   const database = {
     getAll: async () => [...state.data],
+    count: async () => state.data.length,
+    get: async (storeName) => storeName === "settings" ? state.settings : null,
     transaction() {
       let aborted = false;
       const staged = state.data.map((record) => ({ ...record }));
@@ -23,6 +33,7 @@ const mock = vi.hoisted(() => {
           const index = staged.findIndex((item) => item.id === id);
           if (index >= 0) staged.splice(index, 1);
         },
+        clear: async () => { staged.splice(0, staged.length); },
       };
       return {
         store,
@@ -93,5 +104,16 @@ describe("legacy atomic bulk creation", () => {
   it("does not commit part of a failed batch", async () => {
     await expect(playerDb.createTitles([movie(1), movie(2, "Force transaction failure")])).rejects.toThrow("Simulated IndexedDB failure");
     expect(mock.state.data).toHaveLength(0);
+  });
+
+  it("clears only legacy titles and preserves settings and the other player stores", async () => {
+    mock.state.data = [normalizeTitlePayload(movie(1))];
+    const settings = mock.state.settings;
+    const otherStores = mock.state.otherStores;
+    await expect(playerDb.hasLegacyTitles()).resolves.toBe(true);
+    await playerDb.clearLegacyTitles();
+    await expect(playerDb.hasLegacyTitles()).resolves.toBe(false);
+    expect(mock.state.settings).toBe(settings);
+    expect(mock.state.otherStores).toBe(otherStores);
   });
 });

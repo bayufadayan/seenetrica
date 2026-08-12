@@ -56,6 +56,52 @@ export function mergeCategoryRecords(serverRecords, localRecords, protectedIds, 
   ];
 }
 
+export function createMarvelReplacement(snapshot, localCategories, localTitles, outbox) {
+  const serverMarvel = snapshot.categories.find(
+    (category) => !category.deletedAt && (category.id === "CAT-MARVEL" || category.slug === "marvel"),
+  );
+  if (!serverMarvel) throw new Error("The server snapshot does not contain the Marvel category.");
+
+  const localMarvelIds = new Set(
+    localCategories
+      .filter((category) => category.id === "CAT-MARVEL" || category.slug === "marvel")
+      .map((category) => category.id),
+  );
+  localMarvelIds.add(serverMarvel.id);
+  const localMarvelTitleIds = new Set(
+    localTitles
+      .filter((title) => localMarvelIds.has(title.categoryId))
+      .map((title) => title.id),
+  );
+  const serverMarvelTitles = snapshot.titles.filter(
+    (title) => title.categoryId === serverMarvel.id && !title.deletedAt,
+  );
+  for (const title of serverMarvelTitles) localMarvelTitleIds.add(title.id);
+
+  return {
+    categories: [
+      ...localCategories.filter((category) => !localMarvelIds.has(category.id)),
+      serverMarvel,
+    ],
+    titles: [
+      ...localTitles.filter((title) => !localMarvelIds.has(title.categoryId)),
+      ...serverMarvelTitles,
+    ],
+    outbox: outbox.filter((operation) => {
+      if (["category", "iconCleanup"].includes(operation.kind)) {
+        return !localMarvelIds.has(operation.recordId);
+      }
+      if (["title", "completion"].includes(operation.kind)) {
+        return !localMarvelTitleIds.has(operation.recordId)
+          && !localMarvelTitleIds.has(operation.categoryTitleId);
+      }
+      return true;
+    }),
+    marvel: serverMarvel,
+    marvelTitles: serverMarvelTitles,
+  };
+}
+
 async function replaceStore(store, records) {
   await store.clear();
   for (const record of records) await store.put(record);
@@ -416,11 +462,44 @@ export const categoryLibraryDb = {
     await transaction.done;
   },
 
-  async markLegacyBootstrapComplete() {
-    await (await getCacheDatabase()).put("syncMeta", {
-      key: "legacyBootstrap",
-      pending: false,
-      completedAt: now(),
-    });
+  async replaceMarvelFromServer(snapshot) {
+    const database = await getCacheDatabase();
+    const transaction = database.transaction(
+      ["categories", "categoryTitles", "categoryOutbox", "syncMeta"],
+      "readwrite",
+    );
+    try {
+      const categoriesStore = transaction.objectStore("categories");
+      const titlesStore = transaction.objectStore("categoryTitles");
+      const outboxStore = transaction.objectStore("categoryOutbox");
+      const [localCategories, localTitles, outbox] = await Promise.all([
+        categoriesStore.getAll(),
+        titlesStore.getAll(),
+        outboxStore.getAll(),
+      ]);
+      const replacement = createMarvelReplacement(
+        snapshot,
+        localCategories,
+        localTitles,
+        outbox,
+      );
+      await replaceStore(categoriesStore, replacement.categories);
+      await replaceStore(titlesStore, replacement.titles);
+      await replaceStore(outboxStore, replacement.outbox);
+      const syncMeta = transaction.objectStore("syncMeta");
+      const current = await syncMeta.get("categorySync");
+      await syncMeta.put({
+        ...current,
+        key: "categorySync",
+        lastPulledAt: now(),
+        serverTime: snapshot.serverTime || null,
+      });
+      await transaction.done;
+      return this.hydrate();
+    } catch (error) {
+      try { transaction.abort(); } catch { /* The transaction already failed. */ }
+      throw error;
+    }
   },
+
 };

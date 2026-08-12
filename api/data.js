@@ -6,11 +6,14 @@ const ALLOWED_WRITE_ACTIONS = new Set([
     "addViewing",
     "createMemory",
     "updateMemory",
-    "migrateLegacyMarvel",
     "syncCategorizedLibrary",
     "recordCategorizedViewing",
     "prepareCategoryIconUpload",
     "deleteCategoryIcon",
+]);
+
+const ALLOWED_READ_SCOPES = new Set([
+    "categorized",
 ]);
 
 function safeCompare(firstValue, secondValue) {
@@ -72,7 +75,7 @@ async function parseAppsScriptResponse(
     }
 }
 
-async function readAppsScriptData() {
+async function readAppsScriptData(scope = null) {
     const url = new URL(
         process.env.APPS_SCRIPT_URL,
     );
@@ -81,6 +84,13 @@ async function readAppsScriptData() {
         "secret",
         process.env.APPS_SCRIPT_SECRET,
     );
+
+    if (scope) {
+        url.searchParams.set(
+            "scope",
+            scope,
+        );
+    }
 
     const appsScriptResponse = await fetch(
         url,
@@ -179,8 +189,28 @@ module.exports = async function handler(
 
     try {
         if (request.method === "GET") {
+            const requestedScope =
+                request.query?.scope
+                || new URL(
+                    request.url || "/api/data",
+                    "http://localhost",
+                ).searchParams.get("scope");
+            const scope = requestedScope
+                ? String(requestedScope)
+                : null;
+
+            if (
+                scope &&
+                !ALLOWED_READ_SCOPES.has(scope)
+            ) {
+                return response.status(400).json({
+                    success: false,
+                    message: "Invalid data scope.",
+                });
+            }
+
             const result =
-                await readAppsScriptData();
+                await readAppsScriptData(scope);
 
             if (!result.success) {
                 return response

@@ -1,6 +1,4 @@
 import { archiveService } from "../../../services/archive.service";
-import { playerDb } from "../../player/services/player-db.service";
-import { normalizeLegacyTitle } from "../utils/title-draft.util";
 import {
   categorySnapshotFromApi,
   categoryTitleToApi,
@@ -10,7 +8,6 @@ import { categoryLibraryDb } from "./category-library-db.service";
 
 let pullInFlight = null;
 let syncInFlight = null;
-let migrationInFlight = null;
 
 function syncError(code, stage, message, cause = null, summary = null) {
   const error = new Error(message);
@@ -26,16 +23,13 @@ function errorMessage(error) {
   return error instanceof Error ? error.message : String(error || "Unknown error");
 }
 
-function requireCategorySnapshot(data, {
-  requireSyncMeta = false,
-  source = "server",
-  stage = "checking_server",
-} = {}) {
-  const syncMeta = data?.category_sync;
+export function requireCategorySnapshot(data, { source = "server", stage = "pulling" } = {}) {
   if (
     !Array.isArray(data?.categories)
     || !Array.isArray(data?.category_titles)
-    || (requireSyncMeta && (!syncMeta || typeof syncMeta !== "object" || Array.isArray(syncMeta)))
+    || !data?.category_sync
+    || typeof data.category_sync !== "object"
+    || Array.isArray(data.category_sync)
   ) {
     throw syncError(
       "invalid_snapshot",
@@ -50,295 +44,35 @@ function notify(name) {
   if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent(name));
 }
 
-function developmentSummary(action, details) {
-  if (import.meta.env.DEV && import.meta.env.MODE !== "test") {
-    console.info(`[category-sync] ${action}`, details);
-  }
-}
-
-async function readLegacyTitles() {
-  try {
-    const titles = await playerDb.getLegacyTitles();
-    if (!Array.isArray(titles)) throw new Error("The titles store did not return an array.");
-    return titles;
-  } catch (error) {
-    throw syncError(
-      "legacy_storage_unavailable",
-      "reading_legacy_storage",
-      `The legacy Marvel IndexedDB could not be read: ${errorMessage(error)}`,
-      error,
-    );
-  }
-}
-
 async function fetchServerSnapshot() {
-  let data;
   try {
-    data = await archiveService.fetchData();
+    return requireCategorySnapshot(await archiveService.fetchCategorizedData());
   } catch (error) {
+    if (error?.name === "CategorySyncError") throw error;
     throw syncError(
       "snapshot_request_failed",
-      "checking_server",
-      `Could not check the server migration status: ${errorMessage(error)}`,
-      error,
-    );
-  }
-  return requireCategorySnapshot(data, { requireSyncMeta: true, source: "server" });
-}
-
-async function storeSnapshot(snapshot, { canonical = false } = {}) {
-  try {
-    const state = canonical
-      ? await categoryLibraryDb.applyCanonicalSnapshot(snapshot)
-      : await categoryLibraryDb.mergeServerSnapshot(snapshot);
-    return state || categoryLibraryDb.hydrate();
-  } catch (error) {
-    throw syncError(
-      "cache_write_failed",
-      "refreshing_cache",
-      `The server responded, but the categorized cache could not be updated: ${errorMessage(error)}`,
+      "pulling",
+      `Could not fetch categorized data: ${errorMessage(error)}`,
       error,
     );
   }
 }
 
-async function markLegacyBootstrapComplete() {
-  try {
-    await categoryLibraryDb.markLegacyBootstrapComplete();
-  } catch (error) {
-    throw syncError(
-      "cache_write_failed",
-      "refreshing_cache",
-      `The canonical snapshot was saved, but the local migration marker could not be updated: ${errorMessage(error)}`,
-      error,
-    );
-  }
-}
-
-export function summarizeLegacyTitles(titles) {
-  const normalized = (Array.isArray(titles) ? titles : []).map(normalizeLegacyTitle);
-  const watched = normalized.filter((title) => title.isWatched).length;
-  return {
-    total: normalized.length,
-    movies: normalized.filter((title) => title.type === "movie").length,
-    series: normalized.filter((title) => title.type === "series").length,
-    watched,
-    unwatched: normalized.length - watched,
-    prerequisites: normalized.reduce(
-      (total, title) => total + (title.prerequisiteIds?.length || 0),
-      0,
-    ),
-  };
-}
-
-function migrationPreview(titles) {
-  return titles.map((title) => normalizeLegacyTitle(title));
-}
-
-export function verifyLegacyMigrationResponse(response, legacyTitles) {
-  if (!["migrated", "already_completed"].includes(response?.status)) {
-    throw syncError(
-      "migration_response_invalid",
-      "verifying_migration",
-      "The migration endpoint returned an unsupported status.",
-    );
-  }
-
-  const snapshot = requireCategorySnapshot(response.snapshot || {}, {
-    source: "migration",
-    stage: "verifying_migration",
-  });
-  if (!snapshot.legacyMarvelMigrationCompletedAt) {
-    throw syncError(
-      "migration_response_incomplete",
-      "verifying_migration",
-      "The server responded, but the migration completion marker is missing.",
-    );
-  }
-  if (response.status === "already_completed") return snapshot;
-
-  const marvel = snapshot.categories.find(
-    (category) => !category.deletedAt && (category.id === "CAT-MARVEL" || category.slug === "marvel"),
-  );
-  if (!marvel) {
-    throw syncError(
-      "migration_response_incomplete",
-      "verifying_migration",
-      "The server migration snapshot does not contain the Marvel category.",
-    );
-  }
-
-  const normalizedSource = legacyTitles.map(normalizeLegacyTitle);
-  const uniqueSource = new Map(normalizedSource.map((title) => [title.identityKey, title]));
-  const sourceById = new Map(normalizedSource.map((title) => [title.id, title]));
-  const marvelTitles = snapshot.titles.filter(
-    (title) => !title.deletedAt && title.categoryId === marvel.id,
-  );
-  const targetByIdentity = new Map(marvelTitles.map((title) => [title.identityKey, title]));
-  const validTargetIds = new Set(snapshot.titles.filter((title) => !title.deletedAt).map((title) => title.id));
-
-  for (const [identity, source] of uniqueSource) {
-    const target = targetByIdentity.get(identity);
-    if (!target) {
-      throw syncError(
-        "migration_response_incomplete",
-        "verifying_migration",
-        `The migrated server snapshot is missing ${source.title || identity}.`,
-      );
-    }
-    for (const prerequisiteId of source.prerequisiteIds || []) {
-      const sourcePrerequisite = sourceById.get(prerequisiteId);
-      const targetPrerequisite = sourcePrerequisite
-        ? targetByIdentity.get(sourcePrerequisite.identityKey)
-        : null;
-      if (
-        !targetPrerequisite
-        || !validTargetIds.has(targetPrerequisite.id)
-        || !target.prerequisiteIds.includes(targetPrerequisite.id)
-      ) {
-        throw syncError(
-          "migration_response_incomplete",
-          "verifying_migration",
-          `The prerequisite relationships for ${source.title || identity} were not preserved.`,
-        );
-      }
-    }
-  }
-
-  if (
-    response.migrated_count !== undefined
-    && Number(response.migrated_count) !== legacyTitles.length
-  ) {
-    throw syncError(
-      "migration_response_incomplete",
-      "verifying_migration",
-      `The server reported ${response.migrated_count} migrated titles after receiving ${legacyTitles.length}.`,
-    );
-  }
-  return snapshot;
-}
-
-async function runInspection() {
-  const legacyTitles = await readLegacyTitles();
+async function runPull() {
   const snapshot = await fetchServerSnapshot();
-  const marker = snapshot.legacyMarvelMigrationCompletedAt;
   let state;
-
-  if (marker) {
-    state = await storeSnapshot(snapshot, { canonical: true });
-    await markLegacyBootstrapComplete();
-  } else {
-    state = await storeSnapshot(snapshot);
-  }
-  notify("seenetrica:categories-changed");
-
-  const migrationRequired = !marker && legacyTitles.length > 0;
-  developmentSummary("inspect", {
-    legacyCount: legacyTitles.length,
-    markerPresent: Boolean(marker),
-    migrationRequired,
-  });
-  return {
-    status: marker ? "completed" : migrationRequired ? "confirmation_required" : "not_required",
-    marker,
-    migrationRequired,
-    verified: !migrationRequired,
-    legacyTitles: migrationPreview(legacyTitles),
-    summary: summarizeLegacyTitles(legacyTitles),
-    snapshot,
-    state,
-  };
-}
-
-function migrationPostError(error) {
-  if (/invalid write action|unknown action|not allowed/i.test(errorMessage(error))) {
-    return syncError(
-      "proxy_action_rejected",
-      "uploading_migration",
-      "The /api/data proxy rejected the migrateLegacyMarvel action. Deploy the updated proxy before retrying.",
-      error,
-    );
-  }
-  if (/pin|unauthori[sz]ed|forbidden|authentication/i.test(errorMessage(error))) {
-    return syncError(
-      "unauthorized",
-      "uploading_migration",
-      "The migration was not authorized. Check the Seenetrica PIN and retry.",
-      error,
-    );
-  }
-  return syncError(
-    "migration_post_failed",
-    "uploading_migration",
-    `The Marvel migration upload failed: ${errorMessage(error)}`,
-    error,
-  );
-}
-
-async function runConfirmedMigration(pin, onStage = () => {}) {
-  if (!pin) {
-    throw syncError("pin_required", "requesting_pin", "A Seenetrica PIN is required to migrate.");
-  }
-
-  onStage("checking_server");
-  const latestSnapshot = await fetchServerSnapshot();
-  if (latestSnapshot.legacyMarvelMigrationCompletedAt) {
-    onStage("refreshing_cache");
-    const state = await storeSnapshot(latestSnapshot, { canonical: true });
-    await markLegacyBootstrapComplete();
-    notify("seenetrica:categories-changed");
-    return {
-      status: "already_completed",
-      marker: latestSnapshot.legacyMarvelMigrationCompletedAt,
-      migratedCount: 0,
-      snapshot: latestSnapshot,
-      state,
-    };
-  }
-
-  const legacyTitles = await readLegacyTitles();
-  if (!legacyTitles.length) {
-    const state = await storeSnapshot(latestSnapshot);
-    notify("seenetrica:categories-changed");
-    return {
-      status: "not_required",
-      marker: null,
-      migratedCount: 0,
-      snapshot: latestSnapshot,
-      state,
-    };
-  }
-
-  onStage("uploading_migration");
-  let response;
   try {
-    response = await archiveService.writeAction(
-      "migrateLegacyMarvel",
-      { titles: legacyTitles },
-      pin,
-    );
+    state = await categoryLibraryDb.mergeServerSnapshot(snapshot);
   } catch (error) {
-    throw migrationPostError(error);
+    throw syncError(
+      "cache_write_failed",
+      "updating_cache",
+      `The categorized snapshot could not be written to the local cache: ${errorMessage(error)}`,
+      error,
+    );
   }
-
-  onStage("verifying_migration");
-  const canonical = verifyLegacyMigrationResponse(response, legacyTitles);
-  onStage("refreshing_cache");
-  const state = await storeSnapshot(canonical, { canonical: true });
-  await markLegacyBootstrapComplete();
   notify("seenetrica:categories-changed");
-  developmentSummary("migrateLegacyMarvel", {
-    status: response.status,
-    sentCount: legacyTitles.length,
-    serverTime: canonical.serverTime,
-  });
-  return {
-    status: response.status,
-    marker: canonical.legacyMarvelMigrationCompletedAt,
-    migratedCount: response.status === "migrated" ? legacyTitles.length : 0,
-    snapshot: canonical,
-    state,
-  };
+  return { snapshot, state, verified: true };
 }
 
 function wrapLibrarySyncError(error, pushed) {
@@ -346,7 +80,6 @@ function wrapLibrarySyncError(error, pushed) {
     if (pushed > 0 && !error.summary) {
       error.summary = { pushed };
       error.partial = true;
-      error.message = `${error.message} ${pushed} outbox operation${pushed === 1 ? " was" : "s were"} already accepted by the server.`;
     }
     return error;
   }
@@ -459,24 +192,16 @@ async function runSync(pin) {
       notify("seenetrica:archive-refresh");
     }
 
-    // A real no-store pull is always performed, even when there was nothing to push.
-    const pullResult = await runInspection();
+    const pullResult = await runPull();
     const finalState = pullResult.state || await categoryLibraryDb.hydrate();
     const summary = {
       pushed,
       pulled: pullResult.snapshot.categories.length + pullResult.snapshot.titles.length,
       remaining: finalState.outbox.length,
       serverTime: pullResult.snapshot.serverTime,
-      migrationRequired: pullResult.migrationRequired,
       state: finalState,
       pullResult,
     };
-    developmentSummary("syncCategorizedLibrary", {
-      pushed: summary.pushed,
-      pulled: summary.pulled,
-      remaining: summary.remaining,
-      serverTime: summary.serverTime,
-    });
     notify("seenetrica:categories-changed");
     return summary;
   } catch (error) {
@@ -485,36 +210,16 @@ async function runSync(pin) {
 }
 
 export const categorySyncService = {
-  inspectLegacyMarvelMigration() {
-    if (syncInFlight) return syncInFlight.then((result) => result.pullResult);
-    if (migrationInFlight) {
-      return migrationInFlight.then(() => this.inspectLegacyMarvelMigration());
-    }
+  pull() {
     if (!pullInFlight) {
-      pullInFlight = runInspection().finally(() => { pullInFlight = null; });
+      pullInFlight = runPull().finally(() => { pullInFlight = null; });
     }
     return pullInFlight;
-  },
-
-  pull() {
-    return this.inspectLegacyMarvelMigration();
-  },
-
-  confirmLegacyMarvelMigration(pin, { onStage } = {}) {
-    if (!migrationInFlight) {
-      migrationInFlight = (async () => {
-        if (syncInFlight) await syncInFlight;
-        if (pullInFlight) await pullInFlight;
-        return runConfirmedMigration(pin, onStage);
-      })().finally(() => { migrationInFlight = null; });
-    }
-    return migrationInFlight;
   },
 
   sync(pin) {
     if (!syncInFlight) {
       syncInFlight = (async () => {
-        if (migrationInFlight) await migrationInFlight;
         if (pullInFlight) await pullInFlight;
         return runSync(pin);
       })().finally(() => { syncInFlight = null; });

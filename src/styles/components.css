@@ -1,7 +1,7 @@
 .site-header {
   position: relative;
   z-index: 50;
-  width: min(calc(100% - 32px), 980px);
+  width: min(calc(100% - 32px), 900px);
   margin: 18px auto 0;
 }
 
@@ -10,7 +10,7 @@
   display: flex;
   min-height: 60px;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   padding: 8px 10px 8px 14px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 999px;

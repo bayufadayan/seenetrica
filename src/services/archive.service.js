@@ -53,18 +53,27 @@ function forgetPin() {
   }
 }
 
+async function fetchDataEndpoint(scope = null) {
+  const suffix = scope ? `?scope=${encodeURIComponent(scope)}` : "";
+  const response = await fetch(`/api/data${suffix}`, {
+    headers: { Accept: "application/json" },
+    cache: "no-store",
+  });
+  const result = await parseJson(response);
+  return result.data || {};
+}
+
 export const archiveService = {
   async getCachedArchive() {
     return migrateLegacyCachedArchive();
   },
 
   async fetchData() {
-    const response = await fetch("/api/data", {
-      headers: { Accept: "application/json" },
-      cache: "no-store",
-    });
-    const result = await parseJson(response);
-    return result.data || {};
+    return fetchDataEndpoint();
+  },
+
+  async fetchCategorizedData() {
+    return fetchDataEndpoint("categorized");
   },
 
   async fetchArchive() {

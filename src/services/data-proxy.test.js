@@ -42,7 +42,6 @@ describe("/api/data categorized action proxy", () => {
   });
 
   it.each([
-    "migrateLegacyMarvel",
     "syncCategorizedLibrary",
     "recordCategorizedViewing",
     "prepareCategoryIconUpload",
@@ -81,9 +80,29 @@ describe("/api/data categorized action proxy", () => {
     expect(response.payload).toEqual(payload);
   });
 
+  it("forwards the categorized scope and keeps the secret server-side", async () => {
+    const fetchMock = vi.fn(async () => appsScriptResponse({
+      success: true,
+      data: { categories: [], category_titles: [], category_sync: {} },
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = vercelResponse();
+
+    await handler({
+      method: "GET",
+      url: "/api/data?scope=categorized",
+      query: { scope: "categorized" },
+    }, response);
+
+    const upstreamUrl = new URL(fetchMock.mock.calls[0][0]);
+    expect(upstreamUrl.searchParams.get("scope")).toBe("categorized");
+    expect(upstreamUrl.searchParams.get("secret")).toBe("server-secret");
+    expect(response.statusCode).toBe(200);
+  });
+
   it("also marks rejected POST responses no-store", async () => {
     const response = vercelResponse();
-    await handler({ method: "POST", body: { pin: "wrong", action: "migrateLegacyMarvel", data: {} } }, response);
+    await handler({ method: "POST", body: { pin: "wrong", action: "syncCategorizedLibrary", data: {} } }, response);
     expect(response.statusCode).toBe(401);
     expect(response.headers["Cache-Control"]).toBe("no-store");
   });

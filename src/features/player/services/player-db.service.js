@@ -186,9 +186,23 @@ async function createRecords(payloads) {
 }
 
 export const playerDb = {
-  // The legacy titles store remains readable until server migration succeeds.
   async getLegacyTitles() {
     return (await getDatabase()).getAll("titles");
+  },
+  async hasLegacyTitles() {
+    const database = await getDatabase();
+    return (await database.count("titles")) > 0;
+  },
+  async clearLegacyTitles() {
+    const database = await getDatabase();
+    const transaction = database.transaction("titles", "readwrite");
+    try {
+      await transaction.store.clear();
+      await transaction.done;
+    } catch (error) {
+      try { transaction.abort(); } catch { /* The transaction already failed. */ }
+      throw error;
+    }
   },
   async getTitles() {
     return (await getDatabase()).getAll("titles");
