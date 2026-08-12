@@ -97,7 +97,48 @@ describe("/api/data categorized action proxy", () => {
     const upstreamUrl = new URL(fetchMock.mock.calls[0][0]);
     expect(upstreamUrl.searchParams.get("scope")).toBe("categorized");
     expect(upstreamUrl.searchParams.get("secret")).toBe("server-secret");
+    expect(fetchMock.mock.calls[0][1].signal).toBeInstanceOf(AbortSignal);
+    expect(JSON.stringify(response.payload)).not.toContain("server-secret");
     expect(response.statusCode).toBe(200);
+  });
+
+  it("aborts Apps Script after 120 seconds and returns a clear 504 response", async () => {
+    vi.useFakeTimers();
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    const fetchMock = vi.fn((_url, options) => new Promise((_resolve, reject) => {
+      options.signal.addEventListener("abort", () => {
+        const error = new Error("The operation was aborted.");
+        error.name = "AbortError";
+        reject(error);
+      }, { once: true });
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = vercelResponse();
+
+    try {
+      const request = handler({
+        method: "GET",
+        url: "/api/data?scope=categorized",
+        query: { scope: "categorized" },
+      }, response);
+
+      await vi.advanceTimersByTimeAsync(119_999);
+      expect(response.statusCode).toBeNull();
+      expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(false);
+
+      await vi.advanceTimersByTimeAsync(1);
+      await request;
+
+      expect(fetchMock.mock.calls[0][1].signal.aborted).toBe(true);
+      expect(response.statusCode).toBe(504);
+      expect(response.payload).toEqual({
+        success: false,
+        message: "The Seenetrica data service did not respond within 120 seconds.",
+      });
+    } finally {
+      errorSpy.mockRestore();
+      vi.useRealTimers();
+    }
   });
 
   it("also marks rejected POST responses no-store", async () => {

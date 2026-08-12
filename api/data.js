@@ -1,5 +1,7 @@
 const crypto = require("crypto");
 
+const APPS_SCRIPT_TIMEOUT_MS = 120_000;
+
 const ALLOWED_WRITE_ACTIONS = new Set([
     "createMovie",
     "updateMovie",
@@ -15,6 +17,38 @@ const ALLOWED_WRITE_ACTIONS = new Set([
 const ALLOWED_READ_SCOPES = new Set([
     "categorized",
 ]);
+
+class AppsScriptTimeoutError extends Error {
+    constructor() {
+        super(
+            "The Seenetrica data service did not respond within 120 seconds.",
+        );
+        this.name = "AppsScriptTimeoutError";
+        this.code = "APPS_SCRIPT_TIMEOUT";
+    }
+}
+
+async function fetchAppsScript(url, options) {
+    const controller = new AbortController();
+    const timeout = setTimeout(
+        () => controller.abort(),
+        APPS_SCRIPT_TIMEOUT_MS,
+    );
+
+    try {
+        return await fetch(url, {
+            ...options,
+            signal: controller.signal,
+        });
+    } catch (error) {
+        if (controller.signal.aborted) {
+            throw new AppsScriptTimeoutError();
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeout);
+    }
+}
 
 function safeCompare(firstValue, secondValue) {
     const first = Buffer.from(
@@ -92,7 +126,7 @@ async function readAppsScriptData(scope = null) {
         );
     }
 
-    const appsScriptResponse = await fetch(
+    const appsScriptResponse = await fetchAppsScript(
         url,
         {
             method: "GET",
@@ -118,7 +152,7 @@ async function writeAppsScriptData(
     action,
     data,
 ) {
-    const appsScriptResponse = await fetch(
+    const appsScriptResponse = await fetchAppsScript(
         process.env.APPS_SCRIPT_URL,
         {
             method: "POST",
@@ -279,6 +313,13 @@ module.exports = async function handler(
             "Seenetrica API error:",
             error,
         );
+
+        if (error?.code === "APPS_SCRIPT_TIMEOUT") {
+            return response.status(504).json({
+                success: false,
+                message: error.message,
+            });
+        }
 
         return response.status(502).json({
             success: false,
