@@ -48,6 +48,23 @@ describe("categorized library sync", () => {
     expect(mocks.library.mergeServerSnapshot).toHaveBeenCalledOnce();
   });
 
+  it("shares one categorized request between concurrent pull callers", async () => {
+    let resolveRequest;
+    mocks.archive.fetchCategorizedData.mockReturnValue(new Promise((resolve) => {
+      resolveRequest = resolve;
+    }));
+
+    const first = categorySyncService.pull();
+    const second = categorySyncService.pull();
+
+    expect(first).toBe(second);
+    expect(mocks.archive.fetchCategorizedData).toHaveBeenCalledOnce();
+
+    resolveRequest(serverData());
+    await expect(Promise.all([first, second])).resolves.toHaveLength(2);
+    expect(mocks.library.mergeServerSnapshot).toHaveBeenCalledOnce();
+  });
+
   it("pushes dirty records, applies id_map, and completes only that batch", async () => {
     mocks.library.readAll.mockResolvedValue({
       categories: [{ id: "local-cat", name: "Noir", slug: "noir" }],
@@ -103,5 +120,20 @@ describe("categorized library sync", () => {
     await expect(categorySyncService.syncInBackground()).resolves.toEqual({ skipped: true });
     expect(mocks.archive.writeAction).not.toHaveBeenCalled();
     expect(mocks.archive.fetchCategorizedData).not.toHaveBeenCalled();
+  });
+
+  it("does not create an immediate retry storm after a failed pull", async () => {
+    const failure = new Error("upstream unavailable");
+    mocks.archive.fetchCategorizedData.mockRejectedValue(failure);
+
+    await expect(categorySyncService.pull()).rejects.toThrow("upstream unavailable");
+    await expect(categorySyncService.pull()).rejects.toThrow("upstream unavailable");
+
+    expect(mocks.archive.fetchCategorizedData).toHaveBeenCalledOnce();
+
+    // Manual sync is an explicit retry and remains available during cooldown.
+    mocks.archive.fetchCategorizedData.mockResolvedValue(serverData());
+    await expect(categorySyncService.sync("1234")).resolves.toMatchObject({ pushed: 0 });
+    expect(mocks.archive.fetchCategorizedData).toHaveBeenCalledTimes(2);
   });
 });

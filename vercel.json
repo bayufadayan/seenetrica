@@ -2,6 +2,11 @@
   "trailingSlash": false,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/data.js": {
+      "maxDuration": 60
+    }
+  },
   "routes": [
     { "handle": "filesystem" },
     { "src": "/.*", "dest": "/index.html" }

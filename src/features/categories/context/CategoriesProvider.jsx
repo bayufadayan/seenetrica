@@ -46,6 +46,10 @@ export function CategoriesProvider({ children }) {
       await refreshLocal().catch(() => null);
       setSyncStatus("failed");
       throw error;
+    } finally {
+      // Throttle from completion, not request start; a slow failed pull should
+      // not become eligible for another automatic request immediately.
+      lastPull.current = Date.now();
     }
   }, [applyPullResult, refreshLocal]);
 

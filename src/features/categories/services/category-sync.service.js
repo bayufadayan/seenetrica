@@ -8,6 +8,8 @@ import { categoryLibraryDb } from "./category-library-db.service";
 
 let pullInFlight = null;
 let syncInFlight = null;
+let lastPullFailure = null;
+const PULL_FAILURE_COOLDOWN_MS = 30_000;
 
 function syncError(code, stage, message, cause = null, summary = null) {
   const error = new Error(message);
@@ -71,6 +73,7 @@ async function runPull() {
       error,
     );
   }
+  lastPullFailure = null;
   notify("seenetrica:categories-changed");
   return { snapshot, state, verified: true };
 }
@@ -211,8 +214,20 @@ async function runSync(pin) {
 
 export const categorySyncService = {
   pull() {
+    if (
+      lastPullFailure
+      && Date.now() - lastPullFailure.failedAt < PULL_FAILURE_COOLDOWN_MS
+    ) {
+      return Promise.reject(lastPullFailure.error);
+    }
+
     if (!pullInFlight) {
-      pullInFlight = runPull().finally(() => { pullInFlight = null; });
+      pullInFlight = runPull()
+        .catch((error) => {
+          lastPullFailure = { error, failedAt: Date.now() };
+          throw error;
+        })
+        .finally(() => { pullInFlight = null; });
     }
     return pullInFlight;
   },
@@ -220,7 +235,13 @@ export const categorySyncService = {
   sync(pin) {
     if (!syncInFlight) {
       syncInFlight = (async () => {
-        if (pullInFlight) await pullInFlight;
+        if (pullInFlight) {
+          try {
+            await pullInFlight;
+          } catch {
+            // A user-initiated sync is an explicit retry and may continue.
+          }
+        }
         return runSync(pin);
       })().finally(() => { syncInFlight = null; });
     }
