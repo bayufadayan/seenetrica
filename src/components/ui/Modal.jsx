@@ -6,7 +6,7 @@ const focusable = "button:not([disabled]), a[href], input:not([disabled]), selec
 
 export function Modal({ title, children, onClose, busy = false, className = "" }) {
   const dialogRef = useRef(null);
-  const previousFocus = useRef(document.activeElement);
+  const previousFocus = useRef(typeof document === "undefined" ? null : document.activeElement);
   useBodyLock(true);
 
   useEffect(() => {

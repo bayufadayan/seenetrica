@@ -310,19 +310,12 @@ export const categoryLibraryDb = {
     const outbox = await transaction.objectStore("categoryOutbox").getAll();
     const localCategories = await categoriesStore.getAll();
     const localTitles = await titlesStore.getAll();
-    const legacyMeta = await transaction.objectStore("syncMeta").get("legacyBootstrap");
     const protectedCategories = new Set(
       outbox.filter((operation) => operation.kind === "category").map((operation) => operation.recordId),
     );
     const protectedTitles = new Set(
       outbox.filter((operation) => ["title", "completion"].includes(operation.kind)).map((operation) => operation.recordId),
     );
-    if (legacyMeta?.pending) {
-      protectedCategories.add("CAT-MARVEL");
-      for (const title of localTitles.filter((record) => record.categoryId === "CAT-MARVEL")) {
-        protectedTitles.add(title.id);
-      }
-    }
     const categories = mergeCategoryRecords(
       snapshot.categories,
       localCategories,
@@ -420,52 +413,6 @@ export const categoryLibraryDb = {
     const syncMeta = transaction.objectStore("syncMeta");
     const current = await syncMeta.get("categorySync");
     await syncMeta.put({ ...current, key: "categorySync", lastSyncedAt: now() });
-    await transaction.done;
-  },
-
-  async bootstrapLegacyMarvel(titles) {
-    const database = await getCacheDatabase();
-    const transaction = database.transaction(["categories", "categoryTitles", "syncMeta"], "readwrite");
-    const syncMeta = transaction.objectStore("syncMeta");
-    const bootstrap = await syncMeta.get("legacyBootstrap");
-    if (bootstrap?.pending) {
-      await transaction.done;
-      return;
-    }
-    const categories = transaction.objectStore("categories");
-    if (!(await categories.get("CAT-MARVEL"))) {
-      const timestamp = now();
-      await categories.put({
-        id: "CAT-MARVEL",
-        name: "Marvel",
-        slug: "marvel",
-        iconUrl: null,
-        iconPublicId: null,
-        sortOrder: 0,
-        legacyMigrationCompletedAt: null,
-        createdAt: timestamp,
-        updatedAt: timestamp,
-        deletedAt: null,
-      });
-    }
-    const store = transaction.objectStore("categoryTitles");
-    for (const legacy of titles) {
-      const record = {
-        ...legacy,
-        categoryId: "CAT-MARVEL",
-        type: legacy.type || legacy.mediaType,
-        prerequisiteIds: Array.isArray(legacy.prerequisiteIds) ? legacy.prerequisiteIds : [],
-        isWatched: Boolean(legacy.isWatched),
-        deletedAt: null,
-      };
-      await store.put(record);
-    }
-    await syncMeta.put({
-      key: "legacyBootstrap",
-      pending: true,
-      count: titles.length,
-      cachedAt: now(),
-    });
     await transaction.done;
   },
 

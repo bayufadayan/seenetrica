@@ -1,7 +1,7 @@
 .site-header {
   position: relative;
   z-index: 50;
-  width: min(calc(100% - 32px), 1180px);
+  width: min(calc(100% - 32px), 980px);
   margin: 18px auto 0;
 }
 
@@ -46,6 +46,8 @@
 
 .nav-links {
   gap: 4px;
+  margin-left: 8px;
+  margin-right: auto;
 }
 
 .nav-link {
@@ -67,6 +69,7 @@
 
 .nav-actions {
   gap: 4px;
+  margin-left: auto;
 }
 
 .nav-cinema-link {
@@ -1022,6 +1025,7 @@ kbd {
     right: 0;
     left: 0;
     display: none;
+    margin: 0;
     padding: 8px;
     border-radius: 18px;
     background: rgba(23, 23, 21, 0.92);

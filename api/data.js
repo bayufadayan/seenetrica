@@ -6,6 +6,11 @@ const ALLOWED_WRITE_ACTIONS = new Set([
     "addViewing",
     "createMemory",
     "updateMemory",
+    "migrateLegacyMarvel",
+    "syncCategorizedLibrary",
+    "recordCategorizedViewing",
+    "prepareCategoryIconUpload",
+    "deleteCategoryIcon",
 ]);
 
 function safeCompare(firstValue, secondValue) {
@@ -156,6 +161,11 @@ module.exports = async function handler(
         });
     }
 
+    response.setHeader(
+        "Cache-Control",
+        "no-store",
+    );
+
     const missing =
         getMissingConfiguration(isWrite);
 
@@ -177,11 +187,6 @@ module.exports = async function handler(
                     .status(502)
                     .json(result);
             }
-
-            response.setHeader(
-                "Cache-Control",
-                "no-store",
-            );
 
             return response
                 .status(200)
@@ -235,11 +240,6 @@ module.exports = async function handler(
                 .status(status)
                 .json(result);
         }
-
-        response.setHeader(
-            "Cache-Control",
-            "no-store",
-        );
 
         return response
             .status(200)

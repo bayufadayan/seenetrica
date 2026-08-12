@@ -11,6 +11,7 @@ export async function parseJson(response) {
 export async function authenticatedPost(url, payload, pin) {
   const response = await fetch(url, {
     method: "POST",
+    cache: "no-store",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({ ...payload, pin }),
   });
