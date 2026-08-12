@@ -1,7 +1,7 @@
 .site-header {
   position: relative;
   z-index: 50;
-  width: min(calc(100% - 32px), 820px);
+  width: min(calc(100% - 32px), 1180px);
   margin: 18px auto 0;
 }
 

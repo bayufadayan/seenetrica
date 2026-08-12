@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
-import { Ellipsis, Menu, Plus, Search, Ticket } from "lucide-react";
+import { useState } from "react";
+import { Menu, Plus, Search, Ticket, Tv } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
+import { CategoryMenu } from "../../features/categories/components/CategoryMenu";
 
 const navItems = [
   ["/", "Home"],
@@ -11,30 +12,9 @@ const navItems = [
 
 export function Header({ onSearch }) {
   const [open, setOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
-  const moreRef = useRef(null);
   const location = useLocation();
   const cinemaActive = location.pathname.startsWith("/cinema");
-  const marvelActive = location.pathname.startsWith("/watch-marvel");
-
-  useEffect(() => {
-    if (!moreOpen) return undefined;
-    const closeOutside = (event) => {
-      if (!moreRef.current?.contains(event.target)) setMoreOpen(false);
-    };
-    const closeWithEscape = (event) => {
-      if (event.key === "Escape") {
-        setMoreOpen(false);
-        moreRef.current?.querySelector("button")?.focus();
-      }
-    };
-    document.addEventListener("pointerdown", closeOutside);
-    document.addEventListener("keydown", closeWithEscape);
-    return () => {
-      document.removeEventListener("pointerdown", closeOutside);
-      document.removeEventListener("keydown", closeWithEscape);
-    };
-  }, [moreOpen]);
+  const anythingActive = location.pathname.startsWith("/watch-anything");
 
   return (
     <header className="site-header">
@@ -64,41 +44,18 @@ export function Header({ onSearch }) {
           ))}
         </div>
         <div className="nav-actions">
-          <div className="nav-more" ref={moreRef}>
-            <button
-              className={`nav-more-button ${cinemaActive || marvelActive ? "is-active" : ""}`}
-              type="button"
-              aria-label="More destinations"
-              aria-haspopup="menu"
-              aria-expanded={moreOpen}
-              onClick={() => setMoreOpen((value) => !value)}
-            >
-              <Ellipsis aria-hidden="true" />
-              <span>More</span>
-            </button>
-            {moreOpen && (
-              <div className="nav-more-menu" role="menu" aria-label="More destinations">
-                <Link
-                  className={`nav-more-item ${cinemaActive ? "is-active" : ""}`}
-                  role="menuitem"
-                  to="/cinema"
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <Ticket aria-hidden="true" />
-                  <span>Cinema</span>
-                </Link>
-                <Link
-                  className={`nav-more-item ${marvelActive ? "is-active" : ""}`}
-                  role="menuitem"
-                  to="/watch-marvel"
-                  onClick={() => setMoreOpen(false)}
-                >
-                  <span className="marvel-nav-badge" aria-hidden="true">M</span>
-                  <span>Watch Marvel</span>
-                </Link>
-              </div>
-            )}
-          </div>
+          <CategoryMenu />
+          <Link
+            className={`nav-destination is-icon-only ${anythingActive ? "is-active" : ""}`}
+            to="/watch-anything"
+            aria-label="Watch Anything"
+            title="Watch Anything"
+          >
+            <Tv aria-hidden="true" />
+          </Link>
+          <Link className={`nav-destination ${cinemaActive ? "is-active" : ""}`} to="/cinema">
+            <Ticket aria-hidden="true" /><span>Cinema</span>
+          </Link>
           <span className="nav-action-divider" aria-hidden="true" />
           <Link
             className="icon-button"

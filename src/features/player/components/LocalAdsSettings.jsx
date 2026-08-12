@@ -1,0 +1,22 @@
+import { FolderOpen, RefreshCw, Unplug } from "lucide-react";
+import { useEffect, useState } from "react";
+import { localMediaService } from "../services/local-media.service";
+import { playerDb } from "../services/player-db.service";
+
+export function LocalAdsSettings({ source, refresh, toast }) {
+  const [busy, setBusy] = useState(false);
+  const [permission, setPermission] = useState(source?.permissionState || "prompt");
+  useEffect(() => { if (source) localMediaService.checkPermission(source).then(setPermission).catch(() => setPermission("prompt")); }, [source]);
+  async function act(operation) {
+    setBusy(true);
+    try {
+      const next = await operation();
+      if (next) await playerDb.saveLocalSource(next);
+      await refresh();
+      toast("Advertisement source updated.");
+    } catch (error) {
+      if (error.name !== "AbortError") toast(error.message, "error");
+    } finally { setBusy(false); }
+  }
+  return <section className="wm-settings-section" id="local-ads"><header><h2>Local Advertisements</h2></header><p>Connect a folder of short videos. Only filenames, durations, and device permission metadata are stored locally.</p>{source ? <div className="wm-source-summary"><strong>{source.directoryName}</strong><span>{source.files?.length || 0} valid videos · permission {permission}</span><span>Last scanned {source.scannedAt ? new Date(source.scannedAt).toLocaleString() : "never"}</span>{source.fallback && <small>Your browser uses a temporary folder selection; choose it again after refresh.</small>}{source.errors?.length > 0 && <details><summary>{source.errors.length} files could not be played</summary>{source.errors.map((error) => <p key={error.path}>{error.path}: {error.message}</p>)}</details>}</div> : <p className="wm-empty-row">No advertisements folder connected.</p>}<div className="button-row" aria-live="polite"><button className="primary-button" disabled={busy} onClick={() => act(() => source && permission !== "granted" ? localMediaService.reconnect(source) : localMediaService.connectAdsFolder())}><FolderOpen aria-hidden="true" /> {source && permission !== "granted" ? "Reconnect Folder" : "Connect Ads Folder"}</button>{source && <button className="secondary-button" disabled={busy} onClick={() => act(() => localMediaService.rescan(source))}><RefreshCw aria-hidden="true" /> Rescan Folder</button>}{source && <button className="danger-button" disabled={busy} onClick={() => act(async () => { await playerDb.clearLocalSource(); return null; })}><Unplug aria-hidden="true" /> Disconnect Folder</button>}</div></section>;
+}

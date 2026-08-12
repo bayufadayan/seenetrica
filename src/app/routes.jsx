@@ -8,10 +8,10 @@ import CinemaPage from "../pages/CinemaPage";
 import AddMoviePage from "../pages/AddMoviePage";
 import MovieDetailPage from "../pages/MovieDetailPage";
 import NotFoundPage from "../pages/NotFoundPage";
-import WatchMarvelPage from "../pages/WatchMarvelPage";
-import WatchMarvelSettingsPage from "../pages/WatchMarvelSettingsPage";
-import WatchMarvelPlayerPage from "../pages/WatchMarvelPlayerPage";
-import { WatchMarvelFeatureLayout } from "../features/watch-marvel/components/WatchMarvelFeatureLayout";
+import CategoryPage from "../pages/CategoryPage";
+import CategorySettingsPage from "../pages/CategorySettingsPage";
+import WatchAnythingPage from "../pages/WatchAnythingPage";
+import PlayerPage from "../pages/PlayerPage";
 
 function LegacyDetailRedirect() {
   const [params] = useSearchParams();
@@ -35,10 +35,11 @@ export function AppRoutes() {
         <Route path="cinema" element={<CinemaPage />} />
         <Route path="add-movie" element={<AddMoviePage />} />
         <Route path="movies/:movieId" element={<MovieDetailPage />} />
-        <Route path="watch-marvel" element={<WatchMarvelFeatureLayout />}>
-          <Route index element={<WatchMarvelPage />} />
-          <Route path="settings" element={<WatchMarvelSettingsPage />} />
-        </Route>
+        <Route path="categories/:categorySlug" element={<CategoryPage />} />
+        <Route path="categories/:categorySlug/settings" element={<CategorySettingsPage />} />
+        <Route path="watch-anything" element={<WatchAnythingPage />} />
+        <Route path="watch-marvel" element={<Navigate replace to="/categories/marvel" />} />
+        <Route path="watch-marvel/settings" element={<Navigate replace to="/categories/marvel/settings" />} />
         <Route
           path="pages/history.html"
           element={<Navigate replace to="/history" />}
@@ -62,7 +63,8 @@ export function AppRoutes() {
         />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
-      <Route path="watch-marvel/player/:sessionId" element={<WatchMarvelPlayerPage />} />
+      <Route path="watch-anything/player/:sessionId" element={<PlayerPage />} />
+      <Route path="watch-marvel/player/:sessionId" element={<PlayerPage />} />
     </Routes>
   );
 }

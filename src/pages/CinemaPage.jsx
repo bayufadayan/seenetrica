@@ -4,22 +4,14 @@ import { useArchive } from "../context/ArchiveContext";
 import { PageHero } from "../components/common/PageHero";
 import { Poster } from "../components/ui/Poster";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/States";
-import { booleanValue, formatDate, formatRuntime } from "../utils/formatters";
+import { formatDate, formatRuntime } from "../utils/formatters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { buildCinemaEntries } from "../features/history/cinema-view.util";
 
 export default function CinemaPage() {
   useDocumentTitle("Cinema Diary");
   const { movies, history, loading, error } = useArchive();
-  const map = new Map(movies.map((movie) => [String(movie.id), movie]));
-  const entries = history
-    .filter((entry) => booleanValue(entry.watched_in_theater))
-    .map((entry) => ({ ...entry, movie: map.get(String(entry.movie_id)) }))
-    .filter((entry) => entry.movie)
-    .sort(
-      (a, b) =>
-        String(b.watched_at).localeCompare(String(a.watched_at)) ||
-        String(b.created_at).localeCompare(String(a.created_at)),
-    );
+  const entries = buildCinemaEntries(movies, history);
   return (
     <>
       <PageHero

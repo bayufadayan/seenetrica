@@ -1,8 +1,9 @@
 import { authenticatedPost, parseJson } from "./http";
 import { storage } from "../utils/storage";
 import { STORAGE_KEYS } from "../utils/constants";
+import { cacheDb } from "./cache-db.service";
 
-function readCachedArchive() {
+function readLegacyCachedArchive() {
   const movies = storage.get(STORAGE_KEYS.movies);
   const history = storage.get(STORAGE_KEYS.history);
   const memories = storage.get(STORAGE_KEYS.memories, []);
@@ -11,10 +12,21 @@ function readCachedArchive() {
     : null;
 }
 
-function cacheArchive(data) {
-  storage.set(STORAGE_KEYS.movies, data.movies);
-  storage.set(STORAGE_KEYS.history, data.history);
-  storage.set(STORAGE_KEYS.memories, data.memories);
+async function migrateLegacyCachedArchive() {
+  const existing = await cacheDb.getArchiveSnapshot();
+  if (existing) {
+    storage.remove(STORAGE_KEYS.movies);
+    storage.remove(STORAGE_KEYS.history);
+    storage.remove(STORAGE_KEYS.memories);
+    return existing;
+  }
+  const legacy = readLegacyCachedArchive();
+  if (!legacy) return null;
+  await cacheDb.putArchiveSnapshot(legacy);
+  storage.remove(STORAGE_KEYS.movies);
+  storage.remove(STORAGE_KEYS.history);
+  storage.remove(STORAGE_KEYS.memories);
+  return legacy;
 }
 
 function sessionPin() {
@@ -42,26 +54,37 @@ function forgetPin() {
 }
 
 export const archiveService = {
+  async getCachedArchive() {
+    return migrateLegacyCachedArchive();
+  },
+
+  async fetchData() {
+    const response = await fetch("/api/data", {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    const result = await parseJson(response);
+    return result.data || {};
+  },
+
+  async fetchArchive() {
+    const data = await this.fetchData();
+    const movies = data.movies;
+    const history = data.watch_history;
+    const memories = Array.isArray(data.movie_memories) ? data.movie_memories : [];
+    if (!Array.isArray(movies) || !Array.isArray(history)) {
+      throw new Error("The archive returned an invalid data format.");
+    }
+    const archive = { movies, history, memories };
+    await cacheDb.putArchiveSnapshot(archive);
+    return archive;
+  },
+
   async getArchive() {
     try {
-      const response = await fetch("/api/data", {
-        headers: { Accept: "application/json" },
-        cache: "no-store",
-      });
-      const result = await parseJson(response);
-      const movies = result.data?.movies;
-      const history = result.data?.watch_history;
-      const memories = Array.isArray(result.data?.movie_memories)
-        ? result.data.movie_memories
-        : [];
-      if (!Array.isArray(movies) || !Array.isArray(history)) {
-        throw new Error("The archive returned an invalid data format.");
-      }
-      const archive = { movies, history, memories };
-      cacheArchive(archive);
-      return archive;
+      return await this.fetchArchive();
     } catch (error) {
-      const cached = readCachedArchive();
+      const cached = await this.getCachedArchive();
       if (cached) {
         console.warn("Using cached Seenetrica data:", error);
         return cached;
@@ -90,9 +113,6 @@ export const archiveService = {
         pin,
       );
       rememberPin(pin);
-      storage.remove(STORAGE_KEYS.movies);
-      storage.remove(STORAGE_KEYS.history);
-      storage.remove(STORAGE_KEYS.memories);
       return result;
     } catch (error) {
       if (/pin|unauthori[sz]ed|forbidden|authentication/i.test(error.message))

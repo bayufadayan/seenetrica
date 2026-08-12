@@ -4,4 +4,5 @@
 @import "./add-movie.css";
 @import "./cinema.css";
 @import "./memories.css";
-@import "../features/watch-marvel/styles/watch-marvel.css";
+@import "../features/player/styles/player.css";
+@import "../features/categories/styles/categories.css";
