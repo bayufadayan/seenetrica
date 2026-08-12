@@ -50,6 +50,7 @@ describe("/api/data proxy", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    handler._resetForTests();
     vi.spyOn(console, "info").mockImplementation(() => {});
     vi.spyOn(console, "error").mockImplementation(() => {});
     process.env.APPS_SCRIPT_URL = "https://script.google.test/exec";
@@ -133,6 +134,46 @@ describe("/api/data proxy", () => {
     expect(response.statusCode).toBe(200);
   });
 
+  it("shares a concurrent full response with the categorized request", async () => {
+    let resolveFetch;
+    const fetchMock = vi.fn(() => new Promise((resolve) => {
+      resolveFetch = () => resolve(appsScriptResponse({
+        success: true,
+        data: {
+          movies: [],
+          watch_history: [],
+          movie_memories: [],
+          categories: [{ id: "CAT-MARVEL" }],
+          category_titles: [],
+          category_sync: { server_time: "2026-08-12T08:00:00.000Z" },
+        },
+      }));
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const fullResponse = vercelResponse();
+    const categorizedResponse = vercelResponse();
+
+    const fullRequest = handler({ method: "GET", url: "/api/data" }, fullResponse);
+    const categorizedRequest = handler({
+      method: "GET",
+      url: "/api/data?scope=categorized",
+      query: { scope: "categorized" },
+    }, categorizedResponse);
+
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledOnce());
+    resolveFetch();
+    await Promise.all([fullRequest, categorizedRequest]);
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fullResponse.statusCode).toBe(200);
+    expect(categorizedResponse.statusCode).toBe(200);
+    expect(categorizedResponse.payload.data).toMatchObject({
+      categories: [{ id: "CAT-MARVEL" }],
+      category_sync: { server_time: "2026-08-12T08:00:00.000Z" },
+    });
+    expect(categorizedResponse.payload.data).not.toHaveProperty("movies");
+  });
+
   it("turns an upstream non-2xx response into structured JSON", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => appsScriptResponse(null, {
       contentType: "text/html",
@@ -145,6 +186,31 @@ describe("/api/data proxy", () => {
 
     expectStructuredError(response, 502, "UPSTREAM_HTTP_ERROR", "apps_script_response");
     expect(response.payload.upstreamStatus).toBe(503);
+  });
+
+  it("retries one transient Google 404 and returns the successful JSON response", async () => {
+    vi.useFakeTimers();
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(appsScriptResponse(null, {
+        contentType: "text/html",
+        raw: "<html>Temporary Google error</html>",
+        status: 404,
+      }))
+      .mockResolvedValueOnce(appsScriptResponse({ success: true, data: { movies: [] } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = vercelResponse();
+
+    try {
+      const request = handler({ method: "GET", url: "/api/data" }, response);
+      await vi.advanceTimersByTimeAsync(250);
+      await request;
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(response.statusCode).toBe(200);
+      expect(response.payload).toEqual({ success: true, data: { movies: [] } });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it.each([

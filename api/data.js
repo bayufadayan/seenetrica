@@ -4,6 +4,10 @@ const crypto = require("crypto");
 // time to turn an upstream timeout into a controlled JSON response.
 const APPS_SCRIPT_TIMEOUT_MS = 50_000;
 
+const READ_CACHE_TTL_MS = 15_000;
+
+const READ_STALE_TTL_MS = 5 * 60_000;
+
 const ALLOWED_WRITE_ACTIONS = new Set([
   "createMovie",
   "updateMovie",
@@ -17,6 +21,11 @@ const ALLOWED_WRITE_ACTIONS = new Set([
 ]);
 
 const ALLOWED_READ_SCOPES = new Set(["categorized"]);
+
+const readResponseCache = new Map();
+const readRequestsInFlight = new Map();
+let upstreamQueue = Promise.resolve();
+let upstreamQueueDepth = 0;
 
 class DataProxyError extends Error {
   constructor(code, message, {
@@ -199,9 +208,91 @@ function responseContentType(response) {
   }
 }
 
-async function fetchAppsScript(url, options, context) {
+function readCacheKey(scope) {
+  return scope || "full";
+}
+
+function categorizedResultFromFull(result) {
+  const data = result?.data;
+  if (
+    !result?.success
+    || !Array.isArray(data?.categories)
+    || !Array.isArray(data?.category_titles)
+    || !data?.category_sync
+  ) {
+    return null;
+  }
+
+  return {
+    success: true,
+    data: {
+      categories: data.categories,
+      category_titles: data.category_titles,
+      category_sync: data.category_sync,
+      legacy_marvel_migration_completed_at:
+        data.legacy_marvel_migration_completed_at
+        || data.category_sync.legacy_marvel_migration_completed_at
+        || null,
+      server_time:
+        data.server_time
+        || data.category_sync.server_time
+        || null,
+    },
+  };
+}
+
+function cachedReadResult(scope, maxAge = READ_CACHE_TTL_MS) {
+  const entry = readResponseCache.get(readCacheKey(scope));
+  if (!entry || Date.now() - entry.storedAt > maxAge) return null;
+  return entry.result;
+}
+
+function rememberReadResult(scope, result) {
+  if (!result?.success) return;
+
+  const storedAt = Date.now();
+  readResponseCache.set(readCacheKey(scope), { result, storedAt });
+
+  if (!scope) {
+    const categorized = categorizedResultFromFull(result);
+    if (categorized) {
+      readResponseCache.set("categorized", { result: categorized, storedAt });
+    }
+  }
+}
+
+function invalidateReadResponseCache() {
+  readResponseCache.clear();
+}
+
+function enqueueUpstream(task, context) {
+  const wasQueued = upstreamQueueDepth > 0;
+  upstreamQueueDepth += 1;
+
+  if (wasQueued) {
+    logStage(context, "upstream_request_queued", {
+      queueDepth: upstreamQueueDepth,
+    });
+  }
+
+  const operation = upstreamQueue
+    .catch(() => null)
+    .then(task)
+    .finally(() => {
+      upstreamQueueDepth -= 1;
+    });
+
+  upstreamQueue = operation.catch(() => null);
+  return operation;
+}
+
+function wait(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+async function fetchAppsScript(url, options, context, timeoutMs = APPS_SCRIPT_TIMEOUT_MS) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), APPS_SCRIPT_TIMEOUT_MS);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   timeout.unref?.();
   logStage(context, "upstream_fetch_started");
 
@@ -281,17 +372,116 @@ async function parseAppsScriptResponse(appsScriptResponse, context) {
 }
 
 async function readAppsScriptData(upstreamUrl, scope, context) {
+  const cached = cachedReadResult(scope);
+  if (cached) {
+    logStage(context, "upstream_cached_response_used", {
+      cacheKey: readCacheKey(scope),
+    });
+    return cached;
+  }
+
+  const key = readCacheKey(scope);
+  const sameRequest = readRequestsInFlight.get(key);
+  if (sameRequest) {
+    logStage(context, "upstream_request_joined", { cacheKey: key });
+    const result = await sameRequest;
+    logStage(context, "upstream_shared_response_used", { cacheKey: key });
+    return result;
+  }
+
+  if (scope && readRequestsInFlight.has("full")) {
+    logStage(context, "upstream_request_joined", { cacheKey: "full" });
+    try {
+      const fullResult = await readRequestsInFlight.get("full");
+      const categorized = categorizedResultFromFull(fullResult);
+      if (categorized) {
+        rememberReadResult(scope, categorized);
+        logStage(context, "upstream_shared_response_used", { cacheKey: "full" });
+        return categorized;
+      }
+    } catch {
+      logStage(context, "upstream_joined_request_failed", { cacheKey: "full" });
+    }
+  }
+
   const url = new URL(upstreamUrl.toString());
   url.searchParams.set("secret", process.env.APPS_SCRIPT_SECRET);
   if (scope) url.searchParams.set("scope", scope);
 
-  const appsScriptResponse = await fetchAppsScript(url, {
-    method: "GET",
-    redirect: "follow",
-    headers: { Accept: "application/json" },
+  const request = enqueueUpstream(async () => {
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      const remainingMs = APPS_SCRIPT_TIMEOUT_MS - elapsed(context);
+      if (remainingMs <= 1_000) {
+        throw new DataProxyError(
+          "UPSTREAM_TIMEOUT",
+          "The Seenetrica data service did not respond within 50 seconds.",
+          { status: 504, stage: "apps_script_fetch" },
+        );
+      }
+
+      try {
+        const appsScriptResponse = await fetchAppsScript(url, {
+          method: "GET",
+          redirect: "follow",
+          headers: { Accept: "application/json" },
+        }, context, remainingMs);
+
+        return await parseAppsScriptResponse(appsScriptResponse, context);
+      } catch (error) {
+        const retryable404 = error instanceof DataProxyError
+          && error.code === "UPSTREAM_HTTP_ERROR"
+          && error.upstreamStatus === 404;
+
+        if (attempt === 1 && retryable404 && elapsed(context) < 35_000) {
+          logStage(context, "upstream_retry_scheduled", {
+            attempt: 2,
+            upstreamStatus: 404,
+          });
+          await wait(250);
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw new DataProxyError(
+      "UPSTREAM_NETWORK_ERROR",
+      "Could not connect to the Seenetrica data service.",
+      { status: 502, stage: "apps_script_fetch" },
+    );
   }, context);
 
-  return parseAppsScriptResponse(appsScriptResponse, context);
+  readRequestsInFlight.set(key, request);
+
+  try {
+    const result = await request;
+    rememberReadResult(scope, result);
+    return result;
+  } catch (error) {
+    const stale = cachedReadResult(scope, READ_STALE_TTL_MS);
+    if (
+      stale
+      && error instanceof DataProxyError
+      && [
+        "UPSTREAM_HTTP_ERROR",
+        "UPSTREAM_NETWORK_ERROR",
+        "UPSTREAM_TIMEOUT",
+      ].includes(error.code)
+    ) {
+      logStage(context, "upstream_stale_response_used", {
+        cacheKey: key,
+        failureCode: error.code,
+        upstreamStatus: error.upstreamStatus,
+      });
+      return stale;
+    }
+    throw error;
+  } finally {
+    if (readRequestsInFlight.get(key) === request) {
+      readRequestsInFlight.delete(key);
+    }
+  }
 }
 
 async function writeAppsScriptData(upstreamUrl, action, data, context) {
@@ -310,17 +500,25 @@ async function writeAppsScriptData(upstreamUrl, action, data, context) {
     );
   }
 
-  const appsScriptResponse = await fetchAppsScript(upstreamUrl.toString(), {
-    method: "POST",
-    redirect: "follow",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body,
+  invalidateReadResponseCache();
+
+  const result = await enqueueUpstream(async () => {
+    const remainingMs = Math.max(1_000, APPS_SCRIPT_TIMEOUT_MS - elapsed(context));
+    const appsScriptResponse = await fetchAppsScript(upstreamUrl.toString(), {
+      method: "POST",
+      redirect: "follow",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body,
+    }, context, remainingMs);
+
+    return parseAppsScriptResponse(appsScriptResponse, context);
   }, context);
 
-  return parseAppsScriptResponse(appsScriptResponse, context);
+  invalidateReadResponseCache();
+  return result;
 }
 
 module.exports = async function handler(request, response) {
@@ -411,4 +609,11 @@ module.exports = async function handler(request, response) {
   } catch (error) {
     return fail(response, error, context);
   }
+};
+
+module.exports._resetForTests = function resetForTests() {
+  invalidateReadResponseCache();
+  readRequestsInFlight.clear();
+  upstreamQueue = Promise.resolve();
+  upstreamQueueDepth = 0;
 };

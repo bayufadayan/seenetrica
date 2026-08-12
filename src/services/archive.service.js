@@ -3,6 +3,56 @@ import { storage } from "../utils/storage";
 import { STORAGE_KEYS } from "../utils/constants";
 import { cacheDb } from "./cache-db.service";
 
+const READ_CACHE_TTL_MS = 15_000;
+const readCache = new Map();
+const readRequestsInFlight = new Map();
+let readQueue = Promise.resolve();
+
+function readCacheKey(scope) {
+  return scope || "full";
+}
+
+function categorizedDataFromFull(data) {
+  if (
+    !Array.isArray(data?.categories)
+    || !Array.isArray(data?.category_titles)
+    || !data?.category_sync
+  ) {
+    return null;
+  }
+
+  return {
+    categories: data.categories,
+    category_titles: data.category_titles,
+    category_sync: data.category_sync,
+    legacy_marvel_migration_completed_at:
+      data.legacy_marvel_migration_completed_at
+      || data.category_sync.legacy_marvel_migration_completed_at
+      || null,
+    server_time: data.server_time || data.category_sync.server_time || null,
+  };
+}
+
+function cachedRead(scope) {
+  const entry = readCache.get(readCacheKey(scope));
+  if (!entry || Date.now() - entry.storedAt > READ_CACHE_TTL_MS) return null;
+  return entry.data;
+}
+
+function rememberRead(scope, data) {
+  const storedAt = Date.now();
+  readCache.set(readCacheKey(scope), { data, storedAt });
+
+  if (!scope) {
+    const categorized = categorizedDataFromFull(data);
+    if (categorized) readCache.set("categorized", { data: categorized, storedAt });
+  }
+}
+
+function clearReadCache() {
+  readCache.clear();
+}
+
 function readLegacyCachedArchive() {
   const movies = storage.get(STORAGE_KEYS.movies);
   const history = storage.get(STORAGE_KEYS.history);
@@ -54,16 +104,43 @@ function forgetPin() {
 }
 
 async function fetchDataEndpoint(scope = null) {
-  const suffix = scope ? `?scope=${encodeURIComponent(scope)}` : "";
-  const response = await fetch(`/api/data${suffix}`, {
-    headers: { Accept: "application/json" },
-    cache: "no-store",
-  });
-  const result = await parseJson(response);
-  return result.data || {};
+  const cached = cachedRead(scope);
+  if (cached) return cached;
+
+  const key = readCacheKey(scope);
+  if (readRequestsInFlight.has(key)) return readRequestsInFlight.get(key);
+
+  let request;
+  request = readQueue
+    .catch(() => null)
+    .then(async () => {
+      const queuedCache = cachedRead(scope);
+      if (queuedCache) return queuedCache;
+
+      const suffix = scope ? `?scope=${encodeURIComponent(scope)}` : "";
+      const response = await fetch(`/api/data${suffix}`, {
+        headers: { Accept: "application/json" },
+        cache: "no-store",
+      });
+      const result = await parseJson(response);
+      const data = result.data || {};
+      rememberRead(scope, data);
+      return data;
+    })
+    .finally(() => {
+      if (readRequestsInFlight.get(key) === request) {
+        readRequestsInFlight.delete(key);
+      }
+    });
+
+  readRequestsInFlight.set(key, request);
+  readQueue = request.catch(() => null);
+  return request;
 }
 
 export const archiveService = {
+  clearReadCache,
+
   async getCachedArchive() {
     return migrateLegacyCachedArchive();
   },
@@ -121,6 +198,7 @@ export const archiveService = {
         { action, data },
         pin,
       );
+      clearReadCache();
       rememberPin(pin);
       return result;
     } catch (error) {
