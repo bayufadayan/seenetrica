@@ -1,0 +1,190 @@
+Date : 2026-09-01 17:45:37
+Directory : c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src
+Total : 133 files,  13812 codes, 24 comments, 1345 blanks, all 15181 lines
+
+Languages
++----------------+------------+------------+------------+------------+------------+
+| language       | files      | code       | comment    | blank      | total      |
++----------------+------------+------------+------------+------------+------------+
+| JavaScript JSX |         59 |      5,335 |          3 |        236 |      5,574 |
+| JavaScript     |         65 |      4,647 |          9 |        471 |      5,127 |
+| CSS            |          9 |      3,830 |         12 |        638 |      4,480 |
++----------------+------------+------------+------------+------------+------------+
+
+Directories
++---------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                            | files      | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                               |        133 |     13,812 |         24 |      1,345 |     15,181 |
+| . (Files)                                                                                                                       |          1 |          9 |          0 |          2 |         11 |
+| app                                                                                                                             |          3 |        104 |          0 |          8 |        112 |
+| components                                                                                                                      |          8 |        452 |          0 |         27 |        479 |
+| components\common                                                                                                               |          2 |         73 |          0 |          3 |         76 |
+| components\layout                                                                                                               |          3 |        298 |          0 |         14 |        312 |
+| components\ui                                                                                                                   |          3 |         81 |          0 |         10 |         91 |
+| context                                                                                                                         |          4 |        170 |          1 |         18 |        189 |
+| features                                                                                                                        |         84 |      6,379 |          7 |        521 |      6,907 |
+| features\categories                                                                                                             |         39 |      3,323 |          5 |        356 |      3,684 |
+| features\categories\components                                                                                                  |         14 |        796 |          0 |         67 |        863 |
+| features\categories\context                                                                                                     |          1 |        154 |          3 |         14 |        171 |
+| features\categories\services                                                                                                    |         10 |      1,433 |          2 |        144 |      1,579 |
+| features\categories\styles                                                                                                      |          1 |        372 |          0 |         56 |        428 |
+| features\categories\utils                                                                                                       |         13 |        568 |          0 |         75 |        643 |
+| features\history                                                                                                                |          3 |        129 |          0 |          8 |        137 |
+| features\memories                                                                                                               |          5 |        758 |          0 |         12 |        770 |
+| features\movies                                                                                                                 |          2 |        342 |          1 |         10 |        353 |
+| features\player                                                                                                                 |         35 |      1,827 |          1 |        135 |      1,963 |
+| features\player\components                                                                                                      |         10 |        209 |          0 |         22 |        231 |
+| features\player\constants                                                                                                       |          1 |         53 |          1 |          5 |         59 |
+| features\player\context                                                                                                         |          1 |         99 |          0 |          8 |        107 |
+| features\player\hooks                                                                                                           |          4 |        240 |          0 |         15 |        255 |
+| features\player\services                                                                                                        |          5 |        741 |          0 |         46 |        787 |
+| features\player\styles                                                                                                          |          1 |        188 |          0 |          5 |        193 |
+| features\player\utils                                                                                                           |         13 |        297 |          0 |         34 |        331 |
+| hooks                                                                                                                           |          3 |         23 |          0 |          6 |         29 |
+| layouts                                                                                                                         |          1 |         24 |          0 |          2 |         26 |
+| pages                                                                                                                           |         12 |      2,362 |          0 |         55 |      2,417 |
+| services                                                                                                                        |          7 |        923 |          2 |        117 |      1,042 |
+| styles                                                                                                                          |          7 |      3,270 |         12 |        577 |      3,859 |
+| utils                                                                                                                           |          3 |         96 |          2 |         12 |        110 |
++---------------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++---------------------------------------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| filename                                                                                                                        | language       | code       | comment    | blank      | total      |
++---------------------------------------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\app\App.jsx                                                      | JavaScript JSX |         12 |          0 |          2 |         14 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\app\providers.jsx                                                | JavaScript JSX |         15 |          0 |          2 |         17 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\app\routes.jsx                                                   | JavaScript JSX |         77 |          0 |          4 |         81 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\common\MovieCard.jsx                                  | JavaScript JSX |         49 |          0 |          2 |         51 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\common\PageHero.jsx                                   | JavaScript JSX |         24 |          0 |          1 |         25 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\layout\Footer.jsx                                     | JavaScript JSX |         45 |          0 |          2 |         47 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\layout\GlobalSearch.jsx                               | JavaScript JSX |        167 |          0 |          8 |        175 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\layout\Header.jsx                                     | JavaScript JSX |         86 |          0 |          4 |         90 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\ui\Modal.jsx                                          | JavaScript JSX |         47 |          0 |          5 |         52 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\ui\Poster.jsx                                         | JavaScript JSX |         13 |          0 |          2 |         15 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\ui\States.jsx                                         | JavaScript JSX |         21 |          0 |          3 |         24 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\ArchiveContext.jsx                                       | JavaScript JSX |         88 |          0 |          8 |         96 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\ToastContext.jsx                                         | JavaScript JSX |         40 |          0 |          6 |         46 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\archive-load.util.js                                     | JavaScript     |         11 |          1 |          1 |         13 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\archive-load.util.test.js                                | JavaScript     |         31 |          0 |          3 |         34 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryBulkAddModal.jsx          | JavaScript JSX |         49 |          0 |          6 |         55 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryFormModal.jsx             | JavaScript JSX |        110 |          0 |          5 |        115 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryHero.jsx                  | JavaScript JSX |         30 |          0 |          2 |         32 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryIcon.jsx                  | JavaScript JSX |         18 |          0 |          2 |         20 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryLibraryManager.jsx        | JavaScript JSX |         52 |          0 |          6 |         58 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryMenu.jsx                  | JavaScript JSX |         89 |          0 |          4 |         93 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryPrerequisiteSelector.jsx  | JavaScript JSX |         45 |          0 |          5 |         50 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategorySeasonRangeForm.jsx       | JavaScript JSX |         36 |          0 |          3 |         39 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategorySurpriseModal.jsx         | JavaScript JSX |         20 |          0 |          2 |         22 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategorySyncStatus.jsx            | JavaScript JSX |         62 |          0 |          6 |         68 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryTitleForm.jsx             | JavaScript JSX |         49 |          0 |          5 |         54 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\LegacyMarvelActionModal.jsx       | JavaScript JSX |         72 |          0 |          7 |         79 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\LegacyMarvelDataPanel.jsx         | JavaScript JSX |        100 |          0 |          8 |        108 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\legacy-marvel-data-ui.test.jsx    | JavaScript JSX |         64 |          0 |          6 |         70 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\context\CategoriesProvider.jsx               | JavaScript JSX |        154 |          3 |         14 |        171 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-icon.service.js            | JavaScript     |         75 |          0 |          7 |         82 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-icon.service.test.js       | JavaScript     |         19 |          0 |          4 |         23 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-library-db.service.js      | JavaScript     |        477 |          0 |         29 |        506 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-library-db.service.test.js | JavaScript     |         51 |          0 |          6 |         57 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-mapper.service.js          | JavaScript     |         90 |          0 |          6 |         96 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-mapper.service.test.js     | JavaScript     |         14 |          0 |          2 |         16 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-sync.service.js            | JavaScript     |        237 |          1 |         19 |        257 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-sync.service.test.js       | JavaScript     |        117 |          1 |         22 |        140 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\legacy-marvel-data.service.js       | JavaScript     |        168 |          0 |         21 |        189 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\legacy-marvel-data.service.test.js  | JavaScript     |        185 |          0 |         28 |        213 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\styles\categories.css                        | CSS            |        372 |          0 |         56 |        428 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category-menu.util.js                  | JavaScript     |         17 |          0 |          4 |         21 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category-menu.util.test.js             | JavaScript     |         29 |          0 |          5 |         34 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category.util.js                       | JavaScript     |         19 |          0 |          5 |         24 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category.util.test.js                  | JavaScript     |         16 |          0 |          3 |         19 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\legacy-marvel-migration.util.js        | JavaScript     |         84 |          0 |         14 |         98 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\legacy-marvel-migration.util.test.js   | JavaScript     |         50 |          0 |          8 |         58 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\recommendation.util.js                 | JavaScript     |         22 |          0 |          3 |         25 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\recommendation.util.test.js            | JavaScript     |         17 |          0 |          2 |         19 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-draft.util.js                    | JavaScript     |        116 |          0 |          8 |        124 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-draft.util.test.js               | JavaScript     |         63 |          0 |          5 |         68 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-record.util.js                   | JavaScript     |         98 |          0 |         10 |        108 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-record.util.test.js              | JavaScript     |         32 |          0 |          6 |         38 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\tmdb-image.util.js                     | JavaScript     |          5 |          0 |          2 |          7 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\history\HistoryGroups.jsx                               | JavaScript JSX |        106 |          0 |          4 |        110 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\history\cinema-view.util.js                             | JavaScript     |         12 |          0 |          2 |         14 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\history\cinema-view.util.test.js                        | JavaScript     |         11 |          0 |          2 |         13 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryDraftList.jsx                            | JavaScript JSX |         98 |          0 |          2 |        100 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryGallery.jsx                              | JavaScript JSX |         84 |          0 |          2 |         86 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryUploadModal.jsx                          | JavaScript JSX |        292 |          0 |          2 |        294 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryViewerModal.jsx                          | JavaScript JSX |        195 |          0 |          2 |        197 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\useMemoryDrafts.js                             | JavaScript     |         89 |          0 |          4 |         93 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\movies\TmdbSearchPanel.jsx                              | JavaScript JSX |        223 |          0 |          5 |        228 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\movies\useSpeechRecognition.js                          | JavaScript     |        119 |          1 |          5 |        125 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\BroadcastCountdown.jsx                | JavaScript JSX |          2 |          0 |          1 |          3 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\BroadcastMedia.jsx                    | JavaScript JSX |         19 |          0 |          4 |         23 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\BroadcastSettings.jsx                 | JavaScript JSX |         15 |          0 |          3 |         18 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\CinemaOpening.jsx                     | JavaScript JSX |         82 |          0 |          4 |         86 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\LocalAdsSettings.jsx                  | JavaScript JSX |         21 |          0 |          2 |         23 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\PlayerGuide.jsx                       | JavaScript JSX |          1 |          0 |          1 |          2 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\SubtitleSelector.jsx                  | JavaScript JSX |          8 |          0 |          2 |         10 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\TestingStreamingButton.jsx            | JavaScript JSX |         19 |          0 |          2 |         21 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\YouTubeChannelsSettings.jsx           | JavaScript JSX |         29 |          0 |          2 |         31 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\YouTubeTrailerPlayer.jsx              | JavaScript JSX |         13 |          0 |          1 |         14 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\constants\player.constants.js                    | JavaScript     |         53 |          1 |          5 |         59 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\context\PlayerProvider.jsx                       | JavaScript JSX |         99 |          0 |          8 |        107 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useBroadcastSession.js                     | JavaScript     |         95 |          0 |          7 |        102 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useBroadcastSession.test.js                | JavaScript     |         14 |          0 |          3 |         17 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useKeyboardPlayerControls.js               | JavaScript     |         19 |          0 |          2 |         21 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useYouTubePlayer.js                        | JavaScript     |        112 |          0 |          3 |        115 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\broadcast-session.service.js            | JavaScript     |         71 |          0 |          3 |         74 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\local-media.service.js                  | JavaScript     |        193 |          0 |         20 |        213 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\player-db.service.js                    | JavaScript     |        351 |          0 |         12 |        363 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\player-db.service.test.js               | JavaScript     |        111 |          0 |          9 |        120 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\youtube-trailer.service.js              | JavaScript     |         15 |          0 |          2 |         17 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\styles\player.css                                | CSS            |        188 |          0 |          5 |        193 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\breakpoint.util.js                         | JavaScript     |         36 |          0 |          2 |         38 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\breakpoint.util.test.js                    | JavaScript     |          7 |          0 |          2 |          9 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\broadcast-time.util.js                     | JavaScript     |         31 |          0 |          5 |         36 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\broadcast-time.util.test.js                | JavaScript     |         18 |          0 |          2 |         20 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\commercial-plan.util.js                    | JavaScript     |         25 |          0 |          2 |         27 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\commercial-plan.util.test.js               | JavaScript     |          7 |          0 |          2 |          9 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\media-duration.util.js                     | JavaScript     |         23 |          0 |          1 |         24 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\seeded-random.util.js                      | JavaScript     |         17 |          0 |          2 |         19 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\settings.util.js                           | JavaScript     |         42 |          0 |          3 |         45 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\subtitle.util.js                           | JavaScript     |         47 |          0 |          4 |         51 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\subtitle.util.test.js                      | JavaScript     |          9 |          0 |          1 |         10 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\youtube-video.util.js                      | JavaScript     |         16 |          0 |          2 |         18 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\youtube-video.util.test.js                 | JavaScript     |         19 |          0 |          6 |         25 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\hooks\useBodyLock.js                                             | JavaScript     |          8 |          0 |          2 |         10 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\hooks\useDocumentTitle.js                                        | JavaScript     |          6 |          0 |          2 |          8 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\hooks\useEscape.js                                               | JavaScript     |          9 |          0 |          2 |         11 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\layouts\AppLayout.jsx                                            | JavaScript JSX |         24 |          0 |          2 |         26 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\main.jsx                                                         | JavaScript JSX |          9 |          0 |          2 |         11 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\AddMoviePage.jsx                                           | JavaScript JSX |        940 |          0 |         14 |        954 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\CategoryPage.jsx                                           | JavaScript JSX |         93 |          0 |          5 |         98 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\CategorySettingsPage.jsx                                   | JavaScript JSX |         20 |          0 |          2 |         22 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\CinemaPage.jsx                                             | JavaScript JSX |        102 |          0 |          2 |        104 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\HistoryPage.jsx                                            | JavaScript JSX |        168 |          0 |          3 |        171 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\HomePage.jsx                                               | JavaScript JSX |        283 |          0 |          7 |        290 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\MovieDetailPage.jsx                                        | JavaScript JSX |        370 |          0 |          2 |        372 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\NotFoundPage.jsx                                           | JavaScript JSX |         21 |          0 |          2 |         23 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\PlannedPage.jsx                                            | JavaScript JSX |        101 |          0 |          2 |        103 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\PlayerPage.jsx                                             | JavaScript JSX |        132 |          0 |          9 |        141 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\WatchAnythingPage.jsx                                      | JavaScript JSX |         40 |          0 |          5 |         45 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\WatchlistPage.jsx                                          | JavaScript JSX |         92 |          0 |          2 |         94 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\archive.service.js                                      | JavaScript     |        181 |          2 |         28 |        211 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\archive.service.test.js                                 | JavaScript     |         68 |          0 |         11 |         79 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\cache-db.service.js                                     | JavaScript     |         69 |          0 |          9 |         78 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\data-proxy.test.js                                      | JavaScript     |        281 |          0 |         49 |        330 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\http.js                                                 | JavaScript     |         22 |          0 |          2 |         24 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\memories.service.js                                     | JavaScript     |        248 |          0 |         13 |        261 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\tmdb.service.js                                         | JavaScript     |         54 |          0 |          5 |         59 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\add-movie.css                                             | CSS            |        706 |          4 |        122 |        832 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\base.css                                                  | CSS            |        124 |          4 |         24 |        152 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\cinema.css                                                | CSS            |        204 |          0 |         42 |        246 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\components.css                                            | CSS            |        976 |          0 |        165 |      1,141 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\index.css                                                 | CSS            |          8 |          0 |          1 |          9 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\memories.css                                              | CSS            |        585 |          0 |        103 |        688 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\pages.css                                                 | CSS            |        667 |          4 |        120 |        791 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\utils\constants.js                                               | JavaScript     |         26 |          0 |          4 |         30 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\utils\formatters.js                                              | JavaScript     |         42 |          0 |          7 |         49 |
+| c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\utils\storage.js                                                 | JavaScript     |         28 |          2 |          1 |         31 |
+| Total                                                                                                                           |                |     13,812 |         24 |      1,345 |     15,181 |
++---------------------------------------------------------------------------------------------------------------------------------+----------------+------------+------------+------------+------------+

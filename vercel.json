@@ -1,14 +1,17 @@
 {
   "trailingSlash": false,
   "buildCommand": "npm run build",
+  "devCommand": "npm run dev:vite -- --port $PORT",
   "outputDirectory": "dist",
   "functions": {
     "api/data.js": {
       "maxDuration": 60
     }
   },
-  "routes": [
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+  "rewrites": [
+    {
+      "source": "/((?!api/|@vite/|@react-refresh|src/|node_modules/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
   ]
 }

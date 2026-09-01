@@ -1,0 +1,135 @@
+"filename", "language", "CSS", "JavaScript", "JavaScript JSX", "comment", "blank", "total"
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\app\App.jsx", "JavaScript JSX", 0, 0, 12, 0, 2, 14
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\app\providers.jsx", "JavaScript JSX", 0, 0, 15, 0, 2, 17
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\app\routes.jsx", "JavaScript JSX", 0, 0, 77, 0, 4, 81
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\common\MovieCard.jsx", "JavaScript JSX", 0, 0, 49, 0, 2, 51
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\common\PageHero.jsx", "JavaScript JSX", 0, 0, 24, 0, 1, 25
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\layout\Footer.jsx", "JavaScript JSX", 0, 0, 45, 0, 2, 47
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\layout\GlobalSearch.jsx", "JavaScript JSX", 0, 0, 167, 0, 8, 175
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\layout\Header.jsx", "JavaScript JSX", 0, 0, 86, 0, 4, 90
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\ui\Modal.jsx", "JavaScript JSX", 0, 0, 47, 0, 5, 52
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\ui\Poster.jsx", "JavaScript JSX", 0, 0, 13, 0, 2, 15
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\components\ui\States.jsx", "JavaScript JSX", 0, 0, 21, 0, 3, 24
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\ArchiveContext.jsx", "JavaScript JSX", 0, 0, 88, 0, 8, 96
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\ToastContext.jsx", "JavaScript JSX", 0, 0, 40, 0, 6, 46
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\archive-load.util.js", "JavaScript", 0, 11, 0, 1, 1, 13
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\context\archive-load.util.test.js", "JavaScript", 0, 31, 0, 0, 3, 34
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryBulkAddModal.jsx", "JavaScript JSX", 0, 0, 49, 0, 6, 55
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryFormModal.jsx", "JavaScript JSX", 0, 0, 110, 0, 5, 115
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryHero.jsx", "JavaScript JSX", 0, 0, 30, 0, 2, 32
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryIcon.jsx", "JavaScript JSX", 0, 0, 18, 0, 2, 20
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryLibraryManager.jsx", "JavaScript JSX", 0, 0, 52, 0, 6, 58
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryMenu.jsx", "JavaScript JSX", 0, 0, 89, 0, 4, 93
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryPrerequisiteSelector.jsx", "JavaScript JSX", 0, 0, 45, 0, 5, 50
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategorySeasonRangeForm.jsx", "JavaScript JSX", 0, 0, 36, 0, 3, 39
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategorySurpriseModal.jsx", "JavaScript JSX", 0, 0, 20, 0, 2, 22
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategorySyncStatus.jsx", "JavaScript JSX", 0, 0, 62, 0, 6, 68
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\CategoryTitleForm.jsx", "JavaScript JSX", 0, 0, 49, 0, 5, 54
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\LegacyMarvelActionModal.jsx", "JavaScript JSX", 0, 0, 72, 0, 7, 79
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\LegacyMarvelDataPanel.jsx", "JavaScript JSX", 0, 0, 100, 0, 8, 108
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\components\legacy-marvel-data-ui.test.jsx", "JavaScript JSX", 0, 0, 64, 0, 6, 70
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\context\CategoriesProvider.jsx", "JavaScript JSX", 0, 0, 154, 3, 14, 171
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-icon.service.js", "JavaScript", 0, 75, 0, 0, 7, 82
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-icon.service.test.js", "JavaScript", 0, 19, 0, 0, 4, 23
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-library-db.service.js", "JavaScript", 0, 477, 0, 0, 29, 506
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-library-db.service.test.js", "JavaScript", 0, 51, 0, 0, 6, 57
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-mapper.service.js", "JavaScript", 0, 90, 0, 0, 6, 96
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-mapper.service.test.js", "JavaScript", 0, 14, 0, 0, 2, 16
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-sync.service.js", "JavaScript", 0, 237, 0, 1, 19, 257
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\category-sync.service.test.js", "JavaScript", 0, 117, 0, 1, 22, 140
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\legacy-marvel-data.service.js", "JavaScript", 0, 168, 0, 0, 21, 189
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\services\legacy-marvel-data.service.test.js", "JavaScript", 0, 185, 0, 0, 28, 213
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\styles\categories.css", "CSS", 372, 0, 0, 0, 56, 428
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category-menu.util.js", "JavaScript", 0, 17, 0, 0, 4, 21
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category-menu.util.test.js", "JavaScript", 0, 29, 0, 0, 5, 34
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category.util.js", "JavaScript", 0, 19, 0, 0, 5, 24
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\category.util.test.js", "JavaScript", 0, 16, 0, 0, 3, 19
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\legacy-marvel-migration.util.js", "JavaScript", 0, 84, 0, 0, 14, 98
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\legacy-marvel-migration.util.test.js", "JavaScript", 0, 50, 0, 0, 8, 58
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\recommendation.util.js", "JavaScript", 0, 22, 0, 0, 3, 25
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\recommendation.util.test.js", "JavaScript", 0, 17, 0, 0, 2, 19
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-draft.util.js", "JavaScript", 0, 116, 0, 0, 8, 124
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-draft.util.test.js", "JavaScript", 0, 63, 0, 0, 5, 68
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-record.util.js", "JavaScript", 0, 98, 0, 0, 10, 108
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\title-record.util.test.js", "JavaScript", 0, 32, 0, 0, 6, 38
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\categories\utils\tmdb-image.util.js", "JavaScript", 0, 5, 0, 0, 2, 7
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\history\HistoryGroups.jsx", "JavaScript JSX", 0, 0, 106, 0, 4, 110
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\history\cinema-view.util.js", "JavaScript", 0, 12, 0, 0, 2, 14
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\history\cinema-view.util.test.js", "JavaScript", 0, 11, 0, 0, 2, 13
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryDraftList.jsx", "JavaScript JSX", 0, 0, 98, 0, 2, 100
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryGallery.jsx", "JavaScript JSX", 0, 0, 84, 0, 2, 86
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryUploadModal.jsx", "JavaScript JSX", 0, 0, 292, 0, 2, 294
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\MemoryViewerModal.jsx", "JavaScript JSX", 0, 0, 195, 0, 2, 197
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\memories\useMemoryDrafts.js", "JavaScript", 0, 89, 0, 0, 4, 93
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\movies\TmdbSearchPanel.jsx", "JavaScript JSX", 0, 0, 223, 0, 5, 228
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\movies\useSpeechRecognition.js", "JavaScript", 0, 119, 0, 1, 5, 125
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\BroadcastCountdown.jsx", "JavaScript JSX", 0, 0, 2, 0, 1, 3
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\BroadcastMedia.jsx", "JavaScript JSX", 0, 0, 19, 0, 4, 23
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\BroadcastSettings.jsx", "JavaScript JSX", 0, 0, 15, 0, 3, 18
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\CinemaOpening.jsx", "JavaScript JSX", 0, 0, 82, 0, 4, 86
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\LocalAdsSettings.jsx", "JavaScript JSX", 0, 0, 21, 0, 2, 23
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\PlayerGuide.jsx", "JavaScript JSX", 0, 0, 1, 0, 1, 2
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\SubtitleSelector.jsx", "JavaScript JSX", 0, 0, 8, 0, 2, 10
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\TestingStreamingButton.jsx", "JavaScript JSX", 0, 0, 19, 0, 2, 21
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\YouTubeChannelsSettings.jsx", "JavaScript JSX", 0, 0, 29, 0, 2, 31
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\components\YouTubeTrailerPlayer.jsx", "JavaScript JSX", 0, 0, 13, 0, 1, 14
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\constants\player.constants.js", "JavaScript", 0, 53, 0, 1, 5, 59
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\context\PlayerProvider.jsx", "JavaScript JSX", 0, 0, 99, 0, 8, 107
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useBroadcastSession.js", "JavaScript", 0, 95, 0, 0, 7, 102
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useBroadcastSession.test.js", "JavaScript", 0, 14, 0, 0, 3, 17
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useKeyboardPlayerControls.js", "JavaScript", 0, 19, 0, 0, 2, 21
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\hooks\useYouTubePlayer.js", "JavaScript", 0, 112, 0, 0, 3, 115
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\broadcast-session.service.js", "JavaScript", 0, 71, 0, 0, 3, 74
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\local-media.service.js", "JavaScript", 0, 193, 0, 0, 20, 213
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\player-db.service.js", "JavaScript", 0, 351, 0, 0, 12, 363
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\player-db.service.test.js", "JavaScript", 0, 111, 0, 0, 9, 120
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\services\youtube-trailer.service.js", "JavaScript", 0, 15, 0, 0, 2, 17
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\styles\player.css", "CSS", 188, 0, 0, 0, 5, 193
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\breakpoint.util.js", "JavaScript", 0, 36, 0, 0, 2, 38
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\breakpoint.util.test.js", "JavaScript", 0, 7, 0, 0, 2, 9
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\broadcast-time.util.js", "JavaScript", 0, 31, 0, 0, 5, 36
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\broadcast-time.util.test.js", "JavaScript", 0, 18, 0, 0, 2, 20
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\commercial-plan.util.js", "JavaScript", 0, 25, 0, 0, 2, 27
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\commercial-plan.util.test.js", "JavaScript", 0, 7, 0, 0, 2, 9
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\media-duration.util.js", "JavaScript", 0, 23, 0, 0, 1, 24
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\seeded-random.util.js", "JavaScript", 0, 17, 0, 0, 2, 19
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\settings.util.js", "JavaScript", 0, 42, 0, 0, 3, 45
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\subtitle.util.js", "JavaScript", 0, 47, 0, 0, 4, 51
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\subtitle.util.test.js", "JavaScript", 0, 9, 0, 0, 1, 10
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\youtube-video.util.js", "JavaScript", 0, 16, 0, 0, 2, 18
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\features\player\utils\youtube-video.util.test.js", "JavaScript", 0, 19, 0, 0, 6, 25
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\hooks\useBodyLock.js", "JavaScript", 0, 8, 0, 0, 2, 10
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\hooks\useDocumentTitle.js", "JavaScript", 0, 6, 0, 0, 2, 8
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\hooks\useEscape.js", "JavaScript", 0, 9, 0, 0, 2, 11
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\layouts\AppLayout.jsx", "JavaScript JSX", 0, 0, 24, 0, 2, 26
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\main.jsx", "JavaScript JSX", 0, 0, 9, 0, 2, 11
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\AddMoviePage.jsx", "JavaScript JSX", 0, 0, 940, 0, 14, 954
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\CategoryPage.jsx", "JavaScript JSX", 0, 0, 93, 0, 5, 98
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\CategorySettingsPage.jsx", "JavaScript JSX", 0, 0, 20, 0, 2, 22
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\CinemaPage.jsx", "JavaScript JSX", 0, 0, 102, 0, 2, 104
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\HistoryPage.jsx", "JavaScript JSX", 0, 0, 168, 0, 3, 171
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\HomePage.jsx", "JavaScript JSX", 0, 0, 283, 0, 7, 290
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\MovieDetailPage.jsx", "JavaScript JSX", 0, 0, 370, 0, 2, 372
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\NotFoundPage.jsx", "JavaScript JSX", 0, 0, 21, 0, 2, 23
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\PlannedPage.jsx", "JavaScript JSX", 0, 0, 101, 0, 2, 103
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\PlayerPage.jsx", "JavaScript JSX", 0, 0, 132, 0, 9, 141
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\WatchAnythingPage.jsx", "JavaScript JSX", 0, 0, 40, 0, 5, 45
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\pages\WatchlistPage.jsx", "JavaScript JSX", 0, 0, 92, 0, 2, 94
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\archive.service.js", "JavaScript", 0, 181, 0, 2, 28, 211
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\archive.service.test.js", "JavaScript", 0, 68, 0, 0, 11, 79
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\cache-db.service.js", "JavaScript", 0, 69, 0, 0, 9, 78
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\data-proxy.test.js", "JavaScript", 0, 281, 0, 0, 49, 330
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\http.js", "JavaScript", 0, 22, 0, 0, 2, 24
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\memories.service.js", "JavaScript", 0, 248, 0, 0, 13, 261
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\services\tmdb.service.js", "JavaScript", 0, 54, 0, 0, 5, 59
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\add-movie.css", "CSS", 706, 0, 0, 4, 122, 832
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\base.css", "CSS", 124, 0, 0, 4, 24, 152
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\cinema.css", "CSS", 204, 0, 0, 0, 42, 246
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\components.css", "CSS", 976, 0, 0, 0, 165, 1141
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\index.css", "CSS", 8, 0, 0, 0, 1, 9
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\memories.css", "CSS", 585, 0, 0, 0, 103, 688
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\styles\pages.css", "CSS", 667, 0, 0, 4, 120, 791
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\utils\constants.js", "JavaScript", 0, 26, 0, 0, 4, 30
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\utils\formatters.js", "JavaScript", 0, 42, 0, 0, 7, 49
+"c:\Users\sield\Documents\@temp\Dagsap\__belajar\seenetrica\src\utils\storage.js", "JavaScript", 0, 28, 0, 2, 1, 31
+"Total", "-", 3830, 4647, 5335, 24, 1345, 15181

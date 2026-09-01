@@ -42,7 +42,7 @@ module.exports = [
     },
   },
   {
-    files: ["vite.config.mjs"],
+    files: ["vite.config.mjs", "tooling/**/*.mjs"],
     ...js.configs.recommended,
     languageOptions: {
       ecmaVersion: 2024,
