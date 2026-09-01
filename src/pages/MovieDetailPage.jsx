@@ -47,6 +47,7 @@ export default function MovieDetailPage() {
     if (movie)
       setEdit({
         title: movie.title,
+        original_title: movie.original_title || movie.title,
         status: movie.status,
         rating: movie.rating ?? "",
         review: movie.review || "",
@@ -139,6 +140,7 @@ export default function MovieDetailPage() {
         {
           id: movie.id,
           title: edit.title.trim(),
+          original_title: edit.original_title.trim() || edit.title.trim(),
           status: edit.status,
           rating: edit.rating === "" ? null : Number(edit.rating),
           review: edit.review.trim() || null,
@@ -297,6 +299,18 @@ export default function MovieDetailPage() {
                     value={edit.title}
                     onChange={(e) =>
                       setEdit((value) => ({ ...value, title: e.target.value }))
+                    }
+                  />
+                </label>
+                <label className="form-field is-full">
+                  <span>Original title</span>
+                  <input
+                    value={edit.original_title}
+                    onChange={(e) =>
+                      setEdit((value) => ({
+                        ...value,
+                        original_title: e.target.value,
+                      }))
                     }
                   />
                 </label>

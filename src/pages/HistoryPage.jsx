@@ -63,7 +63,7 @@ export default function HistoryPage() {
   return (
     <>
       <PageHero
-        eyebrow="Every screening, in order"
+        eyebrow=""
         title="Watch"
         accent="history."
         description="A timeline of films and series, organized by the moments you watched them."

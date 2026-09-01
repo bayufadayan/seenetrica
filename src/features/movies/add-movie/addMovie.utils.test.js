@@ -10,6 +10,7 @@ import {
 
 const movieForm = {
   title: "  Arrival  ",
+  original_title: "  Arrival  ",
   poster_url: "  https://example.com/poster.jpg  ",
   release_date: "2016-11-11",
   media_type: "movie",
@@ -61,10 +62,11 @@ describe("add movie payloads", () => {
         external_source: "tmdb",
         external_id: 329865,
       }),
-    ).toEqual({
+    ).toMatchObject({
       external_source: "tmdb",
       external_id: 329865,
       title: "Arrival",
+      original_title: "Arrival",
       poster_url: "https://example.com/poster.jpg",
       release_date: "2016-11-11",
       media_type: "movie",

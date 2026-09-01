@@ -163,8 +163,6 @@
 }
 
 .home-aside {
-  position: sticky;
-  top: 24px;
   display: grid;
   gap: 56px;
 }
@@ -256,6 +254,15 @@
   gap: 16px;
   align-items: center;
   margin-bottom: 36px;
+}
+
+.movie-collection-tools {
+  grid-template-columns: minmax(260px, 1fr) repeat(2, minmax(150px, 190px));
+  align-items: end;
+}
+
+.movie-collection-tools .archive-search {
+  align-self: end;
 }
 
 .tool-chips {

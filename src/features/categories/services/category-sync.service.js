@@ -8,6 +8,7 @@ import { categoryLibraryDb } from "./category-library-db.service";
 
 let pullInFlight = null;
 let syncInFlight = null;
+const categorySyncsInFlight = new Map();
 let lastPullFailure = null;
 const PULL_FAILURE_COOLDOWN_MS = 30_000;
 
@@ -212,6 +213,44 @@ async function runSync(pin) {
   }
 }
 
+async function runCategoryMovieSync(categoryId, pin) {
+  if (!pin) {
+    throw syncError("pin_required", "requesting_pin", "PIN is required to sync this category.");
+  }
+
+  await categorySyncService.sync(pin);
+
+  let response;
+  try {
+    response = await archiveService.writeAction(
+      "syncCategoryLibrary",
+      { category_id: categoryId },
+      pin,
+    );
+  } catch (error) {
+    throw syncError(
+      "category_movie_sync_failed",
+      "migrating_category",
+      `This category could not be synced to movies: ${errorMessage(error)}`,
+      error,
+    );
+  }
+
+  const snapshot = requireCategorySnapshot(response?.snapshot || {}, {
+    source: "category movie sync",
+    stage: "migrating_category",
+  });
+  const state = await categoryLibraryDb.applyCanonicalSnapshot(snapshot);
+  notify("seenetrica:categories-changed");
+  notify("seenetrica:archive-refresh");
+
+  return {
+    ...response,
+    snapshot,
+    state,
+  };
+}
+
 export const categorySyncService = {
   pull() {
     if (
@@ -246,6 +285,18 @@ export const categorySyncService = {
       })().finally(() => { syncInFlight = null; });
     }
     return syncInFlight;
+  },
+
+  syncCategoryToMovies(categoryId, pin) {
+    const key = String(categoryId);
+
+    if (!categorySyncsInFlight.has(key)) {
+      const request = runCategoryMovieSync(key, pin)
+        .finally(() => categorySyncsInFlight.delete(key));
+      categorySyncsInFlight.set(key, request);
+    }
+
+    return categorySyncsInFlight.get(key);
   },
 
   async syncInBackground() {

@@ -143,6 +143,23 @@ export function CategoriesProvider({ children }) {
     }
   }
 
+  async function syncCategoryToMovies(categoryId, pin) {
+    setSyncStatus("syncing");
+    setSyncError(null);
+    try {
+      const result = await categorySyncService.syncCategoryToMovies(categoryId, pin);
+      setState(result.state);
+      serverVerified.current = true;
+      setSyncStatus(result.state.outbox.length ? "saved" : "synced");
+      return result;
+    } catch (error) {
+      serverVerified.current = false;
+      setSyncError(error);
+      setSyncStatus("failed");
+      throw error;
+    }
+  }
+
   const value = {
     ...state,
     loading,
@@ -151,6 +168,7 @@ export function CategoriesProvider({ children }) {
     refreshLocal,
     pull,
     manualSync,
+    syncCategoryToMovies,
     createCategory: (payload) => mutate(() => categoryLibraryDb.createCategory(payload)),
     updateCategory: (id, patch) => mutate(() => categoryLibraryDb.updateCategory(id, patch)),
     createTitle: (categoryId, payload) => mutate(() => categoryLibraryDb.createTitle(categoryId, payload)),

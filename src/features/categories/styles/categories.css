@@ -195,9 +195,33 @@
 .category-form-current {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   color: var(--muted);
   font-size: 0.68rem;
+}
+
+.category-form-current-copy {
+  display: grid;
+  flex: 1 1 160px;
+  min-width: 0;
+  gap: 3px;
+}
+
+.category-form-current-copy strong {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.72rem;
+}
+
+.category-icon-remove-button {
+  flex: 0 0 auto;
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+.category-icon-remove-button svg {
+  width: 14px;
+  height: 14px;
 }
 
 .category-form-current > img,
@@ -356,7 +380,16 @@
 .category-hero-name { margin: 0 0 14px !important; color: #e6a08d !important; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
 .category-settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin: 18px 0; }
 .category-settings-actions .secondary-button { min-height: 40px; }
-.category-library-tools { grid-template-columns: minmax(220px, 1fr) repeat(2, 140px); }
+.category-movie-sync { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 14px 0 20px; padding: 14px 16px; border: 1px solid rgba(216, 105, 74, 0.22); border-radius: 14px; background: rgba(216, 105, 74, 0.07); }
+.category-movie-sync.is-synced { border-color: rgba(101, 163, 125, 0.28); background: rgba(101, 163, 125, 0.08); }
+.category-movie-sync > div { display: flex; align-items: center; gap: 11px; min-width: 0; }
+.category-movie-sync > div > svg { flex: 0 0 auto; width: 19px; color: var(--accent-dark); }
+.category-movie-sync.is-synced > div > svg { color: var(--green); }
+.category-movie-sync span { display: grid; gap: 3px; min-width: 0; }
+.category-movie-sync strong { color: var(--ink); font-size: 0.74rem; }
+.category-movie-sync small { color: var(--muted); font-size: 0.66rem; line-height: 1.45; }
+.category-movie-sync > button { flex: 0 0 auto; min-height: 40px; }
+.category-library-tools { grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(140px, 170px)); }
 .category-bulk-list { display: grid; gap: 7px; margin-top: 20px; }
 .category-bulk-list > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; font-size: 0.72rem; font-weight: 700; }
 .category-bulk-list button { display: grid; width: 30px; height: 30px; place-items: center; border-radius: 50%; background: var(--paper); }
@@ -404,6 +437,8 @@
 }
 
 @media (max-width: 800px) {
+  .category-library-tools { grid-template-columns: 1fr 1fr; }
+  .category-library-tools .archive-search { grid-column: 1 / -1; }
   .legacy-marvel-panel { grid-template-columns: auto minmax(0, 1fr); align-items: start; }
   .legacy-marvel-panel-actions { grid-column: 1 / -1; justify-content: flex-start; }
   .watch-anything-hero { grid-template-columns: 1fr; min-height: 620px; }
@@ -412,6 +447,10 @@
 }
 
 @media (max-width: 560px) {
+  .category-movie-sync { align-items: stretch; flex-direction: column; }
+  .category-movie-sync > button { justify-content: center; width: 100%; }
+  .category-library-tools { grid-template-columns: 1fr; }
+  .category-library-tools .archive-search { grid-column: auto; }
   .nav-actions { gap: 1px; }
   .nav-action-divider { display: none; }
   .nav-category-menu { position: fixed; top: 78px; right: 12px; left: 12px; width: auto; }

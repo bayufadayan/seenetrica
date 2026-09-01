@@ -66,7 +66,9 @@ describe("/api/data proxy", () => {
   });
 
   it.each([
+    "createMovies",
     "syncCategorizedLibrary",
+    "syncCategoryLibrary",
     "recordCategorizedViewing",
     "prepareCategoryIconUpload",
     "deleteCategoryIcon",

@@ -144,7 +144,6 @@ export const categoryLibraryDb = {
       const slug = payload.slug || createCategorySlug(name);
       if (!name) throw new Error("Category name is required.");
       if (!slug) throw new Error("Category name must contain a letter or number.");
-      if (!payload.iconUrl || !payload.iconPublicId) throw new Error("A category icon is required.");
       const categories = await transaction.objectStore("categories").getAll();
       if (categories.some((category) => !category.deletedAt && category.slug === slug)) {
         throw new Error("A category with this slug already exists.");
@@ -154,12 +153,13 @@ export const categoryLibraryDb = {
         id: payload.id || createId("local-category"),
         name,
         slug,
-        iconUrl: payload.iconUrl,
-        iconPublicId: payload.iconPublicId,
+        iconUrl: payload.iconUrl || null,
+        iconPublicId: payload.iconPublicId || null,
         sortOrder: Number.isFinite(Number(payload.sortOrder))
           ? Number(payload.sortOrder)
           : activeRecords(categories).length,
         legacyMigrationCompletedAt: null,
+        librarySyncedAt: null,
         createdAt: timestamp,
         updatedAt: timestamp,
         deletedAt: null,

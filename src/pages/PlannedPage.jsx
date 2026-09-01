@@ -1,32 +1,33 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
 import { useArchive } from "../context/ArchiveContext";
 import { PageHero } from "../components/common/PageHero";
 import { MovieCard } from "../components/common/MovieCard";
+import { MovieCollectionTools } from "../components/common/MovieCollectionTools";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/States";
 import { formatDate } from "../utils/formatters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { sortTitles } from "../utils/title-sort";
 
 export default function PlannedPage() {
   useDocumentTitle("Planned");
   const { movies, loading, error } = useArchive();
   const [search, setSearch] = useState("");
-  const [sort, setSort] = useState("date");
+  const [type, setType] = useState("all");
+  const [sort, setSort] = useState("release-newest");
   const all = movies.filter((movie) => movie.status === "plan");
-  const shown = all
-    .filter(
+  const normalizedSearch = search.trim().toLowerCase();
+  const shown = sortTitles(
+    all.filter(
       (movie) =>
-        !search || movie.title.toLowerCase().includes(search.toLowerCase()),
-    )
-    .sort((a, b) =>
-      sort === "added"
-        ? String(b.created_at).localeCompare(String(a.created_at))
-        : (a.release_date || "9999").localeCompare(b.release_date || "9999"),
-    );
+        (!normalizedSearch || `${movie.title} ${movie.original_title || ""}`.toLowerCase().includes(normalizedSearch)) &&
+        (type === "all" || movie.media_type === type),
+    ),
+    sort,
+  );
   return (
     <>
       <PageHero
-        eyebrow="Stories on the horizon"
+        eyebrow=""
         title="Cinema"
         accent="plans."
         description="Upcoming releases that look interesting enough to meet on the big screen."
@@ -34,38 +35,16 @@ export default function PlannedPage() {
         countLabel="upcoming titles"
       />
       <section className="page-content page-shell">
-        <div className="collection-tools">
-          <label className="archive-search">
-            <Search aria-hidden="true" />
-            <span className="sr-only">Search planned titles</span>
-            <input
-              type="search"
-              autoComplete="off"
-              placeholder="Search planned titles"
-              value={search}
-              onChange={(e) => setSearch(e.target.value.trimStart())}
-            />
-          </label>
-          <div
-            className="tool-chips"
-            role="group"
-            aria-label="Sort planned titles"
-          >
-            {[
-              ["date", "Release date"],
-              ["added", "Recently added"],
-            ].map(([value, label]) => (
-              <button
-                className={`chip-button ${sort === value ? "is-active" : ""}`}
-                type="button"
-                key={value}
-                onClick={() => setSort(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <MovieCollectionTools
+          collectionName="planned titles"
+          placeholder="Search planned titles"
+          search={search}
+          type={type}
+          sort={sort}
+          onSearchChange={setSearch}
+          onTypeChange={setType}
+          onSortChange={setSort}
+        />
         {loading ? (
           <LoadingState>Loading plans…</LoadingState>
         ) : error ? (

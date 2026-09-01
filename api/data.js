@@ -10,11 +10,13 @@ const READ_STALE_TTL_MS = 5 * 60_000;
 
 const ALLOWED_WRITE_ACTIONS = new Set([
   "createMovie",
+  "createMovies",
   "updateMovie",
   "addViewing",
   "createMemory",
   "updateMemory",
   "syncCategorizedLibrary",
+  "syncCategoryLibrary",
   "recordCategorizedViewing",
   "prepareCategoryIconUpload",
   "deleteCategoryIcon",

@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { archiveService } from "../../../services/archive.service";
-import { centerSquareCrop, cleanupCategoryIcon, validateCategoryIcon } from "./category-icon.service";
+import {
+  buildCategoryIconPatch,
+  centerSquareCrop,
+  cleanupCategoryIcon,
+  validateCategoryIcon,
+} from "./category-icon.service";
 
 describe("category icons", () => {
   it("validates supported formats", () => {
@@ -18,5 +23,46 @@ describe("category icons", () => {
     await expect(cleanupCategoryIcon("orphan-id", "1234")).rejects.toThrow("cleanup failed");
     expect(write).toHaveBeenCalledWith("deleteCategoryIcon", { public_id: "orphan-id" }, "1234");
     write.mockRestore();
+  });
+
+  it("keeps icon fields empty when no icon is selected", () => {
+    expect(
+      buildCategoryIconPatch({
+        existing: null,
+        uploaded: null,
+        removeIcon: false,
+      }),
+    ).toEqual({});
+  });
+
+  it("clears an existing icon and queues its uploaded asset for cleanup", () => {
+    expect(
+      buildCategoryIconPatch({
+        existing: { iconPublicId: "seenetrica/categories/noir" },
+        uploaded: null,
+        removeIcon: true,
+      }),
+    ).toEqual({
+      iconUrl: null,
+      iconPublicId: null,
+      cleanupIconPublicId: "seenetrica/categories/noir",
+    });
+  });
+
+  it("replaces an existing icon and queues the previous asset for cleanup", () => {
+    expect(
+      buildCategoryIconPatch({
+        existing: { iconPublicId: "old-icon" },
+        uploaded: {
+          iconUrl: "https://example.com/new.webp",
+          iconPublicId: "new-icon",
+        },
+        removeIcon: false,
+      }),
+    ).toEqual({
+      iconUrl: "https://example.com/new.webp",
+      iconPublicId: "new-icon",
+      cleanupIconPublicId: "old-icon",
+    });
   });
 });

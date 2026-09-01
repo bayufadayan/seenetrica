@@ -1,16 +1,4 @@
-/**
- * Seenetrica Google Apps Script backend.
- *
- * Required Script Properties:
- * - API_SECRET
- * - CLOUDINARY_CLOUD_NAME
- * - CLOUDINARY_API_KEY
- * - CLOUDINARY_API_SECRET
- *
- * The first authorized GET automatically creates the category sheets,
- * appends the optional movie/history columns, and seeds Marvel, DC, and
- * Bottle. Redeploy the web app after replacing the code.
- */
+/** Seenetrica Google Apps Script backend. */
 
 const SPREADSHEET_ID = "13DrbCGwETbFkiXTTRkGK_V9CKsjlLFR_Ap-V6p5po8w";
 
@@ -20,6 +8,7 @@ const SHEET_NAMES = {
   MOVIE_MEMORIES: "movie_memories",
   CATEGORIES: "categories",
   CATEGORY_TITLES: "category_titles",
+  CATEGORY_MOVIES: "category_movies",
 };
 
 const INITIAL_CATEGORIES = [
@@ -47,6 +36,7 @@ const ALLOWED_STATUSES = [
   "plan",
   "watchlist",
   "watched",
+  "unlisted",
 ];
 
 const ALLOWED_MEDIA_TYPES = [
@@ -86,6 +76,7 @@ const CATEGORY_HEADERS = [
   "icon_public_id",
   "sort_order",
   "legacy_migration_completed_at",
+  "library_synced_at",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -113,6 +104,18 @@ const CATEGORY_TITLE_HEADERS = [
   "deleted_at",
 ];
 
+const CATEGORY_MOVIE_HEADERS = [
+  "id",
+  "category_id",
+  "movie_id",
+  "is_watched",
+  "prerequisite_movie_ids",
+  "legacy_category_title_id",
+  "created_at",
+  "updated_at",
+  "deleted_at",
+];
+
 const MOVIE_HEADERS = [
   "id",
   "external_source",
@@ -133,6 +136,7 @@ const MOVIE_HEADERS = [
   "season_tmdb_id",
   "identity_key",
   "backdrop_path",
+  "poster_path",
 ];
 
 const WATCH_HISTORY_HEADERS = [
@@ -150,7 +154,7 @@ const CATEGORY_ICON_FOLDER =
 
 const MAX_SYNC_RECORDS = 2000;
 
-const CATEGORIZED_SCHEMA_VERSION = "1";
+const CATEGORIZED_SCHEMA_VERSION = "2";
 
 const READ_CACHE_SECONDS = 20;
 
@@ -364,6 +368,10 @@ function ensureCategorizedSheets() {
       CATEGORY_TITLE_HEADERS,
     );
     ensureSheetWithHeaders(
+      SHEET_NAMES.CATEGORY_MOVIES,
+      CATEGORY_MOVIE_HEADERS,
+    );
+    ensureSheetWithHeaders(
       SHEET_NAMES.MOVIES,
       MOVIE_HEADERS,
     );
@@ -489,6 +497,34 @@ function readSheet(sheetName) {
 
       return result;
     });
+}
+
+function readOptionalSheet(sheetName) {
+  const sheet = getSpreadsheet().getSheetByName(
+    sheetName,
+  );
+
+  return sheet ? readSheet(sheetName) : [];
+}
+
+function writeLegacyCategoryTitles(records) {
+  const sheet = getSpreadsheet().getSheetByName(
+    SHEET_NAMES.CATEGORY_TITLES,
+  );
+
+  if (!sheet) {
+    if (records.length) {
+      throw new Error(
+        "The legacy category_titles sheet is missing.",
+      );
+    }
+    return;
+  }
+
+  writeSheetRecords(
+    SHEET_NAMES.CATEGORY_TITLES,
+    records,
+  );
 }
 
 function writeSheetRecords(
@@ -646,6 +682,7 @@ function ensureInitialCategories() {
         icon_url: null,
         icon_public_id: null,
         legacy_migration_completed_at: null,
+        library_synced_at: null,
         created_at: timestamp,
         updated_at: timestamp,
         deleted_at: null,
@@ -963,14 +1000,44 @@ function normalizeMovieInput(input) {
     );
   }
 
+  const title = requiredText(
+    input.title,
+    "Title",
+    200,
+  );
+  const rawSeasonNumber = optionalNumber(
+    input.season_number,
+    "Season number",
+    { min: 1, max: 10000 },
+  );
+  const seasonNumber =
+    mediaType === "series" &&
+    Number.isInteger(rawSeasonNumber)
+      ? rawSeasonNumber
+      : null;
+  const seasonTmdbId = seasonNumber
+    ? optionalNumber(
+        input.season_tmdb_id,
+        "Season TMDB ID",
+        { min: 1 },
+      )
+    : null;
+  const identityKey = externalId
+    ? createCategoryTitleIdentityKey(
+        mediaType,
+        externalId,
+        seasonNumber,
+      )
+    : optionalText(
+        input.identity_key,
+        "Identity key",
+        300,
+      );
+
   return {
     external_source: externalSource,
     external_id: externalId,
-    title: requiredText(
-      input.title,
-      "Title",
-      200,
-    ),
+    title,
     poster_url: optionalText(
       input.poster_url,
       "Poster URL",
@@ -1002,6 +1069,31 @@ function normalizeMovieInput(input) {
       input.review,
       "Review",
       20000,
+    ),
+    base_title:
+      optionalText(
+        input.base_title,
+        "Base title",
+        200,
+      ) || title,
+    original_title:
+      optionalText(
+        input.original_title,
+        "Original title",
+        200,
+      ) || title,
+    season_number: seasonNumber,
+    season_tmdb_id: seasonTmdbId,
+    identity_key: identityKey,
+    backdrop_path: optionalText(
+      input.backdrop_path,
+      "Backdrop path",
+      1000,
+    ),
+    poster_path: optionalText(
+      input.poster_path,
+      "Poster path",
+      1000,
     ),
   };
 }
@@ -1220,6 +1312,13 @@ function normalizeCategoryInput(
           : source.legacyMigrationCompletedAt,
         "Legacy migration completion",
       ),
+    library_synced_at:
+      optionalTimestamp(
+        source.library_synced_at !== undefined
+          ? source.library_synced_at
+          : source.librarySyncedAt,
+        "Category library sync time",
+      ),
     created_at:
       optionalTimestamp(
         source.created_at || source.createdAt,
@@ -1437,6 +1536,136 @@ function categoryTitleForClient(record) {
   };
 }
 
+function categoryMovieForClient(
+  membership,
+  movie,
+  membershipIdByMovieId,
+) {
+  return {
+    id: membership.id,
+    category_id: membership.category_id,
+    tmdb_id: Number(movie.external_id),
+    title: movie.title,
+    base_title:
+      movie.base_title || movie.title,
+    original_title:
+      movie.original_title || movie.title,
+    release_date:
+      movie.release_date || null,
+    media_type: movie.media_type,
+    season_number:
+      movie.season_number || null,
+    season_tmdb_id:
+      movie.season_tmdb_id || null,
+    identity_key:
+      movie.identity_key ||
+      createCategoryTitleIdentityKey(
+        movie.media_type,
+        movie.external_id,
+        movie.season_number,
+      ),
+    is_watched: booleanFromCell(
+      membership.is_watched,
+    ),
+    prerequisite_ids: arrayFromCell(
+      membership.prerequisite_movie_ids,
+    )
+      .map((movieId) =>
+        membershipIdByMovieId.get(
+          String(movieId),
+        ),
+      )
+      .filter(Boolean),
+    poster_path:
+      movie.poster_path ||
+      movie.poster_url || null,
+    backdrop_path:
+      movie.backdrop_path || null,
+    runtime_minutes:
+      movie.runtime_minutes || null,
+    created_at:
+      membership.created_at || null,
+    updated_at:
+      membership.updated_at || null,
+    deleted_at:
+      membership.deleted_at || null,
+  };
+}
+
+function buildSyncedCategoryTitles(
+  categories,
+  memberships,
+  movies,
+) {
+  const syncedCategoryIds = new Set(
+    categories
+      .filter((category) =>
+        category.library_synced_at,
+      )
+      .map((category) =>
+        String(category.id),
+      ),
+  );
+  const movieById = new Map(
+    movies.map((movie) => [
+      String(movie.id),
+      movie,
+    ]),
+  );
+  const membershipsByCategory = new Map();
+
+  memberships.forEach((membership) => {
+    const categoryId = String(
+      membership.category_id,
+    );
+
+    if (!syncedCategoryIds.has(categoryId)) {
+      return;
+    }
+
+    if (!membershipsByCategory.has(categoryId)) {
+      membershipsByCategory.set(categoryId, []);
+    }
+
+    membershipsByCategory
+      .get(categoryId)
+      .push(membership);
+  });
+
+  const result = [];
+
+  membershipsByCategory.forEach(
+    (categoryMemberships) => {
+      const membershipIdByMovieId = new Map(
+        categoryMemberships.map((membership) => [
+          String(membership.movie_id),
+          membership.id,
+        ]),
+      );
+
+      categoryMemberships.forEach((membership) => {
+        const movie = movieById.get(
+          String(membership.movie_id),
+        );
+
+        if (!movie) {
+          return;
+        }
+
+        result.push(
+          categoryMovieForClient(
+            membership,
+            movie,
+            membershipIdByMovieId,
+          ),
+        );
+      });
+    },
+  );
+
+  return result;
+}
+
 function buildCategorizedSnapshot() {
   const categories = readSheet(
     SHEET_NAMES.CATEGORIES,
@@ -1445,9 +1674,37 @@ function buildCategorizedSnapshot() {
     sort_order:
       Number(category.sort_order) || 0,
   }));
-  const titles = readSheet(
+  const legacyTitles = readOptionalSheet(
     SHEET_NAMES.CATEGORY_TITLES,
   ).map(categoryTitleForClient);
+  const memberships = readSheet(
+    SHEET_NAMES.CATEGORY_MOVIES,
+  );
+  const movies = readSheet(
+    SHEET_NAMES.MOVIES,
+  );
+  const syncedCategoryIds = new Set(
+    categories
+      .filter((category) =>
+        category.library_synced_at,
+      )
+      .map((category) =>
+        String(category.id),
+      ),
+  );
+  const titles = [
+    ...legacyTitles.filter(
+      (title) =>
+        !syncedCategoryIds.has(
+          String(title.category_id),
+        ),
+    ),
+    ...buildSyncedCategoryTitles(
+      categories,
+      memberships,
+      movies,
+    ),
+  ];
   const marvel = categories.find(
     (category) =>
       String(category.id) === "CAT-MARVEL" ||
@@ -1468,6 +1725,8 @@ function buildCategorizedSnapshot() {
     category_sync: {
       legacy_marvel_migration_completed_at:
         migrationCompletedAt,
+      synced_category_ids:
+        Array.from(syncedCategoryIds),
       server_time: serverTime,
     },
   };
@@ -1569,7 +1828,7 @@ function validateTitleRelationships(
   );
 }
 
-function mergeCategorizedChangesUnlocked(
+function mergeLegacyCategorizedChangesUnlocked(
   payload,
 ) {
   const categoryChanges = Array.isArray(
@@ -1595,7 +1854,7 @@ function mergeCategorizedChangesUnlocked(
   const categories = readSheet(
     SHEET_NAMES.CATEGORIES,
   );
-  const titles = readSheet(
+  const titles = readOptionalSheet(
     SHEET_NAMES.CATEGORY_TITLES,
   );
   const categoryIdMap = {};
@@ -1646,6 +1905,9 @@ function mergeCategorizedChangesUnlocked(
           legacy_migration_completed_at:
             existing.legacy_migration_completed_at ||
             normalized.legacy_migration_completed_at,
+          library_synced_at:
+            existing.library_synced_at ||
+            normalized.library_synced_at,
         };
       }
 
@@ -1653,7 +1915,12 @@ function mergeCategorizedChangesUnlocked(
     }
 
     index = categories.length;
-    categories.push(normalized);
+    categories.push({
+      ...normalized,
+      library_synced_at:
+        normalized.library_synced_at ||
+        nowString(),
+    });
     categoryIndexById.set(incomingId, index);
     categoryIndexBySlug.set(
       normalized.slug,
@@ -1790,16 +2057,568 @@ function mergeCategorizedChangesUnlocked(
     SHEET_NAMES.CATEGORIES,
     categories,
   );
-  writeSheetRecords(
-    SHEET_NAMES.CATEGORY_TITLES,
-    titles,
-  );
+  writeLegacyCategoryTitles(titles);
 
   return {
     snapshot: buildCategorizedSnapshot(),
     id_map: {
       categories: categoryIdMap,
       category_titles: titleIdMap,
+    },
+  };
+}
+
+function createUniqueIdFromRecords(
+  records,
+  prefix,
+) {
+  const ids = new Set(
+    records.map((record) => String(record.id)),
+  );
+
+  for (
+    let attempt = 0;
+    attempt < 20;
+    attempt += 1
+  ) {
+    const id =
+      `${prefix}-${dateStamp()}-${randomPair()}`;
+
+    if (!ids.has(id)) {
+      return id;
+    }
+  }
+
+  throw new Error(
+    "Could not generate a unique ID.",
+  );
+}
+
+function movieFromCategoryTitle(
+  title,
+  movies,
+  timestamp,
+) {
+  return {
+    id: createUniqueIdFromRecords(
+      movies,
+      "MOV",
+    ),
+    external_source: "tmdb",
+    external_id: Number(title.tmdb_id),
+    title: title.title,
+    poster_url: tmdbPosterUrl(
+      title.poster_path,
+    ),
+    release_date:
+      title.release_date || null,
+    media_type: title.media_type,
+    runtime_minutes:
+      title.runtime_minutes || null,
+    status: "unlisted",
+    rating: null,
+    review: null,
+    created_at: timestamp,
+    updated_at: timestamp,
+    base_title:
+      title.base_title || title.title,
+    original_title:
+      title.original_title || title.title,
+    season_number:
+      title.season_number || null,
+    season_tmdb_id:
+      title.season_tmdb_id || null,
+    identity_key: title.identity_key,
+    backdrop_path:
+      title.backdrop_path || null,
+    poster_path:
+      title.poster_path || null,
+  };
+}
+
+function updateMovieFromCategoryTitle(
+  movie,
+  title,
+  timestamp,
+) {
+  return {
+    ...movie,
+    external_source: "tmdb",
+    external_id: Number(title.tmdb_id),
+    title: title.title,
+    poster_url:
+      tmdbPosterUrl(title.poster_path) ||
+      movie.poster_url || null,
+    release_date:
+      title.release_date ||
+      movie.release_date || null,
+    media_type: title.media_type,
+    runtime_minutes:
+      title.runtime_minutes ||
+      movie.runtime_minutes || null,
+    status: movie.status || "unlisted",
+    base_title:
+      title.base_title ||
+      movie.base_title ||
+      title.title,
+    original_title:
+      title.original_title ||
+      movie.original_title ||
+      title.title,
+    season_number:
+      title.season_number || null,
+    season_tmdb_id:
+      title.season_tmdb_id || null,
+    identity_key: title.identity_key,
+    backdrop_path:
+      title.backdrop_path ||
+      movie.backdrop_path || null,
+    poster_path:
+      title.poster_path ||
+      movie.poster_path || null,
+    updated_at: timestamp,
+  };
+}
+
+function validateCategoryMovieRelationships(
+  memberships,
+  categories,
+) {
+  const activeCategoryIds = new Set(
+    categories
+      .filter((category) =>
+        !category.deleted_at,
+      )
+      .map((category) =>
+        String(category.id),
+      ),
+  );
+  const activeMemberships = memberships.filter(
+    (membership) => !membership.deleted_at,
+  );
+  const membershipByCategoryMovie = new Map(
+    activeMemberships.map((membership) => [
+      `${membership.category_id}::${membership.movie_id}`,
+      membership,
+    ]),
+  );
+
+  activeMemberships.forEach((membership) => {
+    const categoryId = String(
+      membership.category_id,
+    );
+
+    if (!activeCategoryIds.has(categoryId)) {
+      throw new Error(
+        "A category movie belongs to a missing category.",
+      );
+    }
+
+    arrayFromCell(
+      membership.prerequisite_movie_ids,
+    ).forEach((movieId) => {
+      if (
+        !membershipByCategoryMovie.has(
+          `${categoryId}::${movieId}`,
+        )
+      ) {
+        throw new Error(
+          "Category prerequisites must belong to the same category.",
+        );
+      }
+    });
+  });
+
+  function visit(
+    membership,
+    visiting,
+    visited,
+  ) {
+    const key =
+      `${membership.category_id}::${membership.movie_id}`;
+
+    if (visiting.has(key)) {
+      throw new Error(
+        "Category prerequisites contain a circular dependency.",
+      );
+    }
+
+    if (visited.has(key)) {
+      return;
+    }
+
+    visiting.add(key);
+    arrayFromCell(
+      membership.prerequisite_movie_ids,
+    ).forEach((movieId) => {
+      const prerequisite =
+        membershipByCategoryMovie.get(
+          `${membership.category_id}::${movieId}`,
+        );
+
+      if (prerequisite) {
+        visit(
+          prerequisite,
+          visiting,
+          visited,
+        );
+      }
+    });
+    visiting.delete(key);
+    visited.add(key);
+  }
+
+  const visited = new Set();
+  activeMemberships.forEach((membership) =>
+    visit(membership, new Set(), visited),
+  );
+}
+
+function mergeSyncedCategoryTitleChangesUnlocked(
+  changes,
+) {
+  const categories = readSheet(
+    SHEET_NAMES.CATEGORIES,
+  );
+  const movies = readSheet(
+    SHEET_NAMES.MOVIES,
+  );
+  const memberships = readSheet(
+    SHEET_NAMES.CATEGORY_MOVIES,
+  );
+  const syncedCategoryIds = new Set(
+    categories
+      .filter((category) =>
+        category.library_synced_at,
+      )
+      .map((category) =>
+        String(category.id),
+      ),
+  );
+  const membershipIndexById = new Map(
+    memberships.map((membership, index) => [
+      String(membership.id),
+      index,
+    ]),
+  );
+  const membershipIndexByCategoryMovie = new Map(
+    memberships.map((membership, index) => [
+      `${membership.category_id}::${membership.movie_id}`,
+      index,
+    ]),
+  );
+  const movieIndexById = new Map(
+    movies.map((movie, index) => [
+      String(movie.id),
+      index,
+    ]),
+  );
+  const titleIdMap = {};
+  const movieIdByIncomingTitleId = new Map();
+  const acceptedChanges = [];
+
+  changes.forEach((title) => {
+    const categoryId = String(title.category_id);
+
+    if (!syncedCategoryIds.has(categoryId)) {
+      throw new Error(
+        "The category must be migrated before writing to category_movies.",
+      );
+    }
+
+    let movie = findMainMovieForCategoryTitle(
+      movies,
+      title,
+    );
+    let movieIndex;
+
+    if (!movie) {
+      movie = movieFromCategoryTitle(
+        title,
+        movies,
+        title.updated_at || nowString(),
+      );
+      movieIndex = movies.length;
+      movies.push(movie);
+      movieIndexById.set(
+        String(movie.id),
+        movieIndex,
+      );
+    } else {
+      movieIndex = movieIndexById.get(
+        String(movie.id),
+      );
+    }
+
+    const incomingId = String(title.id);
+    const categoryMovieKey =
+      `${categoryId}::${movie.id}`;
+    let membershipIndex =
+      membershipIndexById.has(incomingId)
+        ? membershipIndexById.get(incomingId)
+        : membershipIndexByCategoryMovie.get(
+            categoryMovieKey,
+          );
+    const existingMembership =
+      membershipIndex === undefined
+        ? null
+        : memberships[membershipIndex];
+    const membershipId = existingMembership
+      ? String(existingMembership.id)
+      : incomingId;
+    const shouldApply =
+      !existingMembership ||
+      isNewerTimestamp(
+        title.updated_at,
+        existingMembership.updated_at,
+      );
+
+    titleIdMap[incomingId] = membershipId;
+    movieIdByIncomingTitleId.set(
+      incomingId,
+      String(movie.id),
+    );
+
+    if (!shouldApply) {
+      return;
+    }
+
+    const timestamp =
+      title.updated_at || nowString();
+    movies[movieIndex] =
+      updateMovieFromCategoryTitle(
+        movie,
+        title,
+        timestamp,
+      );
+    const membership = {
+      ...(existingMembership || {}),
+      id: membershipId,
+      category_id: categoryId,
+      movie_id: movie.id,
+      is_watched: booleanFromCell(
+        title.is_watched,
+      ),
+      prerequisite_movie_ids:
+        existingMembership
+          ? existingMembership.prerequisite_movie_ids
+          : "[]",
+      legacy_category_title_id:
+        existingMembership
+          ? existingMembership.legacy_category_title_id
+          : incomingId,
+      created_at:
+        existingMembership
+          ? existingMembership.created_at
+          : title.created_at || timestamp,
+      updated_at: timestamp,
+      deleted_at:
+        title.deleted_at || null,
+    };
+
+    if (membershipIndex === undefined) {
+      membershipIndex = memberships.length;
+      memberships.push(membership);
+      membershipIndexById.set(
+        membershipId,
+        membershipIndex,
+      );
+      membershipIndexByCategoryMovie.set(
+        categoryMovieKey,
+        membershipIndex,
+      );
+    } else {
+      memberships[membershipIndex] = membership;
+    }
+
+    acceptedChanges.push({
+      title,
+      membershipId,
+    });
+  });
+
+  acceptedChanges.forEach(
+    ({ title, membershipId }) => {
+      const membershipIndex =
+        membershipIndexById.get(membershipId);
+      const membership =
+        memberships[membershipIndex];
+      const prerequisiteMovieIds = arrayFromCell(
+        title.prerequisite_ids,
+      ).map((prerequisiteId) => {
+        const incomingMovieId =
+          movieIdByIncomingTitleId.get(
+            String(prerequisiteId),
+          );
+
+        if (incomingMovieId) {
+          return incomingMovieId;
+        }
+
+        const canonicalMembershipId =
+          titleIdMap[String(prerequisiteId)] ||
+          String(prerequisiteId);
+        const prerequisiteIndex =
+          membershipIndexById.get(
+            canonicalMembershipId,
+          );
+
+        if (prerequisiteIndex === undefined) {
+          throw new Error(
+            "A category prerequisite could not be found.",
+          );
+        }
+
+        return String(
+          memberships[prerequisiteIndex].movie_id,
+        );
+      });
+
+      memberships[membershipIndex] = {
+        ...membership,
+        prerequisite_movie_ids:
+          JSON.stringify([
+            ...new Set(prerequisiteMovieIds),
+          ]),
+      };
+    },
+  );
+
+  const deletedCategoryTimes = new Map(
+    categories
+      .filter((category) => category.deleted_at)
+      .map((category) => [
+        String(category.id),
+        category.deleted_at,
+      ]),
+  );
+
+  memberships.forEach((membership, index) => {
+    const deletedAt = deletedCategoryTimes.get(
+      String(membership.category_id),
+    );
+
+    if (
+      deletedAt &&
+      (!membership.deleted_at ||
+        isNewerTimestamp(
+          deletedAt,
+          membership.deleted_at,
+        ))
+    ) {
+      memberships[index] = {
+        ...membership,
+        updated_at: deletedAt,
+        deleted_at: deletedAt,
+      };
+    }
+  });
+
+  validateCategoryMovieRelationships(
+    memberships,
+    categories,
+  );
+  writeSheetRecords(
+    SHEET_NAMES.MOVIES,
+    movies,
+  );
+  writeSheetRecords(
+    SHEET_NAMES.CATEGORY_MOVIES,
+    memberships,
+  );
+
+  return titleIdMap;
+}
+
+function mergeCategorizedChangesUnlocked(payload) {
+  const categoryChanges = Array.isArray(
+    payload.categories,
+  )
+    ? payload.categories
+    : [];
+  const titleChanges = Array.isArray(
+    payload.category_titles,
+  )
+    ? payload.category_titles
+    : [];
+
+  if (
+    categoryChanges.length > MAX_SYNC_RECORDS ||
+    titleChanges.length > MAX_SYNC_RECORDS
+  ) {
+    throw new Error(
+      "The sync batch is too large.",
+    );
+  }
+
+  const categoryResult =
+    mergeLegacyCategorizedChangesUnlocked({
+      categories: categoryChanges,
+      category_titles: [],
+    });
+  const categoryIdMap =
+    categoryResult.id_map.categories || {};
+  const categories = readSheet(
+    SHEET_NAMES.CATEGORIES,
+  );
+  const syncedCategoryIds = new Set(
+    categories
+      .filter((category) =>
+        category.library_synced_at,
+      )
+      .map((category) =>
+        String(category.id),
+      ),
+  );
+  const normalizedChanges = titleChanges.map(
+    (change) => {
+      const incomingCategoryId = String(
+        change.category_id ||
+          change.categoryId ||
+          "",
+      );
+      const categoryId =
+        categoryIdMap[incomingCategoryId] ||
+        incomingCategoryId;
+
+      return normalizeCategoryTitleInput(
+        change,
+        null,
+        categoryId,
+      );
+    },
+  );
+  const legacyChanges = normalizedChanges.filter(
+    (title) =>
+      !syncedCategoryIds.has(
+        String(title.category_id),
+      ),
+  );
+  const syncedChanges = normalizedChanges.filter(
+    (title) =>
+      syncedCategoryIds.has(
+        String(title.category_id),
+      ),
+  );
+  const legacyResult = legacyChanges.length
+    ? mergeLegacyCategorizedChangesUnlocked({
+        categories: [],
+        category_titles: legacyChanges,
+      })
+    : { id_map: { category_titles: {} } };
+  const syncedTitleIdMap =
+    mergeSyncedCategoryTitleChangesUnlocked(
+      syncedChanges,
+    );
+
+  return {
+    snapshot: buildCategorizedSnapshot(),
+    id_map: {
+      categories: categoryIdMap,
+      category_titles: {
+        ...(legacyResult.id_map.category_titles || {}),
+        ...syncedTitleIdMap,
+      },
     },
   };
 }
@@ -1813,6 +2632,224 @@ function syncCategorizedLibrary(payload) {
     return mergeCategorizedChangesUnlocked(
       payload || {},
     );
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function syncCategoryLibrary(payload) {
+  ensureCategorizedSheets();
+  const categoryId = requiredText(
+    payload && payload.category_id,
+    "Category ID",
+    100,
+  );
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+
+  try {
+    const categories = readSheet(
+      SHEET_NAMES.CATEGORIES,
+    );
+    const categoryIndex = categories.findIndex(
+      (category) =>
+        String(category.id) === categoryId &&
+        !category.deleted_at,
+    );
+
+    if (categoryIndex === -1) {
+      throw new Error(
+        "Category was not found.",
+      );
+    }
+
+    if (categories[categoryIndex].library_synced_at) {
+      return {
+        status: "already_synced",
+        migrated_count: 0,
+        snapshot: buildCategorizedSnapshot(),
+      };
+    }
+
+    const legacyTitles = readOptionalSheet(
+      SHEET_NAMES.CATEGORY_TITLES,
+    ).filter(
+      (title) =>
+        String(title.category_id) === categoryId &&
+        !title.deleted_at,
+    );
+    const movies = readSheet(
+      SHEET_NAMES.MOVIES,
+    );
+    const memberships = readSheet(
+      SHEET_NAMES.CATEGORY_MOVIES,
+    );
+    const membershipIndexByCategoryMovie =
+      new Map(
+        memberships.map((membership, index) => [
+          `${membership.category_id}::${membership.movie_id}`,
+          index,
+        ]),
+      );
+    const movieIdByLegacyTitleId = new Map();
+    let createdMovieCount = 0;
+    const timestamp = nowString();
+
+    legacyTitles.forEach((title) => {
+      let movie = findMainMovieForCategoryTitle(
+        movies,
+        title,
+      );
+
+      if (!movie) {
+        movie = movieFromCategoryTitle(
+          title,
+          movies,
+          timestamp,
+        );
+        movies.push(movie);
+        createdMovieCount += 1;
+      } else {
+        const movieIndex = movies.findIndex(
+          (record) =>
+            String(record.id) ===
+              String(movie.id),
+        );
+        const mergedMovie =
+          updateMovieFromCategoryTitle(
+            movie,
+            title,
+            timestamp,
+          );
+        movies[movieIndex] = {
+          ...mergedMovie,
+          title: movie.title || mergedMovie.title,
+          base_title:
+            movie.base_title ||
+            mergedMovie.base_title,
+          original_title:
+            movie.original_title ||
+            mergedMovie.original_title,
+          poster_url:
+            movie.poster_url ||
+            mergedMovie.poster_url,
+          poster_path:
+            movie.poster_path ||
+            mergedMovie.poster_path,
+        };
+        movie = movies[movieIndex];
+      }
+
+      movieIdByLegacyTitleId.set(
+        String(title.id),
+        String(movie.id),
+      );
+      const membershipKey =
+        `${categoryId}::${movie.id}`;
+      const existingIndex =
+        membershipIndexByCategoryMovie.get(
+          membershipKey,
+        );
+      const existing =
+        existingIndex === undefined
+          ? null
+          : memberships[existingIndex];
+      const membership = {
+        ...(existing || {}),
+        id: existing
+          ? existing.id
+          : String(title.id),
+        category_id: categoryId,
+        movie_id: movie.id,
+        is_watched: booleanFromCell(
+          title.is_watched,
+        ),
+        prerequisite_movie_ids: "[]",
+        legacy_category_title_id: title.id,
+        created_at:
+          existing
+            ? existing.created_at
+            : title.created_at || timestamp,
+        updated_at: timestamp,
+        deleted_at: null,
+      };
+
+      if (existingIndex === undefined) {
+        membershipIndexByCategoryMovie.set(
+          membershipKey,
+          memberships.length,
+        );
+        memberships.push(membership);
+      } else {
+        memberships[existingIndex] = membership;
+      }
+    });
+
+    legacyTitles.forEach((title) => {
+      const movieId = movieIdByLegacyTitleId.get(
+        String(title.id),
+      );
+      const membershipIndex =
+        membershipIndexByCategoryMovie.get(
+          `${categoryId}::${movieId}`,
+        );
+      const prerequisiteMovieIds = arrayFromCell(
+        title.prerequisite_ids,
+      ).map((titleId) => {
+        const prerequisiteMovieId =
+          movieIdByLegacyTitleId.get(
+            String(titleId),
+          );
+
+        if (!prerequisiteMovieId) {
+          throw new Error(
+            "A legacy category prerequisite could not be migrated.",
+          );
+        }
+
+        return prerequisiteMovieId;
+      });
+
+      memberships[membershipIndex] = {
+        ...memberships[membershipIndex],
+        prerequisite_movie_ids:
+          JSON.stringify([
+            ...new Set(prerequisiteMovieIds),
+          ]),
+      };
+    });
+
+    categories[categoryIndex] = {
+      ...categories[categoryIndex],
+      library_synced_at: timestamp,
+      updated_at: timestamp,
+    };
+
+    validateCategoryMovieRelationships(
+      memberships,
+      categories,
+    );
+    writeSheetRecords(
+      SHEET_NAMES.MOVIES,
+      movies,
+    );
+    writeSheetRecords(
+      SHEET_NAMES.CATEGORY_MOVIES,
+      memberships,
+    );
+    writeSheetRecords(
+      SHEET_NAMES.CATEGORIES,
+      categories,
+    );
+
+    return {
+      status: "synced",
+      migrated_count: legacyTitles.length,
+      created_movie_count: createdMovieCount,
+      reused_movie_count:
+        legacyTitles.length - createdMovieCount,
+      snapshot: buildCategorizedSnapshot(),
+    };
   } finally {
     lock.releaseLock();
   }
@@ -2104,6 +3141,16 @@ function recordCategorizedViewing(payload) {
   lock.waitLock(20000);
 
   try {
+    const memberships = readSheet(
+      SHEET_NAMES.CATEGORY_MOVIES,
+    );
+    const membershipIndex =
+      memberships.findIndex(
+        (membership) =>
+          String(membership.id) ===
+            categoryTitleId &&
+          !membership.deleted_at,
+      );
     const existingHistory = readSheet(
       SHEET_NAMES.WATCH_HISTORY,
     ).find(
@@ -2113,7 +3160,25 @@ function recordCategorizedViewing(payload) {
     );
 
     if (existingHistory) {
-      const existingTitles = readSheet(
+      if (
+        membershipIndex !== -1 &&
+        !booleanFromCell(
+          memberships[membershipIndex]
+            .is_watched,
+        )
+      ) {
+        memberships[membershipIndex] = {
+          ...memberships[membershipIndex],
+          is_watched: true,
+          updated_at: nowString(),
+        };
+        writeSheetRecords(
+          SHEET_NAMES.CATEGORY_MOVIES,
+          memberships,
+        );
+      }
+
+      const existingTitles = readOptionalSheet(
         SHEET_NAMES.CATEGORY_TITLES,
       );
       const existingTitleIndex =
@@ -2138,8 +3203,7 @@ function recordCategorizedViewing(payload) {
           is_watched: true,
           updated_at: nowString(),
         };
-        writeSheetRecords(
-          SHEET_NAMES.CATEGORY_TITLES,
+        writeLegacyCategoryTitles(
           existingTitles,
         );
       }
@@ -2151,7 +3215,74 @@ function recordCategorizedViewing(payload) {
       };
     }
 
-    const titles = readSheet(
+    if (membershipIndex !== -1) {
+      const timestamp = nowString();
+      const membership = {
+        ...memberships[membershipIndex],
+        is_watched: true,
+        updated_at: timestamp,
+      };
+      const movie = getRecordById(
+        SHEET_NAMES.MOVIES,
+        membership.movie_id,
+      );
+
+      if (!movie) {
+        throw new Error(
+          "The category movie could not be found.",
+        );
+      }
+
+      const updatedMovie = {
+        ...movie,
+        status: "watched",
+        updated_at: timestamp,
+      };
+      const historyEntry = {
+        id: createUniqueId(
+          SHEET_NAMES.WATCH_HISTORY,
+          "HIS",
+        ),
+        movie_id: movie.id,
+        watched_at: watchedAt,
+        watched_in_theater: false,
+        created_at: timestamp,
+        source_event_id: eventId,
+        category_title_id: membership.id,
+      };
+
+      memberships[membershipIndex] = membership;
+      writeSheetRecords(
+        SHEET_NAMES.CATEGORY_MOVIES,
+        memberships,
+      );
+      updateRecord(
+        SHEET_NAMES.MOVIES,
+        movie.id,
+        updatedMovie,
+      );
+      appendRecord(
+        SHEET_NAMES.WATCH_HISTORY,
+        historyEntry,
+      );
+
+      const snapshot = buildCategorizedSnapshot();
+
+      return {
+        duplicate: false,
+        category_title:
+          snapshot.category_titles.find(
+            (title) =>
+              String(title.id) ===
+                categoryTitleId,
+          ) || null,
+        movie: updatedMovie,
+        history_entry: historyEntry,
+        snapshot,
+      };
+    }
+
+    const titles = readOptionalSheet(
       SHEET_NAMES.CATEGORY_TITLES,
     );
     const titleIndex = titles.findIndex(
@@ -2223,6 +3354,8 @@ function recordCategorizedViewing(payload) {
           categoryTitle.identity_key,
         backdrop_path:
           categoryTitle.backdrop_path || null,
+        poster_path:
+          categoryTitle.poster_path || null,
       };
       appendRecord(
         SHEET_NAMES.MOVIES,
@@ -2289,10 +3422,7 @@ function recordCategorizedViewing(payload) {
       SHEET_NAMES.WATCH_HISTORY,
       historyEntry,
     );
-    writeSheetRecords(
-      SHEET_NAMES.CATEGORY_TITLES,
-      titles,
-    );
+    writeLegacyCategoryTitles(titles);
 
     return {
       duplicate: false,
@@ -2355,6 +3485,9 @@ function getAllData() {
     categories: categorized.categories,
     category_titles:
       categorized.category_titles,
+    category_movies: readSheet(
+      SHEET_NAMES.CATEGORY_MOVIES,
+    ),
     category_sync: categorized.category_sync,
   };
 
@@ -2364,6 +3497,82 @@ function getAllData() {
   );
 
   return data;
+}
+
+function findCanonicalMovie(
+  movies,
+  normalizedMovie,
+) {
+  if (normalizedMovie.identity_key) {
+    const identityMatch = movies.find(
+      (movie) =>
+        String(movie.identity_key || "") ===
+          String(normalizedMovie.identity_key),
+    );
+
+    if (identityMatch) {
+      return identityMatch;
+    }
+  }
+
+  if (
+    normalizedMovie.external_source !== "tmdb" ||
+    normalizedMovie.season_number
+  ) {
+    return null;
+  }
+
+  return (
+    movies.find(
+      (movie) =>
+        String(movie.external_source) === "tmdb" &&
+        Number(movie.external_id) ===
+          Number(normalizedMovie.external_id) &&
+        String(movie.media_type) ===
+          String(normalizedMovie.media_type) &&
+        !movie.season_number,
+    ) || null
+  );
+}
+
+function upsertMovieInRecords(
+  movies,
+  normalizedMovie,
+  timestamp,
+) {
+  const existing = findCanonicalMovie(
+    movies,
+    normalizedMovie,
+  );
+
+  if (!existing) {
+    const movie = {
+      id: createUniqueIdFromRecords(
+        movies,
+        "MOV",
+      ),
+      ...normalizedMovie,
+      created_at: timestamp,
+      updated_at: timestamp,
+    };
+    movies.push(movie);
+    return { movie, created: true };
+  }
+
+  const index = movies.findIndex(
+    (movie) =>
+      String(movie.id) === String(existing.id),
+  );
+  const movie = {
+    ...existing,
+    ...normalizedMovie,
+    id: existing.id,
+    created_at:
+      existing.created_at || timestamp,
+    updated_at: timestamp,
+  };
+  movies[index] = movie;
+  return { movie, created: false };
 }
 
 function createMovie(payload) {
@@ -2379,16 +3588,15 @@ function createMovie(payload) {
   try {
 
     const createdAt = nowString();
-
-    const movie = {
-      id: createUniqueId(
-        SHEET_NAMES.MOVIES,
-        "MOV",
-      ),
-      ...normalizedMovie,
-      created_at: createdAt,
-      updated_at: createdAt,
-    };
+    const movies = readSheet(
+      SHEET_NAMES.MOVIES,
+    );
+    const upserted = upsertMovieInRecords(
+      movies,
+      normalizedMovie,
+      createdAt,
+    );
+    const movie = upserted.movie;
 
     let historyEntry = null;
 
@@ -2409,9 +3617,9 @@ function createMovie(payload) {
       };
     }
 
-    appendRecord(
+    writeSheetRecords(
       SHEET_NAMES.MOVIES,
-      movie,
+      movies,
     );
 
     if (historyEntry) {
@@ -2424,6 +3632,92 @@ function createMovie(payload) {
     return {
       movie,
       history_entry: historyEntry,
+      created: upserted.created,
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function createMovies(payload) {
+  const items = Array.isArray(
+    payload && payload.items,
+  )
+    ? payload.items
+    : [];
+
+  if (!items.length) {
+    throw new Error(
+      "Add at least one movie to the batch.",
+    );
+  }
+
+  if (items.length > 100) {
+    throw new Error(
+      "A movie batch cannot exceed 100 titles.",
+    );
+  }
+
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+
+  try {
+    const movies = readSheet(
+      SHEET_NAMES.MOVIES,
+    );
+    const history = readSheet(
+      SHEET_NAMES.WATCH_HISTORY,
+    );
+    const created = [];
+
+    items.forEach((item) => {
+      const normalizedMovie = normalizeMovieInput(
+        item.movie || {},
+      );
+      const timestamp = nowString();
+      const upserted = upsertMovieInRecords(
+        movies,
+        normalizedMovie,
+        timestamp,
+      );
+      const movie = upserted.movie;
+      let historyEntry = null;
+
+      if (movie.status === "watched") {
+        const viewing = normalizeViewingInput({
+          ...(item.viewing || {}),
+          movie_id: movie.id,
+        });
+        historyEntry = {
+          id: createUniqueIdFromRecords(
+            history,
+            "HIS",
+          ),
+          ...viewing,
+          created_at: timestamp,
+        };
+        history.push(historyEntry);
+      }
+
+      created.push({
+        movie,
+        history_entry: historyEntry,
+        created: upserted.created,
+      });
+    });
+
+    writeSheetRecords(
+      SHEET_NAMES.MOVIES,
+      movies,
+    );
+    writeSheetRecords(
+      SHEET_NAMES.WATCH_HISTORY,
+      history,
+    );
+
+    return {
+      count: created.length,
+      items: created,
     };
   } finally {
     lock.releaseLock();
@@ -2826,6 +4120,12 @@ function doPost(e) {
         );
         break;
 
+      case "createMovies":
+        data = createMovies(
+          body.data || {},
+        );
+        break;
+
       case "updateMovie":
         data = updateMovie(
           body.data || {},
@@ -2858,6 +4158,12 @@ function doPost(e) {
 
       case "syncCategorizedLibrary":
         data = syncCategorizedLibrary(
+          body.data || {},
+        );
+        break;
+
+      case "syncCategoryLibrary":
+        data = syncCategoryLibrary(
           body.data || {},
         );
         break;

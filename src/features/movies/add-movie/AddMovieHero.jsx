@@ -7,7 +7,6 @@ export function AddMovieHero({ mode, preset, onToggleMode }) {
   return (
     <section className="page-hero page-shell add-page-hero">
       <div>
-        <p className="eyebrow">Grow your archive</p>
         <h1>
           Add a <span>title.</span>
         </h1>

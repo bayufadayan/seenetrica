@@ -1,4 +1,5 @@
-import { ArrowUpRight, Plus, Ticket } from "lucide-react";
+import { ArrowUpRight, Plus, Search, Ticket } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useArchive } from "../context/ArchiveContext";
 import { PageHero } from "../components/common/PageHero";
@@ -6,16 +7,21 @@ import { Poster } from "../components/ui/Poster";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/States";
 import { formatDate, formatRuntime } from "../utils/formatters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { buildCinemaEntries } from "../features/history/cinema-view.util";
+import {
+  buildCinemaEntries,
+  filterCinemaEntries,
+} from "../features/history/cinema-view.util";
 
 export default function CinemaPage() {
   useDocumentTitle("Cinema Diary");
   const { movies, history, loading, error } = useArchive();
+  const [search, setSearch] = useState("");
   const entries = buildCinemaEntries(movies, history);
+  const shownEntries = filterCinemaEntries(entries, search);
   return (
     <>
       <PageHero
-        eyebrow="Big screens, remembered"
+        eyebrow=""
         title="Cinema"
         accent="diary."
         description="Every title watched in a theater, listed from the latest screening backward."
@@ -29,7 +35,9 @@ export default function CinemaPage() {
             <p className="collection-status" role="status">
               {loading
                 ? "Loading cinema diary…"
-                : `${entries.length} ${entries.length === 1 ? "screening" : "screenings"} recorded`}
+                : search.trim()
+                  ? `${shownEntries.length} of ${entries.length} screenings shown`
+                  : `${entries.length} ${entries.length === 1 ? "screening" : "screenings"} recorded`}
             </p>
             <Link
               className="primary-button cinema-add-button"
@@ -40,14 +48,25 @@ export default function CinemaPage() {
             </Link>
           </div>
         </div>
+        <label className="archive-search cinema-search">
+          <Search aria-hidden="true" />
+          <span className="sr-only">Search cinema diary</span>
+          <input
+            type="search"
+            autoComplete="off"
+            placeholder="Search cinema diary"
+            value={search}
+            onChange={(event) => setSearch(event.target.value.trimStart())}
+          />
+        </label>
         {loading ? (
           <LoadingState>Loading cinema diary…</LoadingState>
         ) : error ? (
           <ErrorState>The cinema diary could not be loaded.</ErrorState>
         ) : (
           <div className="cinema-list">
-            {entries.length ? (
-              entries.map((entry, index) => (
+            {shownEntries.length ? (
+              shownEntries.map((entry, index) => (
                 <Link
                   className="cinema-entry"
                   to={`/movies/${encodeURIComponent(entry.movie.id)}`}
@@ -92,7 +111,9 @@ export default function CinemaPage() {
               ))
             ) : (
               <EmptyState>
-                No theater viewings have been recorded yet.
+                {search.trim()
+                  ? "No cinema screenings match this search."
+                  : "No theater viewings have been recorded yet."}
               </EmptyState>
             )}
           </div>

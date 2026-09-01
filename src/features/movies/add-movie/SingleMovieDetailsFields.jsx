@@ -14,6 +14,14 @@ export function SingleMovieDetailsFields({ form, preset, speech, onChange }) {
         />
       </FormField>
 
+      <FormField full label="Original title">
+        <input
+          type="text"
+          value={form.original_title}
+          onChange={(event) => onChange("original_title", event.target.value)}
+        />
+      </FormField>
+
       <FormField label="Type">
         <select
           required

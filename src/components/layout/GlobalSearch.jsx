@@ -49,7 +49,11 @@ export function GlobalSearch({ open, onClose, onOpen }) {
   const normalized = query.trim().toLowerCase();
   const matches = normalized
     ? movies
-        .filter((movie) => movie.title.toLowerCase().includes(normalized))
+        .filter(
+          (movie) =>
+            movie.status !== "unlisted" &&
+            movie.title.toLowerCase().includes(normalized),
+        )
         .slice(0, 7)
     : [];
 

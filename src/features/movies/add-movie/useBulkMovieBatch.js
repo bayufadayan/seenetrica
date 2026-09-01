@@ -15,6 +15,18 @@ export function useBulkMovieBatch({ onProgress }) {
   const { refresh } = useArchive();
 
   function addMovie(movie) {
+    const duplicate = queue.some(
+      (item) =>
+        item.external_source === movie.external_source &&
+        Number(item.external_id) === Number(movie.external_id) &&
+        item.media_type === movie.media_type,
+    );
+
+    if (duplicate) {
+      toast(`${movie.title} is already in this batch.`, "error");
+      return;
+    }
+
     setQueue((currentQueue) => [
       ...currentQueue,
       createBatchItem(movie),
@@ -89,60 +101,27 @@ export function useBulkMovieBatch({ onProgress }) {
     }
 
     setSaving(true);
-    const result = await saveQueueItems(pin);
+    onProgress({
+      message: `Saving ${queue.length} titles`,
+      detail: "The batch is written in one request.",
+    });
 
-    removeSavedItems(result.savedIds);
-    setSaving(false);
-    onProgress(null);
-    await refresh().catch(() => {});
-    finishBatch(result);
-  }
-
-  async function saveQueueItems(pin) {
-    const savedIds = [];
-    const failures = [];
-
-    for (let index = 0; index < queue.length; index += 1) {
-      const item = queue[index];
-      onProgress({
-        message: `Saving ${index + 1} of ${queue.length}`,
-        detail: item.title,
-      });
-
-      try {
-        await archiveService.writeAction(
-          "createMovie",
-          createBatchPayload(item, period),
-          pin,
-        );
-        savedIds.push(item.client_id);
-      } catch (error) {
-        failures.push(error);
-        if (isAuthorizationError(error)) break;
-      }
-    }
-
-    return { savedIds, failures };
-  }
-
-  function removeSavedItems(savedIds) {
-    setQueue((currentQueue) =>
-      currentQueue.filter((item) => !savedIds.includes(item.client_id)),
-    );
-  }
-
-  function finishBatch({ savedIds, failures }) {
-    if (!failures.length) {
+    try {
+      await archiveService.writeAction(
+        "createMovies",
+        { items: queue.map((item) => createBatchPayload(item, period)) },
+        pin,
+      );
+      setQueue([]);
+      await refresh();
       toast("Monthly batch saved.");
       navigate("/history");
-      return;
+    } catch (error) {
+      toast(`The batch was not saved. ${error.message}`, "error");
+    } finally {
+      setSaving(false);
+      onProgress(null);
     }
-
-    const remainingCount = queue.length - savedIds.length;
-    toast(
-      `${savedIds.length} saved, ${remainingCount} still in the list. ${failures[0].message}`,
-      "error",
-    );
   }
 
   return {
@@ -159,8 +138,4 @@ export function useBulkMovieBatch({ onProgress }) {
     updateMovie,
     saveBatch,
   };
-}
-
-function isAuthorizationError(error) {
-  return /pin|unauthor|forbidden/i.test(error.message);
 }

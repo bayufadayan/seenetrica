@@ -3,6 +3,29 @@ import { archiveService } from "../../../services/archive.service";
 export const CATEGORY_ICON_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 export const CATEGORY_ICON_SIZE = 96;
 
+export function buildCategoryIconPatch({ existing, uploaded, removeIcon }) {
+  if (uploaded) {
+    return {
+      ...uploaded,
+      ...(existing?.iconPublicId
+        ? { cleanupIconPublicId: existing.iconPublicId }
+        : {}),
+    };
+  }
+
+  if (removeIcon) {
+    return {
+      iconUrl: null,
+      iconPublicId: null,
+      ...(existing?.iconPublicId
+        ? { cleanupIconPublicId: existing.iconPublicId }
+        : {}),
+    };
+  }
+
+  return {};
+}
+
 export function validateCategoryIcon(file) {
   if (!file) throw new Error("Choose a category icon.");
   if (!CATEGORY_ICON_TYPES.has(file.type)) {

@@ -93,6 +93,12 @@ function EditFields({ form, period, onChange }) {
           onChange={(event) => onChange("title", event.target.value)}
         />
       </FormField>
+      <FormField full label="Original title">
+        <input
+          value={form.original_title || ""}
+          onChange={(event) => onChange("original_title", event.target.value)}
+        />
+      </FormField>
       <FormField label="Type">
         <select
           value={form.media_type}

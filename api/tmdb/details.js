@@ -1,3 +1,31 @@
+const {
+  chooseLocalizedItem,
+  displayTitle,
+  originalTitle,
+} = require("../../lib/tmdb-localization");
+
+async function getTmdbDetails(token, tmdbType, id, language) {
+  const params = new URLSearchParams({ language });
+  const response = await fetch(
+    `https://api.themoviedb.org/3/${tmdbType}/${id}?${params}`,
+    {
+      headers: {
+        accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  const payload = await response.json();
+
+  if (!response.ok) {
+    const error = new Error(payload.status_message || "TMDB detail request failed.");
+    error.status = response.status;
+    throw error;
+  }
+
+  return payload;
+}
+
 module.exports = async function handler(request, response) {
   if (request.method !== "GET") {
     response.setHeader("Allow", "GET");
@@ -21,25 +49,13 @@ module.exports = async function handler(request, response) {
   }
 
   const tmdbType = type === "series" ? "tv" : "movie";
-  const params = new URLSearchParams({ language: "en-US" });
 
   try {
-    const tmdbResponse = await fetch(
-      `https://api.themoviedb.org/3/${tmdbType}/${id}?${params}`,
-      {
-        headers: {
-          accept: "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      },
-    );
-
-    const item = await tmdbResponse.json();
-    if (!tmdbResponse.ok) {
-      return response.status(tmdbResponse.status).json({
-        error: item.status_message || "TMDB detail request failed.",
-      });
-    }
+    const [english, indonesian] = await Promise.all([
+      getTmdbDetails(token, tmdbType, id, "en-US"),
+      getTmdbDetails(token, tmdbType, id, "id-ID"),
+    ]);
+    const item = chooseLocalizedItem(english, indonesian);
 
     const posterUrl = (path) => path
       ? `https://image.tmdb.org/t/p/w500${path}`
@@ -64,8 +80,8 @@ module.exports = async function handler(request, response) {
     const result = {
       external_source: "tmdb",
       external_id: item.id,
-      title: item.title || item.name,
-      original_title: item.original_title || item.original_name || item.title || item.name,
+      title: displayTitle(item),
+      original_title: originalTitle(item),
       poster_path: item.poster_path || null,
       backdrop_path: item.backdrop_path || null,
       poster_url: posterUrl(item.poster_path),
@@ -87,8 +103,8 @@ module.exports = async function handler(request, response) {
     return response.status(200).json(result);
   } catch (error) {
     console.error("TMDB details error:", error);
-    return response.status(502).json({
-      error: "Could not connect to TMDB.",
+    return response.status(error.status || 502).json({
+      error: error.status ? error.message : "Could not connect to TMDB.",
     });
   }
 };

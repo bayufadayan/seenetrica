@@ -122,6 +122,25 @@ describe("categorized library sync", () => {
     expect(mocks.archive.fetchCategorizedData).not.toHaveBeenCalled();
   });
 
+  it("flushes local changes before migrating one category to movie IDs", async () => {
+    mocks.archive.writeAction.mockResolvedValue({
+      status: "synced",
+      migrated_count: 3,
+      created_movie_count: 2,
+      snapshot: serverData(),
+    });
+
+    const result = await categorySyncService.syncCategoryToMovies("CAT-MARVEL", "1234");
+
+    expect(mocks.archive.writeAction).toHaveBeenCalledWith(
+      "syncCategoryLibrary",
+      { category_id: "CAT-MARVEL" },
+      "1234",
+    );
+    expect(mocks.library.applyCanonicalSnapshot).toHaveBeenCalledWith(expect.any(Object));
+    expect(result).toMatchObject({ migrated_count: 3, created_movie_count: 2 });
+  });
+
   it("does not create an immediate retry storm after a failed pull", async () => {
     const failure = new Error("upstream unavailable");
     mocks.archive.fetchCategorizedData.mockRejectedValue(failure);

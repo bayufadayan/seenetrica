@@ -1,28 +1,32 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
 import { useArchive } from "../context/ArchiveContext";
 import { PageHero } from "../components/common/PageHero";
 import { MovieCard } from "../components/common/MovieCard";
+import { MovieCollectionTools } from "../components/common/MovieCollectionTools";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/States";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { sortTitles } from "../utils/title-sort";
 
 export default function WatchlistPage() {
   useDocumentTitle("Watchlist");
   const { movies, loading, error } = useArchive();
   const [search, setSearch] = useState("");
-  const [type, setType] = useState("");
+  const [type, setType] = useState("all");
+  const [sort, setSort] = useState("release-newest");
   const all = movies.filter((movie) => movie.status === "watchlist");
-  const shown = all
-    .filter(
+  const normalizedSearch = search.trim().toLowerCase();
+  const shown = sortTitles(
+    all.filter(
       (movie) =>
-        (!search || movie.title.toLowerCase().includes(search.toLowerCase())) &&
-        (!type || movie.media_type === type),
-    )
-    .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)));
+        (!normalizedSearch || `${movie.title} ${movie.original_title || ""}`.toLowerCase().includes(normalizedSearch)) &&
+        (type === "all" || movie.media_type === type),
+    ),
+    sort,
+  );
   return (
     <>
       <PageHero
-        eyebrow="Saved for the right night"
+        eyebrow=""
         title="Your"
         accent="watchlist."
         description="Released titles you are interested in, waiting until you press play."
@@ -30,39 +34,16 @@ export default function WatchlistPage() {
         countLabel="saved titles"
       />
       <section className="page-content page-shell">
-        <div className="collection-tools">
-          <label className="archive-search">
-            <Search aria-hidden="true" />
-            <span className="sr-only">Search watchlist</span>
-            <input
-              type="search"
-              autoComplete="off"
-              placeholder="Search your watchlist"
-              value={search}
-              onChange={(e) => setSearch(e.target.value.trimStart())}
-            />
-          </label>
-          <div
-            className="tool-chips"
-            role="group"
-            aria-label="Media type filters"
-          >
-            {[
-              ["", "All"],
-              ["movie", "Movies"],
-              ["series", "Series"],
-            ].map(([value, label]) => (
-              <button
-                className={`chip-button ${type === value ? "is-active" : ""}`}
-                type="button"
-                key={label}
-                onClick={() => setType(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <MovieCollectionTools
+          collectionName="watchlist"
+          placeholder="Search your watchlist"
+          search={search}
+          type={type}
+          sort={sort}
+          onSearchChange={setSearch}
+          onTypeChange={setType}
+          onSortChange={setSort}
+        />
         {loading ? (
           <LoadingState>Loading watchlist…</LoadingState>
         ) : error ? (

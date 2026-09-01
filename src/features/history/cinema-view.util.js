@@ -11,3 +11,14 @@ export function buildCinemaEntries(movies, history) {
       || String(right.created_at).localeCompare(String(left.created_at)),
     );
 }
+
+export function filterCinemaEntries(entries, query) {
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  if (!normalizedQuery) return entries;
+
+  return entries.filter((entry) =>
+    `${entry.movie.title} ${entry.movie.original_title || ""}`
+      .toLowerCase()
+      .includes(normalizedQuery),
+  );
+}
