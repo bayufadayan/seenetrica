@@ -1,4 +1,8 @@
 const crypto = require("crypto");
+const {
+  createCloudinarySignature,
+  destroyCloudinaryAsset,
+} = require("../lib/server-utils");
 
 // Keep this below vercel.json's 60 second function budget so the handler has
 // time to turn an upstream timeout into a controlled JSON response.
@@ -23,6 +27,19 @@ const ALLOWED_WRITE_ACTIONS = new Set([
 ]);
 
 const ALLOWED_READ_SCOPES = new Set(["categorized"]);
+
+const LOCAL_CLOUDINARY_ACTIONS = new Set([
+  "prepareCategoryIconUpload",
+  "deleteCategoryIcon",
+]);
+
+const CLOUDINARY_ENVIRONMENT = [
+  "CLOUDINARY_CLOUD_NAME",
+  "CLOUDINARY_API_KEY",
+  "CLOUDINARY_API_SECRET",
+];
+
+const CATEGORY_ICON_FOLDER = "seenetrica/categories";
 
 const readResponseCache = new Map();
 const readRequestsInFlight = new Map();
@@ -192,6 +209,105 @@ function validateConfiguration(includeWritePin) {
   }
 
   return upstreamUrl;
+}
+
+function validateCloudinaryConfiguration() {
+  const missing = CLOUDINARY_ENVIRONMENT.filter((name) => !process.env[name]);
+
+  if (missing.length) {
+    throw new DataProxyError(
+      "CONFIGURATION_MISSING",
+      `Missing server configuration: ${missing.join(", ")}.`,
+      { status: 500, stage: "config_validation" },
+    );
+  }
+}
+
+function normalizeCategorySlug(value) {
+  const slug = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+films?$/i, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  if (!slug || slug.length > 80) {
+    throw new DataProxyError(
+      "INVALID_CATEGORY_SLUG",
+      "Category slug is invalid.",
+      { status: 400, stage: "request_validation" },
+    );
+  }
+
+  return slug;
+}
+
+function categoryIconPublicId(value) {
+  const publicId = String(value || "").trim();
+  const prefix = `${CATEGORY_ICON_FOLDER}/`;
+
+  if (
+    publicId.length <= prefix.length
+    || publicId.length > 500
+    || !publicId.startsWith(prefix)
+  ) {
+    throw new DataProxyError(
+      "INVALID_CATEGORY_ICON_ID",
+      "The Cloudinary asset is not a Seenetrica category icon.",
+      { status: 400, stage: "request_validation" },
+    );
+  }
+
+  return publicId;
+}
+
+function prepareCategoryIconUpload(data) {
+  validateCloudinaryConfiguration();
+  const slug = normalizeCategorySlug(data?.slug);
+  const timestamp = Math.floor(Date.now() / 1000);
+  const publicId = `${CATEGORY_ICON_FOLDER}/${slug}-${timestamp}-${crypto.randomBytes(2).toString("hex")}`;
+  const overwrite = "true";
+  const signature = createCloudinarySignature(
+    { overwrite, public_id: publicId, timestamp },
+    process.env.CLOUDINARY_API_SECRET,
+  );
+
+  return {
+    upload_url: `https://api.cloudinary.com/v1_1/${encodeURIComponent(
+      process.env.CLOUDINARY_CLOUD_NAME,
+    )}/image/upload`,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    timestamp,
+    signature,
+    public_id: publicId,
+    overwrite,
+  };
+}
+
+async function runLocalCloudinaryAction(action, data, context) {
+  if (action === "prepareCategoryIconUpload") {
+    return prepareCategoryIconUpload(data);
+  }
+
+  validateCloudinaryConfiguration();
+  const publicId = categoryIconPublicId(data?.public_id);
+  logStage(context, "cloudinary_delete_started");
+
+  try {
+    const result = await destroyCloudinaryAsset(publicId, "image");
+    logStage(context, "cloudinary_delete_completed", { result: result.result });
+    return { public_id: publicId, result: result.result };
+  } catch (error) {
+    throw new DataProxyError(
+      "CLOUDINARY_DELETE_FAILED",
+      "Cloudinary could not delete the category icon.",
+      {
+        cause: error,
+        status: 502,
+        stage: "cloudinary_delete",
+      },
+    );
+  }
 }
 
 function safeCompare(firstValue, secondValue) {
@@ -594,7 +710,12 @@ module.exports = async function handler(request, response) {
       );
     }
 
-    const result = await writeAppsScriptData(upstreamUrl, action, body.data || {}, context);
+    const result = LOCAL_CLOUDINARY_ACTIONS.has(action)
+      ? {
+        success: true,
+        data: await runLocalCloudinaryAction(action, body.data || {}, context),
+      }
+      : await writeAppsScriptData(upstreamUrl, action, body.data || {}, context);
     if (!result.success) {
       const status = result.message === "Unauthorized" ? 502 : 400;
       return sendJson(response, status, {

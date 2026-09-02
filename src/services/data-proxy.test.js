@@ -5,6 +5,9 @@ const originalEnvironment = {
   APPS_SCRIPT_URL: process.env.APPS_SCRIPT_URL,
   APPS_SCRIPT_SECRET: process.env.APPS_SCRIPT_SECRET,
   SEENETRICA_WRITE_PIN: process.env.SEENETRICA_WRITE_PIN,
+  CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
 };
 
 function appsScriptResponse(payload, {
@@ -56,6 +59,9 @@ describe("/api/data proxy", () => {
     process.env.APPS_SCRIPT_URL = "https://script.google.test/exec";
     process.env.APPS_SCRIPT_SECRET = "server-secret";
     process.env.SEENETRICA_WRITE_PIN = "1234";
+    process.env.CLOUDINARY_CLOUD_NAME = "seenetrica-cloud";
+    process.env.CLOUDINARY_API_KEY = "cloudinary-key";
+    process.env.CLOUDINARY_API_SECRET = "cloudinary-secret";
   });
 
   afterAll(() => {
@@ -70,8 +76,6 @@ describe("/api/data proxy", () => {
     "syncCategorizedLibrary",
     "syncCategoryLibrary",
     "recordCategorizedViewing",
-    "prepareCategoryIconUpload",
-    "deleteCategoryIcon",
   ])("forwards %s with its data and server-side secret intact", async (action) => {
     const fetchMock = vi.fn(async () => appsScriptResponse({
       success: true,
@@ -93,6 +97,101 @@ describe("/api/data proxy", () => {
     const forwarded = JSON.parse(fetchMock.mock.calls[0][1].body);
     expect(forwarded).toEqual({ secret: "server-secret", action, data });
     expect(forwarded).not.toHaveProperty("pin");
+  });
+
+  it("signs category icon uploads in Vercel without calling Apps Script", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(1_800_000_000_000);
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = vercelResponse();
+
+    await handler({
+      method: "POST",
+      body: { pin: "1234", action: "prepareCategoryIconUpload", data: { slug: "DC Films" } },
+    }, response);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(response.statusCode).toBe(200);
+    expect(response.payload.data).toMatchObject({
+      upload_url: "https://api.cloudinary.com/v1_1/seenetrica-cloud/image/upload",
+      api_key: "cloudinary-key",
+      timestamp: 1_800_000_000,
+      overwrite: "true",
+      signature: expect.stringMatching(/^[a-f0-9]{40}$/),
+      public_id: expect.stringMatching(
+        /^seenetrica\/categories\/dc-1800000000-[a-f0-9]{4}$/,
+      ),
+    });
+  });
+
+  it("deletes category icons through Cloudinary without calling Apps Script", async () => {
+    const fetchMock = vi.fn(async () => ({
+      ok: true,
+      json: vi.fn(async () => ({ result: "ok" })),
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const response = vercelResponse();
+
+    await handler({
+      method: "POST",
+      body: {
+        pin: "1234",
+        action: "deleteCategoryIcon",
+        data: { public_id: "seenetrica/categories/dc-1800000000-ab12" },
+      },
+    }, response);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.payload.data).toEqual({
+      public_id: "seenetrica/categories/dc-1800000000-ab12",
+      result: "ok",
+    });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(fetchMock.mock.calls[0][0]).toBe(
+      "https://api.cloudinary.com/v1_1/seenetrica-cloud/image/destroy",
+    );
+    expect(fetchMock.mock.calls[0][1]).toMatchObject({ method: "POST" });
+    expect(fetchMock.mock.calls[0][1].body.get("public_id")).toBe(
+      "seenetrica/categories/dc-1800000000-ab12",
+    );
+  });
+
+  it("rejects category icon IDs outside the Seenetrica folder", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const response = vercelResponse();
+
+    await handler({
+      method: "POST",
+      body: {
+        pin: "1234",
+        action: "deleteCategoryIcon",
+        data: { public_id: "someone-else/asset" },
+      },
+    }, response);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expectStructuredError(response, 400, "INVALID_CATEGORY_ICON_ID", "request_validation");
+  });
+
+  it("returns a structured error when Cloudinary cannot delete a category icon", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: false,
+      json: vi.fn(async () => ({ error: { message: "Cloudinary unavailable" } })),
+    })));
+    const response = vercelResponse();
+
+    await handler({
+      method: "POST",
+      body: {
+        pin: "1234",
+        action: "deleteCategoryIcon",
+        data: { public_id: "seenetrica/categories/dc-1800000000-ab12" },
+      },
+    }, response);
+
+    expectStructuredError(response, 502, "CLOUDINARY_DELETE_FAILED", "cloudinary_delete");
+    expect(response.payload.message).not.toContain("Cloudinary unavailable");
   });
 
   it("successfully proxies the full archive GET", async () => {
