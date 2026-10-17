@@ -1,49 +1,46 @@
 import { useState } from "react";
 import { useArchive } from "../context/ArchiveContext";
 import { PageHero } from "../components/common/PageHero";
-import { MovieCard } from "../components/common/MovieCard";
 import { MovieCollectionTools } from "../components/common/MovieCollectionTools";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/States";
-import { formatDate } from "../utils/formatters";
+import { ReleaseMonthSection } from "../features/movies/release/ReleaseMonthSection";
+import { groupMoviesByReleaseMonth } from "../features/movies/release/release-groups";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
-import { sortTitles } from "../utils/title-sort";
+import "../features/movies/release/release.css";
 
 export default function PlannedPage() {
   useDocumentTitle("Planned");
   const { movies, loading, error } = useArchive();
   const [search, setSearch] = useState("");
   const [type, setType] = useState("all");
-  const [sort, setSort] = useState("release-newest");
   const all = movies.filter((movie) => movie.status === "plan");
   const normalizedSearch = search.trim().toLowerCase();
-  const shown = sortTitles(
-    all.filter(
-      (movie) =>
-        (!normalizedSearch || `${movie.title} ${movie.original_title || ""}`.toLowerCase().includes(normalizedSearch)) &&
-        (type === "all" || movie.media_type === type),
-    ),
-    sort,
+  const shown = all.filter(
+    (movie) =>
+      (!normalizedSearch || `${movie.title} ${movie.original_title || ""}`.toLowerCase().includes(normalizedSearch)) &&
+      (type === "all" || movie.media_type === type),
   );
+  const groups = groupMoviesByReleaseMonth(shown);
+
   return (
     <>
       <PageHero
         eyebrow=""
         title="Cinema"
         accent="plans."
-        description="Upcoming releases that look interesting enough to meet on the big screen."
+        description="A release journey, month by month. Scroll sideways to explore each timeline."
         count={loading ? "—" : all.length}
-        countLabel="upcoming titles"
+        countLabel="planned titles"
       />
-      <section className="page-content page-shell">
+      <section className="page-content page-shell release-collection-page">
         <MovieCollectionTools
           collectionName="planned titles"
           placeholder="Search planned titles"
           search={search}
           type={type}
-          sort={sort}
           onSearchChange={setSearch}
           onTypeChange={setType}
-          onSortChange={setSort}
+          showSort={false}
         />
         {loading ? (
           <LoadingState>Loading plans…</LoadingState>
@@ -51,28 +48,14 @@ export default function PlannedPage() {
           <ErrorState>The planned list could not be loaded.</ErrorState>
         ) : (
           <>
-            <p className="collection-status" role="status">
-              {shown.length} upcoming {shown.length === 1 ? "title" : "titles"}{" "}
-              shown
-            </p>
-            <div className="collection-grid">
-              {shown.length ? (
-                shown.map((movie) => (
-                  <MovieCard
-                    movie={movie}
-                    key={movie.id}
-                    subtitle={`${movie.media_type} · ${movie.release_date ? `Releases ${formatDate(movie.release_date)}` : "Release date TBA"}`}
-                    dateBadge={
-                      movie.release_date
-                        ? formatDate(movie.release_date, { year: "2-digit" })
-                        : "TBA"
-                    }
-                  />
-                ))
-              ) : (
-                <EmptyState>No planned titles match this view.</EmptyState>
-              )}
-            </div>
+            <p className="collection-status" role="status">{shown.length} {shown.length === 1 ? "title" : "titles"} shown · oldest releases first</p>
+            {groups.length ? (
+              <div className="release-month-list">
+                {groups.map((group) => <ReleaseMonthSection key={group.key} group={group} timeline />)}
+              </div>
+            ) : (
+              <EmptyState>No planned titles match this view.</EmptyState>
+            )}
           </>
         )}
       </section>

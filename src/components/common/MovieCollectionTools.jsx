@@ -10,9 +10,10 @@ export function MovieCollectionTools({
   onSearchChange,
   onTypeChange,
   onSortChange,
+  showSort = true,
 }) {
   return (
-    <div className="collection-tools movie-collection-tools">
+    <div className={`collection-tools movie-collection-tools ${showSort ? "" : "release-collection-tools"}`}>
       <label className="archive-search">
         <Search aria-hidden="true" />
         <span className="sr-only">Search {collectionName}</span>
@@ -32,7 +33,7 @@ export function MovieCollectionTools({
           <option value="series">Series</option>
         </select>
       </label>
-      <label className="form-field">
+      {showSort && <label className="form-field">
         <span>Sort by</span>
         <select value={sort} onChange={(event) => onSortChange(event.target.value)}>
           {TITLE_SORT_OPTIONS.map((option) => (
@@ -41,7 +42,7 @@ export function MovieCollectionTools({
             </option>
           ))}
         </select>
-      </label>
+      </label>}
     </div>
   );
 }

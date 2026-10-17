@@ -1,0 +1,308 @@
+/* Scoped styles for Planned and Watchlist release collections. */
+.release-collection-page .release-collection-tools {
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 190px);
+}
+
+.release-month-list {
+  display: grid;
+  gap: 54px;
+}
+
+.release-month-section {
+  min-width: 0;
+}
+
+.release-month-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.release-month-heading > div {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.release-month-heading h2 {
+  margin: 0;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+}
+
+.release-month-heading > div > span {
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.release-current-month {
+  flex-shrink: 0;
+  color: var(--accent-dark);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.release-month-section.is-timeline.is-current-month {
+  margin-inline: -24px;
+  padding: 22px 24px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+}
+
+.release-timeline-scroll {
+  min-width: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+  padding: 0 2px 18px;
+}
+
+.release-timeline-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.release-timeline-track {
+  --release-item-width: 184px;
+  --release-item-gap: 22px;
+  display: flex;
+  position: relative;
+  gap: var(--release-item-gap);
+  width: max-content;
+  min-width: 100%;
+}
+
+.release-timeline-track::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: calc(var(--release-item-width) / 2);
+  left: calc(var(--release-item-width) / 2);
+  height: 2px;
+  background: var(--line);
+}
+
+.release-timeline-track:has(> :only-child)::before {
+  display: none;
+}
+
+.release-timeline-item {
+  position: relative;
+  flex: 0 0 var(--release-item-width);
+  width: var(--release-item-width);
+  scroll-snap-align: start;
+}
+
+.release-timeline-node {
+  display: block;
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  margin: 0 auto 10px;
+  border: 3px solid var(--accent);
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.release-month-section.is-current-month .release-timeline-node {
+  background: var(--accent);
+}
+
+.release-timeline-date {
+  display: block;
+  min-height: 24px;
+  margin-bottom: 13px;
+  text-align: center;
+  color: var(--ink);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.release-timeline-track.is-tba::before {
+  border-top: 2px dashed var(--line);
+  height: 0;
+  background: none;
+}
+
+.release-timeline-track.is-tba .release-timeline-node {
+  border-color: var(--muted);
+}
+
+.release-month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 28px 18px;
+}
+
+.release-film-card {
+  position: relative;
+  min-width: 0;
+}
+
+.release-card-actions {
+  position: absolute;
+  z-index: 5;
+  top: 9px;
+  right: 9px;
+}
+
+.release-actions-trigger {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 9px;
+  background: rgba(23, 23, 21, 0.88);
+  color: white;
+  cursor: pointer;
+}
+
+.release-actions-trigger svg {
+  width: 18px;
+  height: 18px;
+}
+
+.release-actions-trigger:hover,
+.release-actions-trigger:focus-visible {
+  background: var(--ink);
+}
+
+.release-actions-trigger:disabled {
+  opacity: 0.65;
+  cursor: progress;
+}
+
+.release-actions-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  width: 190px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-shadow: 0 8px 20px rgba(23, 23, 21, 0.15);
+}
+
+.release-actions-menu button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px;
+  border-radius: 7px;
+  color: var(--ink);
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.release-actions-menu button:hover:not(:disabled),
+.release-actions-menu button:focus-visible {
+  background: var(--paper);
+}
+
+.release-actions-menu button:disabled {
+  color: var(--muted);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.release-actions-menu svg {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+}
+
+.release-date-form {
+  display: grid;
+  gap: 20px;
+}
+
+.release-date-form > p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.release-date-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+@keyframes release-spin {
+  to { transform: rotate(360deg); }
+}
+
+.release-spin {
+  animation: release-spin 800ms linear infinite;
+}
+
+@media (max-width: 980px) {
+  .release-month-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .release-collection-page .release-collection-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .release-month-list {
+    gap: 36px;
+  }
+
+  .release-month-heading {
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .release-month-heading > div {
+    display: grid;
+    gap: 2px;
+  }
+
+  .release-month-section.is-timeline.is-current-month {
+    margin-inline: -12px;
+    padding: 16px 12px 9px;
+  }
+
+  .release-timeline-track {
+    --release-item-width: 148px;
+    --release-item-gap: 14px;
+  }
+
+  .release-timeline-date {
+    font-size: 0.7rem;
+  }
+
+  .release-month-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .release-spin {
+    animation: none;
+  }
+}
