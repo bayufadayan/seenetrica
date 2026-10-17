@@ -73,6 +73,7 @@ describe("/api/data proxy", () => {
 
   it.each([
     "createMovies",
+    "logViewing",
     "syncCategorizedLibrary",
     "syncCategoryLibrary",
     "recordCategorizedViewing",

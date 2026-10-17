@@ -73,7 +73,7 @@ export function getLastDateOfMonth(period) {
 
 export function createMoviePayload(form, selectedMovie) {
   return {
-    external_source: selectedMovie?.external_source || "manual",
+    external_source: selectedMovie?.external_source || (selectedMovie?.external_id ? "tmdb" : "manual"),
     external_id: selectedMovie?.external_id ?? null,
     title: form.title.trim(),
     original_title: String(form.original_title || "").trim() || form.title.trim(),

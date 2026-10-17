@@ -39,7 +39,7 @@ export function HistoryGroups({
             </span>
             <Link
               className="group-add-button"
-              to={`/add-movie?intent=watched&period=${period}`}
+              to={`/log-viewing?period=${period}`}
               aria-label={`Add a watched title to ${formatMonth(period)}`}
               title={`Add to ${formatMonth(period)}`}
             >

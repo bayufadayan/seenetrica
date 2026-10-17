@@ -1,8 +1,7 @@
 import { FormField } from "./FormField";
 import { MovieReviewField } from "./MovieReviewField";
-import { getLastDateOfMonth } from "./addMovie.utils";
 
-export function SingleMovieDetailsFields({ form, preset, speech, onChange }) {
+export function SingleMovieDetailsFields({ form, speech, onChange }) {
   return (
     <div className="form-grid">
       <FormField full label="Title">
@@ -58,7 +57,6 @@ export function SingleMovieDetailsFields({ form, preset, speech, onChange }) {
         >
           <option value="watchlist">Watchlist</option>
           <option value="plan">Planned</option>
-          <option value="watched">Watched</option>
         </select>
       </FormField>
 
@@ -81,38 +79,7 @@ export function SingleMovieDetailsFields({ form, preset, speech, onChange }) {
         />
       </FormField>
 
-      {form.status === "watched" && (
-        <WatchedFields form={form} preset={preset} onChange={onChange} />
-      )}
-
       <MovieReviewField form={form} speech={speech} onChange={onChange} />
     </div>
-  );
-}
-
-function WatchedFields({ form, preset, onChange }) {
-  return (
-    <>
-      <FormField label="Watched on">
-        <input
-          type="date"
-          required
-          min={preset.period ? `${preset.period}-01` : undefined}
-          max={getLastDateOfMonth(preset.period) || undefined}
-          value={form.watched_at}
-          onChange={(event) => onChange("watched_at", event.target.value)}
-        />
-      </FormField>
-      <label className="checkbox-field is-full">
-        <input
-          type="checkbox"
-          checked={form.watched_in_theater}
-          onChange={(event) =>
-            onChange("watched_in_theater", event.target.checked)
-          }
-        />
-        Watched in a theater
-      </label>
-    </>
   );
 }

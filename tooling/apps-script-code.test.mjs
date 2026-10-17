@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const source = readFileSync(new URL("../apps-script/Code.gs", import.meta.url), "utf8");
 const backend = new Function(
-  `${source}; return { categoryMovieForClient, normalizeMovieInput, validateCategoryMovieRelationships };`,
+  `${source}; return { categoryMovieForClient, normalizeMovieInput, validateCategoryMovieRelationships, findCanonicalMovie, upsertMovieInRecords };`,
 )();
 
 describe("Apps Script category movie schema", () => {
@@ -56,5 +56,34 @@ describe("Apps Script category movie schema", () => {
       }],
       [{ id: "CAT", deleted_at: null }],
     )).toThrow("same category");
+  });
+});
+
+
+
+describe("Apps Script movie identity and safe creation", () => {
+  const stored = {
+    id: "MOV-SAVED",
+    external_source: "tmdb",
+    external_id: 70523,
+    media_type: "series",
+    season_number: 2,
+    identity_key: "series:70523:season:2",
+    status: "watched",
+    rating: 9,
+    review: "Keep my original review",
+  };
+
+  it("reuses an existing season instead of another season of the same show", () => {
+    expect(backend.findCanonicalMovie([stored], { ...stored, id: "new" })?.id).toBe("MOV-SAVED");
+    expect(backend.findCanonicalMovie([stored], { ...stored, season_number: 1, identity_key: "series:70523:season:1" })).toBeNull();
+  });
+
+  it("does not overwrite an existing movie on a repeated Add Movie", () => {
+    const movies = [{ ...stored }];
+    const result = backend.upsertMovieInRecords(movies, { ...stored, rating: null, review: null, status: "watchlist" }, "2026-10-17");
+    expect(result.created).toBe(false);
+    expect(result.movie).toMatchObject({ id: "MOV-SAVED", rating: 9, review: "Keep my original review", status: "watched" });
+    expect(movies).toEqual([stored]);
   });
 });

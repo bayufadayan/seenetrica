@@ -1,0 +1,8 @@
+.nav-add-action-menu {
+  width: 220px;
+  padding: 8px;
+}
+
+.nav-add-action > .icon-button.is-active {
+  background: rgba(255, 255, 255, 0.12);
+}

@@ -3389,10 +3389,7 @@ function findCanonicalMovie(
     }
   }
 
-  if (
-    normalizedMovie.external_source !== "tmdb" ||
-    normalizedMovie.season_number
-  ) {
+  if (normalizedMovie.external_source !== "tmdb") {
     return null;
   }
 
@@ -3400,11 +3397,9 @@ function findCanonicalMovie(
     movies.find(
       (movie) =>
         String(movie.external_source) === "tmdb" &&
-        Number(movie.external_id) ===
-          Number(normalizedMovie.external_id) &&
-        String(movie.media_type) ===
-          String(normalizedMovie.media_type) &&
-        !movie.season_number,
+        Number(movie.external_id) === Number(normalizedMovie.external_id) &&
+        String(movie.media_type) === String(normalizedMovie.media_type) &&
+        Number(movie.season_number || 0) === Number(normalizedMovie.season_number || 0),
     ) || null
   );
 }
@@ -3433,26 +3428,18 @@ function upsertMovieInRecords(
     return { movie, created: true };
   }
 
-  const index = movies.findIndex(
-    (movie) =>
-      String(movie.id) === String(existing.id),
-  );
-  const movie = {
-    ...existing,
-    ...normalizedMovie,
-    id: existing.id,
-    created_at:
-      existing.created_at || timestamp,
-    updated_at: timestamp,
-  };
-  movies[index] = movie;
-  return { movie, created: false };
+  // Adding an existing title must never overwrite its review, rating, or metadata.
+  return { movie: existing, created: false };
 }
 
 function createMovie(payload) {
   const input = payload.movie || {};
   const normalizedMovie =
     normalizeMovieInput(input);
+
+  if (normalizedMovie.status === "watched") {
+    throw new Error("Use Log a Viewing to record a watched title.");
+  }
 
   const lock =
     LockService.getScriptLock();
@@ -3465,47 +3452,23 @@ function createMovie(payload) {
     const movies = readSheet(
       SHEET_NAMES.MOVIES,
     );
-    const upserted = upsertMovieInRecords(
-      movies,
-      normalizedMovie,
-      createdAt,
-    );
-    const movie = upserted.movie;
-
-    let historyEntry = null;
-
-    if (movie.status === "watched") {
-      const viewing =
-        normalizeViewingInput({
-          ...(payload.viewing || {}),
-          movie_id: movie.id,
-        });
-
-      historyEntry = {
-        id: createUniqueId(
-          SHEET_NAMES.WATCH_HISTORY,
-          "HIS",
-        ),
-        ...viewing,
-        created_at: createdAt,
-      };
-    }
-
-    writeSheetRecords(
-      SHEET_NAMES.MOVIES,
-      movies,
-    );
-
-    if (historyEntry) {
-      appendRecord(
-        SHEET_NAMES.WATCH_HISTORY,
-        historyEntry,
+    if (!findCanonicalMovie(movies, normalizedMovie) && !payload.allow_same_title) {
+      const name = normalizedMovie.title.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+      const sameTitle = movies.some((movie) =>
+        String(movie.title || "").normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase() === name,
       );
+      if (sameTitle) {
+        throw new Error("This title already exists. Review the existing movie before creating another record.");
+      }
+    }
+    const upserted = upsertMovieInRecords(movies, normalizedMovie, createdAt);
+    if (upserted.created) {
+      writeSheetRecords(SHEET_NAMES.MOVIES, movies);
     }
 
     return {
-      movie,
-      history_entry: historyEntry,
+      movie: upserted.movie,
+      history_entry: null,
       created: upserted.created,
     };
   } finally {
@@ -3555,9 +3518,11 @@ function createMovies(payload) {
         timestamp,
       );
       const movie = upserted.movie;
+      const movieIndex = movies.findIndex((record) => String(record.id) === String(movie.id));
+      movies[movieIndex] = { ...movie, status: "watched", updated_at: timestamp };
       let historyEntry = null;
 
-      if (movie.status === "watched") {
+      if (normalizedMovie.status === "watched") {
         const viewing = normalizeViewingInput({
           ...(item.viewing || {}),
           movie_id: movie.id,
@@ -3574,7 +3539,7 @@ function createMovies(payload) {
       }
 
       created.push({
-        movie,
+        movie: movies[movieIndex],
         history_entry: historyEntry,
         created: upserted.created,
       });
@@ -3647,6 +3612,87 @@ function updateMovie(payload) {
     return {
       movie: updatedMovie,
     };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function logViewing(payload) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+
+  try {
+    const movies = readSheet(SHEET_NAMES.MOVIES);
+    const timestamp = nowString();
+    const movieId = payload.movie_id ? String(payload.movie_id) : null;
+    let movie = movieId
+      ? movies.find((record) => String(record.id) === movieId)
+      : null;
+    let created = false;
+
+    if (movieId && !movie) {
+      throw new Error("The selected movie was not found. Refresh and choose it again.");
+    }
+
+    if (!movie) {
+      const normalized = normalizeMovieInput({
+        ...(payload.movie || {}),
+        status: "watched",
+        rating: null,
+        review: null,
+      });
+      if (normalized.external_source !== "tmdb") {
+        throw new Error("Add manual titles to your library before logging a viewing.");
+      }
+      const matches = movies.filter((record) =>
+        String(record.external_source) === "tmdb" &&
+        Number(record.external_id) === Number(normalized.external_id) &&
+        String(record.media_type) === String(normalized.media_type) &&
+        Number(record.season_number || 0) === Number(normalized.season_number || 0),
+      );
+      if (matches.length > 1) {
+        throw new Error("Multiple records exist for this title. Select one from your library before saving.");
+      }
+      movie = matches[0] || null;
+      if (!movie) {
+        const name = normalized.title.normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase();
+        const sameTitle = movies.some((record) =>
+          String(record.title || "").normalize("NFKC").trim().replace(/\s+/g, " ").toLowerCase() === name,
+        );
+        if (sameTitle && !payload.allow_same_title) {
+          throw new Error("A movie with this title already exists. Review it before creating a new record.");
+        }
+        movie = {
+          id: createUniqueIdFromRecords(movies, "MOV"),
+          ...normalized,
+          created_at: timestamp,
+          updated_at: timestamp,
+        };
+        movies.push(movie);
+        created = true;
+      }
+    }
+
+    const viewing = normalizeViewingInput({
+      ...(payload.viewing || {}),
+      movie_id: movie.id,
+    });
+    const updatedMovie = {
+      ...movie,
+      status: "watched",
+      updated_at: timestamp,
+    };
+    const index = movies.findIndex((record) => String(record.id) === String(movie.id));
+    movies[index] = updatedMovie;
+    const historyEntry = {
+      id: createUniqueId(SHEET_NAMES.WATCH_HISTORY, "HIS"),
+      ...viewing,
+      created_at: timestamp,
+    };
+
+    writeSheetRecords(SHEET_NAMES.MOVIES, movies);
+    appendRecord(SHEET_NAMES.WATCH_HISTORY, historyEntry);
+    return { movie: updatedMovie, history_entry: historyEntry, created };
   } finally {
     lock.releaseLock();
   }
@@ -4004,6 +4050,10 @@ function doPost(e) {
         data = updateMovie(
           body.data || {},
         );
+        break;
+
+      case "logViewing":
+        data = logViewing(body.data || {});
         break;
 
       case "addViewing":

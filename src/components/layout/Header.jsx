@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { Menu, Plus, Search, Ticket, Tv } from "lucide-react";
+import { Menu, Search, Ticket, Tv } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { CategoryMenu } from "../../features/categories/components/CategoryMenu";
+import { AddActionMenu } from "./AddActionMenu";
 import { MoreMenu } from "./MoreMenu";
 
 const navItems = [
@@ -61,14 +62,7 @@ export function Header({ onSearch }) {
           </Link>
           <MoreMenu />
           <span className="nav-action-divider" aria-hidden="true" />
-          <Link
-            className="icon-button"
-            to="/add-movie"
-            aria-label="Add movie"
-            title="Add movie"
-          >
-            <Plus aria-hidden="true" />
-          </Link>
+          <AddActionMenu />
           <button
             className="icon-button"
             type="button"

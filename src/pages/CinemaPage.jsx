@@ -41,7 +41,7 @@ export default function CinemaPage() {
             </p>
             <Link
               className="primary-button cinema-add-button"
-              to="/add-movie?intent=theater"
+              to="/log-viewing?intent=theater"
             >
               <Plus aria-hidden="true" />
               Add Screening

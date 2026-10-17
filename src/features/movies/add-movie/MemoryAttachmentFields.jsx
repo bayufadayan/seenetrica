@@ -30,10 +30,10 @@ export function MemoryAttachmentFields({ drafts, saving }) {
     <section className="memory-entry-block" aria-labelledby="add-memory-heading">
       <div className="memory-entry-heading">
         <div>
-          <h3 id="add-memory-heading">Add media from this experience</h3>
+          <h3 id="add-memory-heading">Attach media to this movie</h3>
           <p>
-            Tickets, cinema photos, short videos, posters, or screenshots. The
-            movie is saved first, then this media is attached to it.
+            Photos, posters, or screenshots. The movie is saved first, then the
+            selected media is attached to its record.
           </p>
         </div>
         <label className="secondary-button memory-file-button">

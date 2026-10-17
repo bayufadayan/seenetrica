@@ -1,0 +1,12 @@
+.existing-movie-notice {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.existing-movie-heading { margin: 0; font-weight: 700; }
+.existing-movie-notice p { margin: 0; line-height: 1.6; }
+.existing-movie-actions { display: flex; gap: 10px; flex-wrap: wrap; }

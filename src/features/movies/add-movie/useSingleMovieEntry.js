@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { findMoviesByIdentity, findMoviesWithSameTitle } from "../movie-identity.util";
 import { useArchive } from "../../../context/ArchiveContext";
 import { useToast } from "../../../context/ToastContext";
 import { useMemoryDrafts } from "../../memories/useMemoryDrafts";
@@ -11,7 +12,6 @@ import {
   createMovieDetailsPath,
   createMovieForm,
   createMoviePayload,
-  createViewingPayload,
 } from "./addMovie.utils";
 
 export function useSingleMovieEntry({ preset, onProgress }) {
@@ -20,7 +20,8 @@ export function useSingleMovieEntry({ preset, onProgress }) {
   const [saving, setSaving] = useState(false);
   const submitGuard = useRef(false);
   const drafts = useMemoryDrafts();
-  const { refresh } = useArchive();
+  const { movies, refresh } = useArchive();
+  const [allowSameTitle, setAllowSameTitle] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -43,6 +44,7 @@ export function useSingleMovieEntry({ preset, onProgress }) {
     speech.stop();
     drafts.clear();
     setSelectedMovie(movie);
+    setAllowSameTitle(false);
     setForm(createMovieForm(movie, preset));
   }
 
@@ -50,16 +52,33 @@ export function useSingleMovieEntry({ preset, onProgress }) {
     speech.stop();
     drafts.clear();
     setSelectedMovie(null);
+    setAllowSameTitle(false);
     setForm(createEmptyMovieForm(preset));
   }
 
   function updateField(name, value) {
+    if (name === "title") setAllowSameTitle(false);
     setForm((current) => ({ ...current, [name]: value }));
   }
+
+  const existingMatches = selectedMovie
+    ? findMoviesByIdentity(movies, selectedMovie)
+    : [];
+  const sameTitleMatches = selectedMovie && !existingMatches.length
+    ? findMoviesWithSameTitle(movies, form.title)
+    : [];
 
   async function submit(event) {
     event.preventDefault();
     if (submitGuard.current) return;
+    if (existingMatches.length) {
+      toast("This title is already in the library. Open the existing movie instead.", "error");
+      return;
+    }
+    if (sameTitleMatches.length && !allowSameTitle) {
+      toast("Review the matching titles before saving a separate movie.", "error");
+      return;
+    }
 
     await speech.stop();
 
@@ -78,12 +97,18 @@ export function useSingleMovieEntry({ preset, onProgress }) {
     });
 
     try {
-      const savedMovie = await saveMovie(pin);
-      const mediaResult = await saveMemories(savedMovie.id, pin);
+      const result = await saveMovie(pin);
+      if (!result.created) {
+        await refresh();
+        toast("This movie already exists in your library. No new record was created.");
+        navigate(`/movies/${encodeURIComponent(result.movie.id)}`);
+        return;
+      }
+      const mediaResult = await saveMemories(result.movie.id, pin);
 
       await refresh();
       showSuccessMessage(mediaResult);
-      navigate(createMovieDetailsPath(savedMovie.id, mediaResult));
+      navigate(createMovieDetailsPath(result.movie.id, mediaResult));
     } catch (error) {
       toast(error.message, "error");
       onProgress(null);
@@ -97,12 +122,12 @@ export function useSingleMovieEntry({ preset, onProgress }) {
       "createMovie",
       {
         movie: createMoviePayload(form, selectedMovie),
-        viewing: createViewingPayload(form),
+        allow_same_title: allowSameTitle,
       },
       pin,
     );
 
-    return result.movie;
+    return result;
   }
 
   async function saveMemories(movieId, pin) {
@@ -171,5 +196,9 @@ export function useSingleMovieEntry({ preset, onProgress }) {
     clearSelection,
     updateField,
     submit,
+    existingMatches,
+    sameTitleMatches,
+    allowSameTitle,
+    setAllowSameTitle,
   };
 }

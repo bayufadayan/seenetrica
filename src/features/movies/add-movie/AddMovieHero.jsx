@@ -15,7 +15,7 @@ export function AddMovieHero({ mode, preset, onToggleMode }) {
         </p>
       </div>
 
-      <div className="add-mode-action">
+      {onToggleMode && <div className="add-mode-action">
         <button
           className="secondary-button add-mode-toggle"
           type="button"
@@ -34,7 +34,7 @@ export function AddMovieHero({ mode, preset, onToggleMode }) {
             ? "Return to the regular form for a single detailed entry."
             : "Useful when you want to backfill several titles from the same month."}
         </p>
-      </div>
+      </div>}
     </section>
   );
 }
@@ -50,5 +50,5 @@ function getDescription(mode, preset) {
     return `Add a watched title to ${formatMonth(preset.period)}. Choose the exact day before saving.`;
   }
 
-  return "Search TMDB for the basic details, then make the entry yours.";
+  return "Search TMDB or enter a title to save it to your library. Viewing history is recorded separately.";
 }

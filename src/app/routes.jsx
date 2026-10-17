@@ -7,6 +7,7 @@ import PlannedPage from "../pages/PlannedPage";
 import CinemaPage from "../pages/CinemaPage";
 import AllMoviesPage from "../pages/AllMoviesPage";
 import AddMoviePage from "../pages/AddMoviePage";
+import LogViewingPage from "../pages/LogViewingPage";
 import MovieDetailPage from "../pages/MovieDetailPage";
 import NotFoundPage from "../pages/NotFoundPage";
 import CategoryPage from "../pages/CategoryPage";
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route path="cinema" element={<CinemaPage />} />
         <Route path="movies" element={<AllMoviesPage />} />
         <Route path="add-movie" element={<AddMoviePage />} />
+        <Route path="log-viewing" element={<LogViewingPage />} />
         <Route path="movies/:movieId" element={<MovieDetailPage />} />
         <Route path="categories/:categorySlug" element={<CategoryPage />} />
         <Route path="categories/:categorySlug/settings" element={<CategorySettingsPage />} />
