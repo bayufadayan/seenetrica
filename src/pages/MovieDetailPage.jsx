@@ -43,6 +43,11 @@ export default function MovieDetailPage() {
     Boolean(activeMemory || uploadOpen),
   );
   useDocumentTitle(movie?.title || "Movie detail");
+  const editReady = Boolean(edit);
+  useEffect(() => {
+    if (!movie || !editReady || location.hash !== "#movie-edit") return;
+    document.getElementById("movie-edit")?.scrollIntoView();
+  }, [movie, editReady, location.hash]);
   useEffect(() => {
     if (movie)
       setEdit({
@@ -175,9 +180,9 @@ export default function MovieDetailPage() {
     );
   return (
     <section className="detail-page page-shell">
-      <Link className="detail-back" to="/">
+      <Link className="detail-back" to={location.state?.from === "/movies" ? "/movies" : "/"}>
         <ArrowLeft aria-hidden="true" />
-        Back to archive
+        {location.state?.from === "/movies" ? "Back to all movies" : "Back to archive"}
       </Link>
       <div className="detail-layout">
         <div className="detail-poster">
@@ -289,7 +294,7 @@ export default function MovieDetailPage() {
             </form>
           </section>
           {edit && (
-            <section className="edit-block">
+            <section className="edit-block" id="movie-edit">
               <h2>Edit this entry</h2>
               <form className="form-grid" onSubmit={saveEdit}>
                 <label className="form-field is-full">
@@ -325,6 +330,7 @@ export default function MovieDetailPage() {
                     <option value="plan">Planned</option>
                     <option value="watchlist">Watchlist</option>
                     <option value="watched">Watched</option>
+                    <option value="unlisted">Unlisted</option>
                   </select>
                 </label>
                 <label className="form-field">

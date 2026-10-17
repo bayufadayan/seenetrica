@@ -1,0 +1,127 @@
+/* All Movies: compact rows keep duplicate titles easy to compare. */
+.all-movies-tools {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.all-movies-tools .archive-search {
+  flex: 1;
+  min-width: 0;
+}
+
+.all-movies-duplicate-filter {
+  min-height: 48px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.all-movies-duplicate-filter:hover,
+.all-movies-duplicate-filter.is-active {
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.all-movies-note {
+  margin: -8px 0 24px;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.all-movies-list {
+  border-top: 1px solid var(--line);
+}
+
+.all-movies-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.all-movies-poster {
+  flex: 0 0 52px;
+  width: 52px;
+  height: 78px;
+  overflow: hidden;
+  border-radius: 7px;
+  background: var(--paper-deep);
+}
+
+.all-movies-poster img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.all-movies-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.all-movies-title {
+  display: inline-block;
+  margin-bottom: 4px;
+  font-size: 0.95rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.all-movies-title:hover {
+  color: var(--accent-dark);
+}
+
+.all-movies-meta {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 0.77rem;
+}
+
+.all-movies-duplicate-label {
+  display: inline-block;
+  margin-top: 9px;
+  padding: 4px 9px;
+  border: 1px solid rgba(159, 56, 39, 0.23);
+  border-radius: 7px;
+  color: var(--accent-dark);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.all-movies-edit {
+  flex: 0 0 auto;
+  min-height: 44px;
+  padding-inline: 15px;
+}
+
+@media (max-width: 560px) {
+  .all-movies-tools {
+    flex-direction: column;
+  }
+
+  .all-movies-row {
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .all-movies-poster {
+    flex-basis: 44px;
+    width: 44px;
+    height: 66px;
+  }
+
+  .all-movies-edit {
+    padding: 0 12px;
+  }
+}
+
+.all-movies-add {
+  margin-top: 14px;
+}

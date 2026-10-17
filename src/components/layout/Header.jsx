@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Menu, Plus, Search, Ticket, Tv } from "lucide-react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { CategoryMenu } from "../../features/categories/components/CategoryMenu";
+import { MoreMenu } from "./MoreMenu";
 
 const navItems = [
   ["/", "Home"],
@@ -42,6 +43,8 @@ export function Header({ onSearch }) {
               {label}
             </NavLink>
           ))}
+          <NavLink className="nav-link nav-mobile-only" to="/watch-anything" onClick={() => setOpen(false)}>Watch Anything</NavLink>
+          <NavLink className="nav-link nav-mobile-only" to="/cinema" onClick={() => setOpen(false)}>Cinema</NavLink>
         </div>
         <div className="nav-actions">
           <CategoryMenu />
@@ -56,6 +59,7 @@ export function Header({ onSearch }) {
           <Link className={`nav-destination ${cinemaActive ? "is-active" : ""}`} to="/cinema">
             <Ticket aria-hidden="true" /><span>Cinema</span>
           </Link>
+          <MoreMenu />
           <span className="nav-action-divider" aria-hidden="true" />
           <Link
             className="icon-button"

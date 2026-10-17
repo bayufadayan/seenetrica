@@ -1,0 +1,19 @@
+.nav-mobile-only {
+  display: none;
+}
+
+.nav-more-menu {
+  width: 205px;
+  padding: 8px;
+}
+
+@media (max-width: 540px) {
+  .nav-mobile-only {
+    display: block;
+  }
+
+  .nav-actions > a[href="/watch-anything"],
+  .nav-actions > a[href="/cinema"] {
+    display: none;
+  }
+}
