@@ -97,6 +97,7 @@
 .series-timeline-item:active { cursor: grabbing; }
 .series-timeline-item.is-dragged { opacity: 0.45; transform: scale(0.98); }
 .series-timeline-item.is-watched .series-timeline-film { padding: 11px 9px 13px; border: 1px solid rgba(188, 142, 48, 0.34); border-radius: 16px; background: linear-gradient(145deg, rgba(255, 244, 198, 0.92), rgba(245, 218, 147, 0.66) 52%, rgba(255, 251, 232, 0.94)); box-shadow: 0 10px 26px rgba(157, 116, 38, 0.09); }
+.series-timeline-item:not(.is-watched) .series-timeline-film { padding: 11px 9px 13px; border: 1px solid rgba(23, 23, 21, 0.11); border-radius: 16px; background: rgba(255, 254, 250, 0.42); }
 .series-timeline-item.is-watched .series-timeline-node { border-color: #c39337; background: linear-gradient(145deg, #ffefb3, #d8a744); }
 .series-timeline-item.is-watched .series-timeline-node span { color: #9a6a1d; }
 .series-timeline-item.is-watched .series-timeline-poster { box-shadow: 0 8px 20px rgba(145, 103, 27, 0.2); }
@@ -107,8 +108,10 @@
 .series-timeline-film:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
 .series-timeline-poster { display: block; width: 184px; height: 270px; border-radius: 9px; object-fit: cover; background: var(--line); box-shadow: 0 8px 18px rgba(23, 23, 21, 0.14); transition: transform 150ms ease, box-shadow 150ms ease; }
 .series-timeline-film-copy { display: grid; min-width: 0; justify-items: center; gap: 5px; }
-.series-timeline-film-copy strong { display: -webkit-box; overflow: hidden; max-width: 100%; font-family: var(--font-serif); font-size: 1.08rem; font-weight: 500; line-height: 1.2; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.series-timeline-film-copy strong { display: -webkit-box; overflow: hidden; min-height: 2.4em; max-width: 100%; font-family: var(--font-serif); font-size: 1.08rem; font-weight: 500; line-height: 1.2; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .series-timeline-film-copy > small { color: var(--muted); font-size: 0.66rem; }
+.series-timeline-film-copy > .series-timeline-meta { display: flex; min-height: 14px; flex-wrap: wrap; align-items: center; justify-content: center; gap: 5px; }
+.series-timeline-rating { color: #9a6a1d; font-weight: 700; }
 .series-note-toggle { display: flex; width: max-content; align-items: center; justify-content: center; gap: 7px; min-height: 34px; margin: 10px auto 0; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: rgba(255, 254, 250, 0.7); cursor: pointer; font: inherit; font-size: 0.68rem; }
 .series-note-toggle:hover { border-color: rgba(23, 23, 21, 0.35); background: var(--white); }
 .series-note-toggle > span:last-child { color: var(--accent); font-size: 1rem; line-height: 1; }
