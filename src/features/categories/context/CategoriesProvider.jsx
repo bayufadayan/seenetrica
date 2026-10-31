@@ -160,6 +160,15 @@ export function CategoriesProvider({ children }) {
     }
   }
 
+  async function recordCompletedViewing(payload) {
+    const result = await categoryLibraryDb.recordCompletedViewing(payload);
+    await refreshLocal();
+    serverVerified.current = false;
+    setSyncStatus("saved");
+    backgroundSync();
+    return result;
+  }
+
   const value = {
     ...state,
     loading,
@@ -169,6 +178,7 @@ export function CategoriesProvider({ children }) {
     pull,
     manualSync,
     syncCategoryToMovies,
+    recordCompletedViewing,
     createCategory: (payload) => mutate(() => categoryLibraryDb.createCategory(payload)),
     updateCategory: (id, patch) => mutate(() => categoryLibraryDb.updateCategory(id, patch)),
     createTitle: (categoryId, payload) => mutate(() => categoryLibraryDb.createTitle(categoryId, payload)),

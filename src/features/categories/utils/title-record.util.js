@@ -21,7 +21,8 @@ function dependsOn(sourceId, targetId, titleMap, visited = new Set()) {
 export function normalizeCategoryTitle(categoryId, payload, existing = null) {
   if (!categoryId) throw new Error("Category is required.");
   if (!payload?.title?.trim()) throw new Error("Title is required.");
-  if (!Number.isFinite(Number(payload.tmdbId))) throw new Error("A valid TMDB ID is required.");
+  const movieId = payload.movieId || existing?.movieId || null;
+  if (!movieId && !(payload.tmdbId !== null && payload.tmdbId !== undefined && Number.isFinite(Number(payload.tmdbId)))) throw new Error("A valid TMDB ID is required.");
   if (!["movie", "series"].includes(payload.type)) throw new Error("Type must be movie or series.");
 
   const type = payload.type;
@@ -40,7 +41,7 @@ export function normalizeCategoryTitle(categoryId, payload, existing = null) {
     ...(existing || {}),
     id: existing?.id || payload.id || createId("category-title"),
     categoryId,
-    tmdbId: Number(payload.tmdbId),
+    tmdbId: movieId ? (payload.tmdbId !== null && payload.tmdbId !== undefined && Number.isFinite(Number(payload.tmdbId)) ? Number(payload.tmdbId) : null) : Number(payload.tmdbId),
     title,
     baseTitle,
     originalTitle: String(payload.originalTitle || title).trim(),
@@ -50,16 +51,19 @@ export function normalizeCategoryTitle(categoryId, payload, existing = null) {
     seasonTmdbId: seasonNumber && Number(payload.seasonTmdbId) > 0
       ? Number(payload.seasonTmdbId)
       : null,
-    identityKey: existing?.identityKey || payload.identityKey || createTitleIdentityKey({
+    identityKey: existing?.identityKey || payload.identityKey || (movieId ? `archive:${movieId}` : createTitleIdentityKey({
       type,
       tmdbId: payload.tmdbId,
       seasonNumber,
-    }),
+    })),
     isWatched: Boolean(payload.isWatched),
     prerequisiteIds,
     posterPath: payload.posterPath || null,
     backdropPath: payload.backdropPath || null,
     runtimeMinutes: Number(payload.runtimeMinutes) > 0 ? Number(payload.runtimeMinutes) : null,
+    movieId,
+    sortOrder: Number.isFinite(Number(payload.sortOrder)) ? Number(payload.sortOrder) : (existing?.sortOrder || 0),
+    note: String(payload.note ?? existing?.note ?? "").trim(),
     createdAt: existing?.createdAt || payload.createdAt || timestamp,
     updatedAt: timestamp,
     deletedAt: payload.deletedAt ?? existing?.deletedAt ?? null,

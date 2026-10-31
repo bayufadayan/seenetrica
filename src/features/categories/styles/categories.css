@@ -82,6 +82,35 @@
   width: 15px;
 }
 
+.nav-category-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  padding: 8px 8px 0;
+}
+
+.nav-category-tabs button {
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 9px;
+  color: rgba(255, 255, 255, 0.58);
+  background: transparent;
+  font: inherit;
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.nav-category-tabs button.is-active {
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-category-tabs svg { width: 14px; height: 14px; }
+
 .nav-category-items {
   display: grid;
   max-height: min(420px, 65vh);

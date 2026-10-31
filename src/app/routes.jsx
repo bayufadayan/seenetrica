@@ -14,6 +14,8 @@ import CategoryPage from "../pages/CategoryPage";
 import CategorySettingsPage from "../pages/CategorySettingsPage";
 import WatchAnythingPage from "../pages/WatchAnythingPage";
 import PlayerPage from "../pages/PlayerPage";
+import SeriesPage from "../pages/SeriesPage";
+import SeriesDetailPage from "../pages/SeriesDetailPage";
 
 function LegacyDetailRedirect() {
   const [params] = useSearchParams();
@@ -41,6 +43,8 @@ export function AppRoutes() {
         <Route path="movies/:movieId" element={<MovieDetailPage />} />
         <Route path="categories/:categorySlug" element={<CategoryPage />} />
         <Route path="categories/:categorySlug/settings" element={<CategorySettingsPage />} />
+        <Route path="series" element={<SeriesPage />} />
+        <Route path="series/:categorySlug" element={<SeriesDetailPage />} />
         <Route path="watch-anything" element={<WatchAnythingPage />} />
         <Route path="watch-marvel" element={<Navigate replace to="/categories/marvel" />} />
         <Route path="watch-marvel/settings" element={<Navigate replace to="/categories/marvel/settings" />} />

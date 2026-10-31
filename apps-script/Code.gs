@@ -72,6 +72,7 @@ const CATEGORY_HEADERS = [
   "id",
   "name",
   "slug",
+  "kind",
   "icon_url",
   "icon_public_id",
   "sort_order",
@@ -99,6 +100,9 @@ const CATEGORY_TITLE_HEADERS = [
   "poster_path",
   "backdrop_path",
   "runtime_minutes",
+  "movie_id",
+  "sort_order",
+  "note",
   "created_at",
   "updated_at",
   "deleted_at",
@@ -110,6 +114,8 @@ const CATEGORY_MOVIE_HEADERS = [
   "movie_id",
   "is_watched",
   "prerequisite_movie_ids",
+  "sort_order",
+  "note",
   "legacy_category_title_id",
   "created_at",
   "updated_at",
@@ -154,7 +160,7 @@ const CATEGORY_ICON_FOLDER =
 
 const MAX_SYNC_RECORDS = 2000;
 
-const CATEGORIZED_SCHEMA_VERSION = "2";
+const CATEGORIZED_SCHEMA_VERSION = "3";
 
 const READ_CACHE_SECONDS = 20;
 
@@ -1294,6 +1300,7 @@ function normalizeCategoryInput(
     id,
     name,
     slug,
+    kind: source.kind === "series" ? "series" : "category",
     icon_url: iconUrl,
     icon_public_id: iconPublicId,
     sort_order:
@@ -1370,6 +1377,13 @@ function normalizeCategoryTitleInput(
     );
   }
 
+  const movieId = optionalText(
+    source.movie_id !== undefined
+      ? source.movie_id
+      : source.movieId,
+    "Movie ID",
+    50,
+  );
   const tmdbId = optionalNumber(
     source.tmdb_id !== undefined
       ? source.tmdb_id
@@ -1378,7 +1392,7 @@ function normalizeCategoryTitleInput(
     { min: 1 },
   );
 
-  if (tmdbId === null) {
+  if (tmdbId === null && !movieId) {
     throw new Error(
       "A valid TMDB ID is required.",
     );
@@ -1432,8 +1446,9 @@ function normalizeCategoryTitleInput(
       ),
     ),
   ];
-  const identityKey =
-    createCategoryTitleIdentityKey(
+  const identityKey = movieId
+    ? `archive:${movieId}`
+    : createCategoryTitleIdentityKey(
       mediaType,
       tmdbId,
       seasonNumber,
@@ -1491,6 +1506,20 @@ function normalizeCategoryTitleInput(
       "Runtime",
       { min: 1, max: 10000 },
     ),
+    movie_id: movieId,
+    sort_order:
+      optionalNumber(
+        source.sort_order !== undefined
+          ? source.sort_order
+          : source.sortOrder,
+        "Series order",
+        { min: 0, max: 100000 },
+      ) || 0,
+    note: optionalText(
+      source.note,
+      "Series note",
+      5000,
+    ) || "",
     created_at:
       optionalTimestamp(
         source.created_at || source.createdAt,
@@ -1511,7 +1540,7 @@ function normalizeCategoryTitleInput(
 function categoryTitleForClient(record) {
   return {
     ...record,
-    tmdb_id: Number(record.tmdb_id),
+    tmdb_id: record.tmdb_id ? Number(record.tmdb_id) : null,
     season_number:
       record.season_number === null ||
       record.season_number === ""
@@ -1544,7 +1573,7 @@ function categoryMovieForClient(
   return {
     id: membership.id,
     category_id: membership.category_id,
-    tmdb_id: Number(movie.external_id),
+    tmdb_id: movie.external_id ? Number(movie.external_id) : null,
     title: movie.title,
     base_title:
       movie.base_title || movie.title,
@@ -1557,16 +1586,13 @@ function categoryMovieForClient(
       movie.season_number || null,
     season_tmdb_id:
       movie.season_tmdb_id || null,
-    identity_key:
-      movie.identity_key ||
-      createCategoryTitleIdentityKey(
-        movie.media_type,
-        movie.external_id,
-        movie.season_number,
-      ),
+    identity_key: movie.identity_key || `archive:${movie.id}`,
     is_watched: booleanFromCell(
       membership.is_watched,
     ),
+    movie_id: String(movie.id),
+    sort_order: Number(membership.sort_order) || 0,
+    note: membership.note || "",
     prerequisite_ids: arrayFromCell(
       membership.prerequisite_movie_ids,
     )
@@ -2333,6 +2359,9 @@ function mergeSyncedCategoryTitleChangesUnlocked(
     let movieIndex;
 
     if (!movie) {
+      if (title.movie_id) {
+        throw new Error("A series item must reference an existing movie.");
+      }
       movie = movieFromCategoryTitle(
         title,
         movies,
@@ -2385,12 +2414,9 @@ function mergeSyncedCategoryTitleChangesUnlocked(
 
     const timestamp =
       title.updated_at || nowString();
-    movies[movieIndex] =
-      updateMovieFromCategoryTitle(
-        movie,
-        title,
-        timestamp,
-      );
+    if (!title.movie_id) {
+      movies[movieIndex] = updateMovieFromCategoryTitle(movie, title, timestamp);
+    }
     const membership = {
       ...(existingMembership || {}),
       id: membershipId,
@@ -2399,6 +2425,8 @@ function mergeSyncedCategoryTitleChangesUnlocked(
       is_watched: booleanFromCell(
         title.is_watched,
       ),
+      sort_order: Number(title.sort_order) || 0,
+      note: title.note || "",
       prerequisite_movie_ids:
         existingMembership
           ? existingMembership.prerequisite_movie_ids
@@ -2966,6 +2994,12 @@ function findMainMovieForCategoryTitle(
   movies,
   title,
 ) {
+  if (title.movie_id) {
+    return movies.find(
+      (movie) => String(movie.id) === String(title.movie_id),
+    ) || null;
+  }
+
   const identityMatch = movies.find(
     (movie) =>
       movie.identity_key &&
@@ -3011,6 +3045,9 @@ function recordCategorizedViewing(payload) {
       payload && payload.watched_at,
       "Watched date",
     ) || todayString();
+  const watchedInTheater = booleanFromCell(
+    payload && payload.watched_in_theater,
+  );
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
 
@@ -3119,7 +3156,7 @@ function recordCategorizedViewing(payload) {
         ),
         movie_id: movie.id,
         watched_at: watchedAt,
-        watched_in_theater: false,
+        watched_in_theater: watchedInTheater,
         created_at: timestamp,
         source_event_id: eventId,
         category_title_id: membership.id,
@@ -3287,7 +3324,7 @@ function recordCategorizedViewing(payload) {
       ),
       movie_id: movie.id,
       watched_at: watchedAt,
-      watched_in_theater: false,
+      watched_in_theater: watchedInTheater,
       created_at: timestamp,
       source_event_id: eventId,
       category_title_id: categoryTitle.id,

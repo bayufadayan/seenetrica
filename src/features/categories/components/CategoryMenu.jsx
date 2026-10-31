@@ -1,4 +1,4 @@
-import { Plus, Tags } from "lucide-react";
+import { Clapperboard, Plus, Tags } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useCategories } from "../context/CategoriesProvider";
@@ -11,10 +11,17 @@ export function CategoryMenu() {
   const { categories } = useCategories();
   const [open, setOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
+  const [activeKind, setActiveKind] = useState("category");
+  const [formKind, setFormKind] = useState("category");
   const rootRef = useRef(null);
   const triggerRef = useRef(null);
   const location = useLocation();
-  const categoryActive = location.pathname.startsWith("/categories/");
+  const categoryActive = location.pathname.startsWith("/categories/") || location.pathname.startsWith("/series");
+  const visibleCollections = categories.filter((item) => (item.kind || "category") === activeKind);
+
+  useEffect(() => {
+    setActiveKind(location.pathname.startsWith("/series") ? "series" : "category");
+  }, [location.pathname]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -52,21 +59,26 @@ export function CategoryMenu() {
           <Tags aria-hidden="true" />
         </button>
         {open && (
-          <div className="nav-category-menu" role="menu" aria-label="Categories">
+          <div className="nav-category-menu" role="menu" aria-label="Categories and series">
             <div className="nav-category-heading">
-              <span>Categories</span>
+              <span>{activeKind === "series" ? "Series" : "Categories"}</span>
               <button
                 type="button"
-                aria-label="Add category"
-                title="Add category"
-                onClick={() => { setOpen(false); setFormOpen(true); }}
+                aria-label={activeKind === "series" ? "Add series" : "Add category"}
+                title={activeKind === "series" ? "Add series" : "Add category"}
+                onClick={() => { setFormKind(activeKind); setOpen(false); setFormOpen(true); }}
               >
                 <Plus aria-hidden="true" />
               </button>
             </div>
+            <div className="nav-category-tabs" role="tablist" aria-label="Collection type">
+              <button className={activeKind === "category" ? "is-active" : ""} type="button" role="tab" aria-selected={activeKind === "category"} onClick={() => setActiveKind("category")}><Tags aria-hidden="true" />Categories</button>
+              <button className={activeKind === "series" ? "is-active" : ""} type="button" role="tab" aria-selected={activeKind === "series"} onClick={() => setActiveKind("series")}><Clapperboard aria-hidden="true" />Series</button>
+            </div>
             <div className="nav-category-items">
-              {categories.map((category) => {
-                const path = `/categories/${encodeURIComponent(category.slug)}`;
+              {visibleCollections.map((category) => {
+                const isSeries = activeKind === "series";
+                const path = isSeries ? `/series/${encodeURIComponent(category.slug)}` : `/categories/${encodeURIComponent(category.slug)}`;
                 const active = location.pathname === path || location.pathname.startsWith(`${path}/`);
                 return (
                   <Link
@@ -77,16 +89,17 @@ export function CategoryMenu() {
                     onClick={() => setOpen(false)}
                   >
                     <CategoryIcon category={category} />
-                    <span>{categoryDisplayName(category.name)}</span>
+                    <span>{isSeries ? category.name : categoryDisplayName(category.name)}</span>
                   </Link>
                 );
               })}
-              {!categories.length && <p className="nav-category-empty">Categories will appear after the first sync.</p>}
+              {!visibleCollections.length && <p className="nav-category-empty">{activeKind === "series" ? "No series yet. Add one to get started." : "Categories will appear after the first sync."}</p>}
+              {activeKind === "series" && <Link className="nav-category-item nav-series-all" role="menuitem" to="/series" onClick={() => setOpen(false)}>View all series</Link>}
             </div>
           </div>
         )}
       </div>
-      {formOpen && <CategoryFormModal onClose={() => setFormOpen(false)} />}
+      {formOpen && <CategoryFormModal kind={formKind} onClose={() => setFormOpen(false)} />}
     </>
   );
 }

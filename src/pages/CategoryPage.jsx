@@ -16,7 +16,7 @@ export default function CategoryPage() {
   const { categorySlug } = useParams();
   const categories = useCategories();
   const player = usePlayerSettings();
-  const category = categories.categories.find((item) => item.slug === categorySlug);
+  const category = categories.categories.find((item) => item.slug === categorySlug && (item.kind || "category") === "category");
   const titles = category
     ? categories.titles.filter((title) => title.categoryId === category.id)
     : [];

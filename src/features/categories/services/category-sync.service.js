@@ -180,6 +180,7 @@ async function runSync(pin) {
           event_id: operation.eventId,
           category_title_id: operation.categoryTitleId,
           watched_at: operation.watchedAt,
+          watched_in_theater: Boolean(operation.watchedInTheater),
         },
         pin,
       );

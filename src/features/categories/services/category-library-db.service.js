@@ -153,6 +153,7 @@ export const categoryLibraryDb = {
         id: payload.id || createId("local-category"),
         name,
         slug,
+        kind: payload.kind === "series" ? "series" : "category",
         iconUrl: payload.iconUrl || null,
         iconPublicId: payload.iconPublicId || null,
         sortOrder: Number.isFinite(Number(payload.sortOrder))
@@ -194,6 +195,7 @@ export const categoryLibraryDb = {
         id: categoryId,
         name,
         slug,
+        kind: patch.kind === "series" ? "series" : (patch.kind === "category" ? "category" : (existing.kind || "category")),
         updatedAt: now(),
       };
       await categoriesStore.put(record);
@@ -308,7 +310,7 @@ export const categoryLibraryDb = {
     return (await getCacheDatabase()).get("categoryTitles", titleId);
   },
 
-  async recordCompletedViewing({ sessionId, categoryTitleId, watchedAt }) {
+  async recordCompletedViewing({ sessionId, categoryTitleId, watchedAt, watchedInTheater = false }) {
     const eventId = createViewingEventId(sessionId);
     const database = await getCacheDatabase();
     const transaction = database.transaction(["categoryTitles", "categoryOutbox"], "readwrite");
@@ -333,6 +335,7 @@ export const categoryLibraryDb = {
           eventId,
           categoryTitleId: title.id,
           watchedAt,
+          watchedInTheater: Boolean(watchedInTheater),
           createdAt: now(),
           updatedAt: now(),
         });

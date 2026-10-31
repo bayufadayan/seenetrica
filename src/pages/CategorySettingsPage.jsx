@@ -12,7 +12,7 @@ export default function CategorySettingsPage() {
   const { categorySlug } = useParams();
   const data = useCategories();
   const [editOpen, setEditOpen] = useState(false);
-  const category = data.categories.find((item) => item.slug === categorySlug);
+  const category = data.categories.find((item) => item.slug === categorySlug && (item.kind || "category") === "category");
   if (data.loading && !category) return <main className="page-shell wm-page"><LoadingState>Loading category library…</LoadingState></main>;
   if (!category) return <main className="page-shell wm-page"><ErrorState>This category could not be found.</ErrorState></main>;
   const titles = data.titles.filter((title) => title.categoryId === category.id);

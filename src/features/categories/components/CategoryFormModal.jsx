@@ -16,7 +16,7 @@ import {
 } from "../utils/category.util";
 import { CategoryIcon } from "./CategoryIcon";
 
-export function CategoryFormModal({ existing = null, onClose }) {
+export function CategoryFormModal({ existing = null, kind = "category", onClose }) {
   const categories = useCategories();
   const toast = useToast();
   const fileInput = useRef(null);
@@ -63,15 +63,14 @@ export function CategoryFormModal({ existing = null, onClose }) {
       const payload = {
         name: normalizedName,
         slug,
+        kind: existing?.kind || kind,
         ...buildCategoryIconPatch({ existing, uploaded, removeIcon }),
       };
 
       if (existing) await categories.updateCategory(existing.id, payload);
       else await categories.createCategory(payload);
 
-      toast(
-        `${normalizedName} Films saved locally. Sync will continue in the background.`,
-      );
+      toast(`${normalizedName}${(existing?.kind || kind) === "series" ? " series" : " Films"} saved locally. Sync will continue in the background.`);
       onClose();
     } catch (nextError) {
       setError(await getSaveError(nextError, uploaded, pin));
@@ -110,7 +109,7 @@ export function CategoryFormModal({ existing = null, onClose }) {
 
   return (
     <Modal
-      title={existing ? "Edit category" : "Add category"}
+      title={existing ? ((existing.kind || "category") === "series" ? "Edit series" : "Edit category") : (kind === "series" ? "Create series" : "Add category")}
       onClose={onClose}
       busy={busy}
       className="category-form-modal"
@@ -127,7 +126,7 @@ export function CategoryFormModal({ existing = null, onClose }) {
         )}
 
         <label className="form-field">
-          <span>Category name</span>
+          <span>{(existing?.kind || kind) === "series" ? "Series name" : "Category name"}</span>
           <input
             value={name}
             onChange={(event) => setName(event.target.value)}
@@ -140,7 +139,7 @@ export function CategoryFormModal({ existing = null, onClose }) {
         </label>
 
         <label className="form-field">
-          <span>{existing ? "Replace icon (optional)" : "Icon (optional)"}</span>
+          <span>{existing ? "Replace image (optional)" : "Image (optional)"}</span>
           <input
             ref={fileInput}
             type="file"
@@ -148,7 +147,7 @@ export function CategoryFormModal({ existing = null, onClose }) {
             onChange={selectIcon}
           />
           <small>
-            Leave empty to use the default clapperboard icon. JPG, PNG, or WebP
+            Leave empty to use the default series icon. JPG, PNG, or WebP
             files are center-cropped to 96×96 WebP.
           </small>
         </label>
@@ -161,7 +160,7 @@ export function CategoryFormModal({ existing = null, onClose }) {
 
         <div className="form-actions">
           <button className="primary-button" type="submit" disabled={busy}>
-            {busy ? "Saving…" : "Save category"}
+            {busy ? "Saving…" : ((existing?.kind || kind) === "series" ? "Save series" : "Save category")}
           </button>
           <button
             className="text-button"
