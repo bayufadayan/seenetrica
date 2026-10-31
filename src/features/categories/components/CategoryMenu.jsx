@@ -16,7 +16,7 @@ export function CategoryMenu() {
   const rootRef = useRef(null);
   const triggerRef = useRef(null);
   const location = useLocation();
-  const categoryActive = location.pathname.startsWith("/categories/") || location.pathname.startsWith("/series");
+  const categoryActive = location.pathname === "/categories" || location.pathname.startsWith("/categories/") || location.pathname.startsWith("/series");
   const visibleCollections = categories.filter((item) => (item.kind || "category") === activeKind);
 
   useEffect(() => {
@@ -95,6 +95,7 @@ export function CategoryMenu() {
               })}
               {!visibleCollections.length && <p className="nav-category-empty">{activeKind === "series" ? "No series yet. Add one to get started." : "Categories will appear after the first sync."}</p>}
               {activeKind === "series" && <Link className="nav-category-item nav-series-all" role="menuitem" to="/series" onClick={() => setOpen(false)}>View all series</Link>}
+              {activeKind === "category" && <Link className="nav-category-item nav-series-all" role="menuitem" to="/categories" onClick={() => setOpen(false)}>View all categories</Link>}
             </div>
           </div>
         )}

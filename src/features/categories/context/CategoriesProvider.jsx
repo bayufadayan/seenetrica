@@ -181,6 +181,7 @@ export function CategoriesProvider({ children }) {
     recordCompletedViewing,
     createCategory: (payload) => mutate(() => categoryLibraryDb.createCategory(payload)),
     updateCategory: (id, patch) => mutate(() => categoryLibraryDb.updateCategory(id, patch)),
+    deleteCategory: (id) => mutate(() => categoryLibraryDb.deleteCategory(id)),
     createTitle: (categoryId, payload) => mutate(() => categoryLibraryDb.createTitle(categoryId, payload)),
     createTitles: (categoryId, payloads) => mutate(() => categoryLibraryDb.createTitles(categoryId, payloads)),
     updateTitle: (id, patch) => mutate(() => categoryLibraryDb.updateTitle(id, patch)),

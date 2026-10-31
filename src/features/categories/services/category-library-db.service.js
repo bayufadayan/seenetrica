@@ -219,6 +219,50 @@ export const categoryLibraryDb = {
     }
   },
 
+  async deleteCategory(categoryId) {
+    const database = await getCacheDatabase();
+    const transaction = database.transaction(["categories", "categoryTitles", "categoryOutbox"], "readwrite");
+    try {
+      const categoryStore = transaction.objectStore("categories");
+      const category = await categoryStore.get(categoryId);
+      if (!category || category.deletedAt) throw new Error("Series was not found.");
+      const timestamp = now();
+      const deletedCategory = {
+        ...category,
+        deletedAt: timestamp,
+        iconUrl: null,
+        iconPublicId: null,
+        updatedAt: timestamp,
+      };
+      await categoryStore.put(deletedCategory);
+      const outbox = transaction.objectStore("categoryOutbox");
+      await queueRecord(outbox, "category", category.id);
+      if (category.iconPublicId) {
+        await outbox.put({
+          id: `iconCleanup:${category.id}`,
+          kind: "iconCleanup",
+          recordId: category.id,
+          publicId: category.iconPublicId,
+          createdAt: timestamp,
+          updatedAt: timestamp,
+        });
+      }
+
+      const titleStore = transaction.objectStore("categoryTitles");
+      const titles = await titleStore.getAll();
+      for (const title of titles.filter((item) => item.categoryId === categoryId && !item.deletedAt)) {
+        const deletedTitle = { ...title, deletedAt: timestamp, updatedAt: timestamp };
+        await titleStore.put(deletedTitle);
+        await queueRecord(outbox, "title", title.id);
+      }
+      await transaction.done;
+      return deletedCategory;
+    } catch (error) {
+      try { transaction.abort(); } catch { /* Transaction already failed. */ }
+      throw error;
+    }
+  },
+
   async createTitles(categoryId, payloads) {
     if (!Array.isArray(payloads) || !payloads.length) {
       throw new Error("Add at least one title before saving.");

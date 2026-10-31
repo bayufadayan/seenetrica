@@ -1,6 +1,6 @@
-import { ArrowDown, ArrowUp, ArrowUpDown, Check, Pencil, Plus, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowUpDown, Check, Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Modal } from "../components/ui/Modal";
 import { Poster } from "../components/ui/Poster";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/States";
@@ -18,11 +18,13 @@ export default function SeriesDetailPage() {
   const categories = useCategories();
   const { movies, history, loading: archiveLoading, error: archiveError } = useArchive();
   const toast = useToast();
+  const navigate = useNavigate();
   const series = categories.categories.find((item) => item.slug === categorySlug && item.kind === "series");
   useDocumentTitle(series?.name || "Series");
   const [editing, setEditing] = useState(false);
   const [editDetails, setEditDetails] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTitleId, setSelectedTitleId] = useState(null);
   const [draggedId, setDraggedId] = useState(null);
   const titles = useMemo(() => categories.titles
@@ -61,6 +63,16 @@ export default function SeriesDetailPage() {
     try {
       await categories.deleteTitle(title.id);
       toast(`${title.title} removed from this series.`);
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  }
+
+  async function deleteSeries() {
+    try {
+      await categories.deleteCategory(series.id);
+      toast(`${series.name} was deleted. Its films remain in All Movies and History.`);
+      navigate("/series");
     } catch (error) {
       toast(error.message, "error");
     }
@@ -109,42 +121,42 @@ export default function SeriesDetailPage() {
 
   return (
     <>
-      <section className="page-hero page-shell series-detail-hero">
+      <section className="page-shell series-detail-heading">
         <div className="series-detail-icon"><CategoryIcon category={series} /></div>
         <div className="series-detail-copy"><p className="eyebrow">Watch order · {titles.length} titles</p><h1>{series.name}<span>.</span></h1><p className="page-hero-description">Films in your chosen order. Select a film to open its note.</p></div>
         <div className="series-detail-actions">
-          <button className={editing ? "secondary-button" : "primary-button"} type="button" onClick={() => setEditing((value) => !value)}>{editing ? <Check aria-hidden="true" /> : <Pencil aria-hidden="true" />}{editing ? "Done" : "Edit"}</button>
-          {editing && <button className="secondary-button" type="button" onClick={() => setEditDetails(true)}>Name & image</button>}
+          <label className="series-order-switch"><span>{editing ? "Reorder on" : "Reorder"}</span><input type="checkbox" role="switch" checked={editing} onChange={(event) => setEditing(event.target.checked)} /><span className="series-switch-track" aria-hidden="true" /></label>
+          <button className="secondary-button" type="button" onClick={() => setEditDetails(true)}><Pencil aria-hidden="true" /> Name & image</button>
+          <button className="series-delete-trigger" type="button" onClick={() => setDeleteOpen(true)}><Trash2 aria-hidden="true" /> Delete series</button>
         </div>
       </section>
       <section className="page-shell page-content series-detail-page">
-        <div className="series-order-heading"><span>{editing ? "Drag titles to change the timeline" : "Your timeline"}</span>{editing && <button className="secondary-button" type="button" onClick={() => setPickerOpen(true)}><Plus aria-hidden="true" /> Add from All Movies</button>}</div>
+        <div className="series-order-heading"><span>{editing ? "Drag films to change their order" : "Your timeline · first to last"}</span>{editing && <button className="secondary-button" type="button" onClick={() => setPickerOpen(true)}><Plus aria-hidden="true" /> Add from All Movies</button>}</div>
         {archiveError && <p className="series-offline-note" role="status">Showing saved series. Movie details may be unavailable until the archive reconnects.</p>}
         {titles.length ? (
-          <ol className={`series-timeline ${editing ? "is-editing" : ""}`}>
+          <div className="series-timeline-scroll" role="region" aria-label="Series watch order">
+          <ol className={`series-timeline-track ${editing ? "is-editing" : ""}`}>
             {titles.map((title, index) => {
               const movie = movieById.get(String(title.movieId));
               const watched = title.isWatched || watchedMovieIds.has(String(title.movieId)) || movie?.status === "watched";
               return (
-                <li className="series-timeline-item" key={title.id} draggable={editing} onDragStart={() => setDraggedId(title.id)} onDragOver={(event) => { if (editing) event.preventDefault(); }} onDrop={(event) => { event.preventDefault(); moveTitle(draggedId, title.id); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)}>
-                  {editing && <span className="series-drag-handle" aria-hidden="true"><ArrowUpDown /></span>}
-                  <span className="series-order-number">{String(index + 1).padStart(2, "0")}</span>
-                  <button className="series-movie-poster-button" type="button" aria-label={`Open note for ${movie?.title || title.title}`} onClick={() => setSelectedTitleId(title.id)}><Poster className="series-movie-poster" src={movie?.poster_url || title.posterPath} alt="" loading="lazy" /></button>
-                  <button className="series-movie-open" type="button" onClick={() => setSelectedTitleId(title.id)}>
-                    <strong>{movie?.title || title.title}</strong>
-                    <span>{(movie?.release_date || title.releaseDate)?.slice(0, 4) || "Year unknown"} · {movie?.media_type === "series" || title.type === "series" ? "Series" : "Movie"}</span>
-                    {title.note && <small>Note saved</small>}
+                <li className={`series-timeline-item ${draggedId === title.id ? "is-dragged" : ""}`} key={title.id} draggable={editing} onDragStart={() => setDraggedId(title.id)} onDragOver={(event) => { if (editing) event.preventDefault(); }} onDrop={(event) => { event.preventDefault(); moveTitle(draggedId, title.id); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)}>
+                  <span className="series-timeline-node" aria-hidden="true"><span>{String(index + 1).padStart(2, "0")}</span></span>
+                  <button className="series-timeline-film" type="button" onClick={() => setSelectedTitleId(title.id)} aria-label={`Open note for ${movie?.title || title.title}`}>
+                    <Poster className="series-timeline-poster" src={movie?.poster_url || title.posterPath} alt="" loading="lazy" />
+                    <span className="series-timeline-film-copy"><strong>{movie?.title || title.title}</strong><small>{(movie?.release_date || title.releaseDate)?.slice(0, 4) || "Year unknown"} · {movie?.media_type === "series" || title.type === "series" ? "Series" : "Movie"}</small>{title.note && <small className="series-note-indicator">Note saved</small>}<span className={`series-watched-status ${watched ? "is-watched" : ""}`}>{watched ? <><Check aria-hidden="true" /> Watched</> : "Not watched"}</span></span>
                   </button>
-                  <span className={`series-watched-status ${watched ? "is-watched" : ""}`}>{watched ? <><Check aria-hidden="true" /> Watched</> : "Not watched"}</span>
-                  {editing && <div className="series-item-actions"><button type="button" aria-label={`Move ${title.title} up`} disabled={index === 0} onClick={() => moveBy(title, -1)}><ArrowUp aria-hidden="true" /></button><button type="button" aria-label={`Move ${title.title} down`} disabled={index === titles.length - 1} onClick={() => moveBy(title, 1)}><ArrowDown aria-hidden="true" /></button><button type="button" aria-label={`Remove ${title.title} from this series`} onClick={() => removeMovie(title)}><Trash2 aria-hidden="true" /></button></div>}
+                  {editing && <div className="series-item-actions"><span className="series-drag-handle" aria-hidden="true"><ArrowUpDown /></span><button type="button" aria-label={`Move ${title.title} left`} disabled={index === 0} onClick={() => moveBy(title, -1)}><ArrowLeft aria-hidden="true" /></button><button type="button" aria-label={`Move ${title.title} right`} disabled={index === titles.length - 1} onClick={() => moveBy(title, 1)}><ArrowRight aria-hidden="true" /></button><button type="button" aria-label={`Remove ${title.title} from this series`} onClick={() => removeMovie(title)}><Trash2 aria-hidden="true" /></button></div>}
                 </li>
               );
             })}
           </ol>
-        ) : <EmptyState>This series is empty. Edit it to add films from All Movies.</EmptyState>}
+          </div>
+        ) : <EmptyState>This series is empty. Turn on Reorder to add films from All Movies.</EmptyState>}
         <Link className="series-back-link" to="/series">Back to all series</Link>
       </section>
       {editDetails && <CategoryFormModal existing={series} onClose={() => setEditDetails(false)} />}
+      {deleteOpen && <Modal title="Delete this series?" onClose={() => setDeleteOpen(false)} className="series-delete-modal"><p><strong>{series.name}</strong> and its order and notes will be removed. The film records, categories, and watch history will stay in your library.</p><div className="form-actions"><button className="danger-button" type="button" onClick={deleteSeries}><Trash2 aria-hidden="true" /> Delete series</button><button className="secondary-button" type="button" onClick={() => setDeleteOpen(false)}>Cancel</button></div></Modal>}
       {pickerOpen && <SeriesMoviePicker movies={movies} usedIds={new Set(titles.map((title) => String(title.movieId)))} onAdd={addMovie} onClose={() => setPickerOpen(false)} />}
       {selectedTitle && <SeriesNoteModal title={selectedTitle} movie={movieById.get(String(selectedTitle.movieId))} watched={selectedTitle.isWatched || watchedMovieIds.has(String(selectedTitle.movieId)) || movieById.get(String(selectedTitle.movieId))?.status === "watched"} onSaveNote={async (note) => { try { await categories.updateTitle(selectedTitle.id, { note }); toast("Note saved."); } catch (error) { toast(error.message, "error"); throw error; } }} onMarkWatched={markWatched} onClose={() => setSelectedTitleId(null)} />}
     </>
