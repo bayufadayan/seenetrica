@@ -1,19 +1,27 @@
-import { Pencil, Search } from "lucide-react";
+import { Pencil, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { PageHero } from "../components/common/PageHero";
+import { Modal } from "../components/ui/Modal";
 import { Poster } from "../components/ui/Poster";
 import { EmptyState, ErrorState, LoadingState } from "../components/ui/States";
 import { useArchive } from "../context/ArchiveContext";
+import { useToast } from "../context/ToastContext";
 import { countMoviesByTitle, normalizeMovieTitle } from "../features/movies/movie-duplicates.util";
+import { archiveService } from "../services/archive.service";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
+import { useCategories } from "../features/categories/context/CategoriesProvider";
 import "./AllMoviesPage.css";
 
 export default function AllMoviesPage() {
   useDocumentTitle("All Movies");
-  const { movies, loading, error } = useArchive();
+  const { movies, loading, error, refresh } = useArchive();
+  const categories = useCategories();
+  const toast = useToast();
   const [search, setSearch] = useState("");
   const [duplicatesOnly, setDuplicatesOnly] = useState(false);
+  const [deleting, setDeleting] = useState(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
 
   const titleCounts = useMemo(() => countMoviesByTitle(movies), [movies]);
   const duplicateGroups = [...titleCounts.values()].filter((count) => count > 1);
@@ -25,6 +33,30 @@ export default function AllMoviesPage() {
     watched: "Watched",
     unlisted: "Unlisted",
   };
+
+  async function deleteMovie() {
+    if (!deleting || deleteBusy) return;
+    const pin = archiveService.askForPin();
+    if (pin === null) return;
+    if (!pin) {
+      toast("PIN is required.", "error");
+      return;
+    }
+    setDeleteBusy(true);
+    try {
+      const result = await archiveService.writeAction("deleteMovie", { id: deleting.id }, pin);
+      await refresh();
+      await categories.pull().catch(() => {});
+      toast(result.cleanup_warning
+        ? `${deleting.title} was deleted, but some uploaded memory files could not be removed.`
+        : `${deleting.title} and its related history were deleted.`, result.cleanup_warning ? "error" : "success");
+      setDeleting(null);
+    } catch (nextError) {
+      toast(nextError.message, "error");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
 
   const shown = [...movies]
     .filter((movie) => {
@@ -111,10 +143,10 @@ export default function AllMoviesPage() {
                         </span>
                       )}
                     </div>
-                    <Link className="secondary-button all-movies-edit" to={`${detailPath}#movie-edit`} state={{ from: "/movies" }}>
-                      <Pencil aria-hidden="true" />
-                      Edit
-                    </Link>
+                    <div className="all-movies-actions">
+                      <Link className="secondary-button all-movies-edit" to={`${detailPath}#movie-edit`} state={{ from: "/movies" }}><Pencil aria-hidden="true" /> Edit</Link>
+                      <button className="secondary-button all-movies-delete" type="button" aria-label={`Delete ${movie.title}`} onClick={() => setDeleting(movie)}><Trash2 aria-hidden="true" /><span>Delete</span></button>
+                    </div>
                   </article>
                 );
               })}
@@ -134,6 +166,7 @@ export default function AllMoviesPage() {
           </>
         )}
       </section>
+      {deleting && <Modal title="Delete this movie?" onClose={() => setDeleting(null)} busy={deleteBusy} className="all-movies-delete-modal"><p><strong>{deleting.title}</strong>, its viewing history, category/series entries, and memory entries will be permanently removed. Uploaded Seenetrica memories will also be deleted; linked files on external services will remain there.</p><div className="form-actions"><button className="danger-button" type="button" disabled={deleteBusy} onClick={deleteMovie}><Trash2 aria-hidden="true" />{deleteBusy ? "Deleting…" : "Delete movie"}</button><button className="secondary-button" type="button" disabled={deleteBusy} onClick={() => setDeleting(null)}>Cancel</button></div></Modal>}
     </>
   );
 }

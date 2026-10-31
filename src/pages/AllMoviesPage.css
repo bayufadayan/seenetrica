@@ -95,11 +95,28 @@
   font-weight: 700;
 }
 
-.all-movies-edit {
+.all-movies-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.all-movies-edit,
+.all-movies-delete {
   flex: 0 0 auto;
   min-height: 44px;
   padding-inline: 15px;
 }
+
+.all-movies-delete { color: #9f3827; }
+.all-movies-delete:hover { border-color: rgba(159, 56, 39, 0.35); background: rgba(159, 56, 39, 0.06); }
+.all-movies-delete-modal .wm-modal-dialog { max-width: 480px; }
+.all-movies-delete-modal p { color: var(--muted); font-size: 0.82rem; line-height: 1.6; }
+.all-movies-delete-modal p strong { color: var(--ink); }
+.all-movies-delete-modal .form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 20px; }
+.all-movies-delete-modal .danger-button { display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 0 14px; border: 1px solid #a13c2d; border-radius: 999px; color: white; background: #a13c2d; cursor: pointer; font: inherit; font-size: 0.72rem; font-weight: 700; }
+.all-movies-delete-modal .danger-button svg { width: 15px; height: 15px; }
 
 @media (max-width: 560px) {
   .all-movies-tools {
@@ -117,7 +134,10 @@
     height: 66px;
   }
 
-  .all-movies-edit {
+  .all-movies-actions { flex-direction: column; align-items: stretch; }
+
+  .all-movies-edit,
+  .all-movies-delete {
     padding: 0 12px;
   }
 }

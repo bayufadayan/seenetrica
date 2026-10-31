@@ -131,7 +131,25 @@
 .series-back-link { display: inline-flex; margin-top: 27px; color: var(--muted); font-size: 0.73rem; }
 
 .series-picker-modal .wm-modal-dialog,
-.series-note-modal .wm-modal-dialog { max-width: 560px; }
+.series-note-modal .wm-modal-dialog,
+.category-title-picker-modal .wm-modal-dialog { max-width: 620px; }
+.category-title-search { margin-bottom: 12px; }
+.category-title-search-results { display: grid; max-height: 42vh; overflow: auto; border-top: 1px solid var(--line); }
+.category-title-search-result { display: grid; width: 100%; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 11px; padding: 9px 4px; border: 0; border-bottom: 1px solid var(--line); color: var(--ink); background: transparent; text-align: left; }
+button.category-title-search-result { cursor: pointer; }
+button.category-title-search-result:hover:not(:disabled) { background: rgba(23, 23, 21, 0.04); }
+.category-title-search-result:disabled { cursor: default; opacity: 0.6; }
+.category-title-search-result > img { width: 42px; height: 59px; border-radius: 5px; object-fit: cover; }
+.category-title-search-result > span:nth-child(2) { display: grid; min-width: 0; gap: 4px; }
+.category-title-search-result strong { overflow: hidden; font-family: var(--font-serif); font-size: 0.92rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.category-title-search-result small { color: var(--muted); font-size: 0.63rem; }
+.category-title-search-result > span:last-child { color: var(--accent); font-size: 0.66rem; font-weight: 700; }
+.category-title-no-local { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 15px 5px; color: var(--muted); font-size: 0.73rem; }
+.category-title-search-result.category-title-tmdb-result { grid-template-columns: 44px minmax(0, 1fr) auto; }
+.category-title-result-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.category-title-result-actions button { min-height: 32px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: var(--white); cursor: pointer; font: inherit; font-size: 0.62rem; }
+.category-title-result-actions button:hover:not(:disabled) { border-color: var(--accent); }
+.category-title-result-actions button:disabled { opacity: 0.55; }
 .series-picker-modal .form-field > span,
 .series-note-modal .form-field > span { display: block; margin-bottom: 7px; color: var(--ink); font-size: 0.72rem; font-weight: 700; }
 .series-picker-modal input,

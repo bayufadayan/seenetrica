@@ -3654,6 +3654,73 @@ function updateMovie(payload) {
   }
 }
 
+function deleteMovie(payload) {
+  const movieId = requiredText(payload.id, "Movie ID", 50);
+  ensureMemorySheet();
+  ensureCategorizedSheets();
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+
+  try {
+    const movies = readSheet(SHEET_NAMES.MOVIES);
+    const movie = movies.find((record) => String(record.id) === movieId);
+    if (!movie) throw new Error("Movie was not found.");
+
+    const categoryTitles = readOptionalSheet(SHEET_NAMES.CATEGORY_TITLES);
+    const removedTitleIds = new Set(categoryTitles
+      .filter((title) => String(title.movie_id || "") === movieId)
+      .map((title) => String(title.id)));
+    const keptCategoryTitles = categoryTitles
+      .filter((title) => String(title.movie_id || "") !== movieId)
+      .map((title) => {
+        const prerequisites = arrayFromCell(title.prerequisite_ids)
+          .filter((id) => !removedTitleIds.has(String(id)));
+        return prerequisites.length === arrayFromCell(title.prerequisite_ids).length
+          ? title
+          : { ...title, prerequisite_ids: JSON.stringify(prerequisites), updated_at: nowString() };
+      });
+
+    const memberships = readSheet(SHEET_NAMES.CATEGORY_MOVIES);
+    const keptMemberships = memberships
+      .filter((membership) => String(membership.movie_id || "") !== movieId)
+      .map((membership) => {
+        const prerequisites = arrayFromCell(membership.prerequisite_movie_ids)
+          .filter((id) => String(id) !== movieId);
+        return prerequisites.length === arrayFromCell(membership.prerequisite_movie_ids).length
+          ? membership
+          : { ...membership, prerequisite_movie_ids: JSON.stringify(prerequisites), updated_at: nowString() };
+      });
+
+    const history = readSheet(SHEET_NAMES.WATCH_HISTORY);
+    const keptHistory = history.filter((entry) =>
+      String(entry.movie_id || "") !== movieId
+      && !removedTitleIds.has(String(entry.category_title_id || "")),
+    );
+    const allMemories = readSheet(SHEET_NAMES.MOVIE_MEMORIES);
+    const memories = allMemories.filter((memory) => String(memory.movie_id || "") !== movieId);
+
+    writeSheetRecords(SHEET_NAMES.MOVIES, movies.filter((record) => String(record.id) !== movieId));
+    writeSheetRecords(SHEET_NAMES.WATCH_HISTORY, keptHistory);
+    writeSheetRecords(SHEET_NAMES.MOVIE_MEMORIES, memories);
+    writeSheetRecords(SHEET_NAMES.CATEGORY_MOVIES, keptMemberships);
+    writeLegacyCategoryTitles(keptCategoryTitles);
+    CacheService.getScriptCache().removeAll([
+      READ_CACHE_KEYS.ALL,
+      READ_CACHE_KEYS.CATEGORIZED,
+    ]);
+
+    return {
+      movie,
+      deleted_history_count: history.length - keptHistory.length,
+      deleted_memory_count: allMemories.length - memories.length,
+      deleted_category_title_count: categoryTitles.length - keptCategoryTitles.length,
+      deleted_category_membership_count: memberships.length - keptMemberships.length,
+    };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function logViewing(payload) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -4087,6 +4154,10 @@ function doPost(e) {
         data = updateMovie(
           body.data || {},
         );
+        break;
+
+      case "deleteMovie":
+        data = deleteMovie(body.data || {});
         break;
 
       case "logViewing":

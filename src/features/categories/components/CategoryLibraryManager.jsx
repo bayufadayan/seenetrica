@@ -11,7 +11,9 @@ import {
 import { getTmdbImageUrl } from "../utils/tmdb-image.util";
 import { CategoryBulkAddModal } from "./CategoryBulkAddModal";
 import { CategoryMovieSyncControl } from "./CategoryMovieSyncControl";
+import { CategoryTitlePickerModal } from "./CategoryTitlePickerModal";
 import { CategoryTitleForm } from "./CategoryTitleForm";
+import "../styles/series.css";
 
 function titleMeta(title) {
   return [title.type === "movie" ? "Movie" : "Series", title.seasonNumber ? `Season ${title.seasonNumber}` : null, title.releaseDate?.slice(0, 4) || "TBA", title.runtimeMinutes ? `${title.runtimeMinutes} min` : "Runtime unknown"].filter(Boolean).join(" · ");
@@ -54,7 +56,7 @@ export function CategoryLibraryManager({ category, titles }) {
 
   return (
     <section className="wm-settings-section" id="library">
-      <header><h2>{categoryName} Library</h2><div className="wm-library-header-actions"><button className="primary-button" type="button" onClick={() => setEditing(null)}><Plus aria-hidden="true" /> Add Title</button><button className="secondary-button" type="button" onClick={() => setBulkOpen(true)}><Layers3 aria-hidden="true" /> Bulk Add</button></div></header>
+      <header><h2>{categoryName} Library</h2><div className="wm-library-header-actions"><button className="primary-button" type="button" onClick={() => setEditing(null)}><Plus aria-hidden="true" /> Add Movie</button><button className="secondary-button" type="button" onClick={() => setBulkOpen(true)}><Layers3 aria-hidden="true" /> Bulk Add</button></div></header>
       <CategoryMovieSyncControl category={category} />
       <div className="wm-library-tools category-library-tools">
         <label className="archive-search"><Search aria-hidden="true" /><input type="search" aria-label={`Search ${categoryName} library`} placeholder="Search category library" value={query} onChange={(event) => setQuery(event.target.value)} /></label>
@@ -66,7 +68,8 @@ export function CategoryLibraryManager({ category, titles }) {
         {visibleTitles.map((title) => <article className="wm-library-card" key={title.id}><Poster src={getTmdbImageUrl(title.posterPath, "w342")} alt="" /><div><h3>{title.title}</h3><p>{titleMeta(title)}</p><p className="wm-prerequisite-count">{title.prerequisiteIds?.length || 0} prerequisites</p><label className="checkbox-field"><input type="checkbox" checked={title.isWatched} onChange={async (event) => { try { await data.setTitleWatched(title.id, event.target.checked); } catch (error) { toast(error.message, "error"); } }} /> Watched</label></div><div className="wm-card-actions"><button type="button" aria-label={`Edit ${title.title}`} onClick={() => setEditing(title)}><Pencil aria-hidden="true" /></button><button type="button" aria-label={`Delete ${title.title}`} onClick={() => remove(title)}><Trash2 aria-hidden="true" /></button></div></article>)}
         {!visibleTitles.length && <p className="wm-empty-row">No titles match these filters.</p>}
       </div>
-      {editing !== undefined && <CategoryTitleForm existing={editing} titles={titles} categoryName={categoryName} onSave={save} onClose={() => setEditing(undefined)} />}
+      {editing === null && <CategoryTitlePickerModal titles={titles} categoryName={categoryName} sortOrder={titles.length} onSave={save} onClose={() => setEditing(undefined)} />}
+      {editing && <CategoryTitleForm existing={editing} titles={titles} categoryName={categoryName} onSave={save} onClose={() => setEditing(undefined)} />}
       {bulkOpen && <CategoryBulkAddModal titles={titles} categoryName={categoryName} onSave={save} onClose={() => setBulkOpen(false)} />}
     </section>
   );

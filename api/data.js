@@ -16,6 +16,7 @@ const ALLOWED_WRITE_ACTIONS = new Set([
   "createMovie",
   "createMovies",
   "updateMovie",
+  "deleteMovie",
   "addViewing",
   "createMemory",
   "updateMemory",
@@ -639,6 +640,37 @@ async function writeAppsScriptData(upstreamUrl, action, data, context) {
   return result;
 }
 
+async function deleteMovieAndCleanMemories(upstreamUrl, data, context) {
+  let memories = [];
+  try {
+    const archive = await readAppsScriptData(upstreamUrl, null, context);
+    const movieId = String(data?.id || "");
+    memories = (Array.isArray(archive?.data?.movie_memories) ? archive.data.movie_memories : [])
+      .filter((memory) => String(memory.movie_id) === movieId && String(memory.public_id || "").startsWith("seenetrica/memories/"));
+  } catch (error) {
+    logStage(context, "movie_memory_cleanup_lookup_failed", {
+      errorName: error?.name || "Error",
+    }, "warn");
+  }
+
+  const result = await writeAppsScriptData(upstreamUrl, "deleteMovie", data, context);
+  if (!result?.success || !memories.length) return result;
+
+  const cleanupResults = await Promise.allSettled(memories.map((memory) => {
+    const resourceType = /\/video\/upload\//i.test(String(memory.image_url || ""))
+      ? "video"
+      : "image";
+    return destroyCloudinaryAsset(memory.public_id, resourceType);
+  }));
+  const failedCount = cleanupResults.filter((item) => item.status === "rejected").length;
+  if (failedCount) {
+    logStage(context, "movie_memory_cleanup_incomplete", { failedCount }, "warn");
+  }
+  return failedCount
+    ? { ...result, data: { ...result.data, cleanup_warning: true } }
+    : result;
+}
+
 module.exports = async function handler(request, response) {
   const context = {
     requestId: "unavailable",
@@ -715,6 +747,8 @@ module.exports = async function handler(request, response) {
         success: true,
         data: await runLocalCloudinaryAction(action, body.data || {}, context),
       }
+      : action === "deleteMovie"
+        ? await deleteMovieAndCleanMemories(upstreamUrl, body.data || {}, context)
       : await writeAppsScriptData(upstreamUrl, action, body.data || {}, context);
     if (!result.success) {
       const status = result.message === "Unauthorized" ? 502 : 400;

@@ -8,6 +8,7 @@ import { useArchive } from "../context/ArchiveContext";
 import { useToast } from "../context/ToastContext";
 import { CategoryFormModal } from "../features/categories/components/CategoryFormModal";
 import { CategoryIcon } from "../features/categories/components/CategoryIcon";
+import { CategoryTitlePickerModal } from "../features/categories/components/CategoryTitlePickerModal";
 import { useCategories } from "../features/categories/context/CategoriesProvider";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { today } from "../utils/formatters";
@@ -37,28 +38,16 @@ export default function SeriesDetailPage() {
   const watchedMovieIds = useMemo(() => new Set(history.map((entry) => String(entry.movie_id))), [history]);
   const selectedTitle = titles.find((title) => title.id === selectedTitleId) || null;
 
-  async function addMovie(movie) {
-    if (!series || titles.some((title) => String(title.movieId) === String(movie.id))) return;
+  async function addMovie(payload) {
+    if (!series) return;
     try {
-      await categories.createTitle(series.id, {
-        movieId: movie.id,
-        tmdbId: movie.external_source === "tmdb" ? movie.external_id : null,
-        title: movie.title,
-        baseTitle: movie.base_title || movie.title,
-        originalTitle: movie.original_title || movie.title,
-        releaseDate: movie.release_date,
-        type: movie.media_type || "movie",
-        runtimeMinutes: movie.runtime_minutes,
-        posterPath: movie.poster_path || movie.poster_url,
-        backdropPath: movie.backdrop_path,
-        identityKey: `archive:${movie.id}`,
-        sortOrder: titles.length,
-        isWatched: movie.status === "watched" || watchedMovieIds.has(String(movie.id)),
-        note: "",
-      });
-      toast(`${movie.title} added to ${series.name}.`);
+      const records = Array.isArray(payload) ? payload : [payload];
+      if (records.length > 1) await categories.createTitles(series.id, records);
+      else await categories.createTitle(series.id, records[0]);
+      toast(`${records.length} ${records.length === 1 ? "title" : "titles"} added to ${series.name}.`);
     } catch (error) {
       toast(error.message, "error");
+      throw error;
     }
   }
 
@@ -144,7 +133,7 @@ export default function SeriesDetailPage() {
         </div>
       </section>
       <section className="page-shell page-content series-detail-page">
-        <div className="series-order-heading"><span>{editing ? "Drag films to change their order" : "Your timeline · first to last"}</span>{editing && <button className="secondary-button" type="button" onClick={() => setPickerOpen(true)}><Plus aria-hidden="true" /> Add from All Movies</button>}</div>
+        <div className="series-order-heading"><span>{editing ? "Drag films to change their order" : "Your timeline · first to last"}</span><button className="secondary-button" type="button" onClick={() => setPickerOpen(true)}><Plus aria-hidden="true" /> Add Movie</button></div>
         {archiveError && <p className="series-offline-note" role="status">Showing saved series. Movie details may be unavailable until the archive reconnects.</p>}
         {titles.length ? (
           <div className="series-timeline-scroll" role="region" aria-label="Series watch order">
@@ -173,16 +162,10 @@ export default function SeriesDetailPage() {
       </section>
       {editDetails && <CategoryFormModal existing={series} onClose={() => setEditDetails(false)} />}
       {deleteOpen && <Modal title="Delete this series?" onClose={() => setDeleteOpen(false)} className="series-delete-modal"><p><strong>{series.name}</strong> and its order and notes will be removed. The film records, categories, and watch history will stay in your library.</p><div className="form-actions"><button className="danger-button" type="button" onClick={deleteSeries}><Trash2 aria-hidden="true" /> Delete series</button><button className="secondary-button" type="button" onClick={() => setDeleteOpen(false)}>Cancel</button></div></Modal>}
-      {pickerOpen && <SeriesMoviePicker movies={movies} usedIds={new Set(titles.map((title) => String(title.movieId)))} onAdd={addMovie} onClose={() => setPickerOpen(false)} />}
+      {pickerOpen && <CategoryTitlePickerModal titles={titles} categoryName={series.name} sortOrder={titles.length} onSave={addMovie} onClose={() => setPickerOpen(false)} />}
       {selectedTitle && <SeriesViewingModal title={selectedTitle} movie={movieById.get(String(selectedTitle.movieId))} watched={selectedTitle.isWatched || watchedMovieIds.has(String(selectedTitle.movieId)) || movieById.get(String(selectedTitle.movieId))?.status === "watched"} onMarkWatched={markWatched} onClose={() => setSelectedTitleId(null)} />}
     </>
   );
-}
-
-function SeriesMoviePicker({ movies, usedIds, onAdd, onClose }) {
-  const [search, setSearch] = useState("");
-  const results = movies.filter((movie) => !usedIds.has(String(movie.id)) && (!search.trim() || String(movie.title || "").toLowerCase().includes(search.trim().toLowerCase()))).slice(0, 40);
-  return <Modal title="Add films from All Movies" onClose={onClose} className="series-picker-modal"><label className="form-field"><span>Search your movie library</span><input type="search" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search titles" /></label><div className="series-picker-results">{results.map((movie) => <button className="series-picker-row" key={movie.id} type="button" onClick={() => onAdd(movie)}><Poster src={movie.poster_url} alt="" /><span><strong>{movie.title}</strong><small>{movie.release_date?.slice(0, 4) || "Year unknown"} · {movie.media_type || "movie"}</small></span><Plus aria-hidden="true" /></button>)}{!results.length && <p className="collection-status">No matching titles. Add the film to All Movies first.</p>}</div><div className="form-actions"><Link className="text-button" to="/add-movie">Add a missing film</Link><button className="secondary-button" type="button" onClick={onClose}>Done</button></div></Modal>;
 }
 
 function SeriesViewingModal({ title, movie, watched, onMarkWatched, onClose }) {
