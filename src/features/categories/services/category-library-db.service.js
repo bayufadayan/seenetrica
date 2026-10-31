@@ -225,7 +225,7 @@ export const categoryLibraryDb = {
     try {
       const categoryStore = transaction.objectStore("categories");
       const category = await categoryStore.get(categoryId);
-      if (!category || category.deletedAt) throw new Error("Series was not found.");
+      if (!category || category.deletedAt) throw new Error("Collection was not found.");
       const timestamp = now();
       const deletedCategory = {
         ...category,

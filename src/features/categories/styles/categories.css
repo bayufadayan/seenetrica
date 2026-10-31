@@ -409,6 +409,12 @@
 .category-hero-name { margin: 0 0 14px !important; color: #e6a08d !important; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
 .category-settings-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin: 18px 0; }
 .category-settings-actions .secondary-button { min-height: 40px; }
+.category-settings-actions .category-delete-button { color: var(--accent-dark); border-color: rgba(159, 56, 39, 0.25); }
+.category-settings-actions .category-delete-button:hover { border-color: var(--accent-dark); background: rgba(159, 56, 39, 0.06); }
+.category-delete-modal .wm-modal-dialog { max-width: 500px; }
+.category-delete-modal p { color: var(--muted); font-size: 0.82rem; line-height: 1.6; }
+.category-delete-modal p strong { color: var(--ink); }
+.category-delete-modal .form-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 9px; margin-top: 20px; }
 .category-movie-sync { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin: 14px 0 20px; padding: 14px 16px; border: 1px solid rgba(216, 105, 74, 0.22); border-radius: 14px; background: rgba(216, 105, 74, 0.07); }
 .category-movie-sync.is-synced { border-color: rgba(101, 163, 125, 0.28); background: rgba(101, 163, 125, 0.08); }
 .category-movie-sync > div { display: flex; align-items: center; gap: 11px; min-width: 0; }
