@@ -75,7 +75,7 @@ export function CategoryTitlePickerModal({ titles, categoryName, sortOrder = 0, 
 
   useEffect(() => {
     const normalized = query.trim();
-    if (!searchTmdb || archiveLoading || normalized.length < 2 || matches.length) {
+    if (!searchTmdb || archiveLoading || normalized.length < 2) {
       setTmdbResults([]);
       setTmdbStatus("");
       return undefined;
@@ -94,7 +94,7 @@ export function CategoryTitlePickerModal({ titles, categoryName, sortOrder = 0, 
       }
     }, 400);
     return () => window.clearTimeout(timeout);
-  }, [archiveLoading, matches.length, query, searchTmdb]);
+  }, [archiveLoading, query, searchTmdb]);
 
   async function save(payload) {
     setBusy(true);
@@ -183,8 +183,8 @@ export function CategoryTitlePickerModal({ titles, categoryName, sortOrder = 0, 
               return <button className="category-title-search-result" key={movie.id} type="button" disabled={busy || alreadyAdded} onClick={() => save(categoryTitleFromMovie(movie, sortOrder))}><Poster src={movie.poster_url} alt="" /><span><strong>{movie.title}</strong><small>{movie.media_type === "series" ? "Series" : "Movie"} · {movie.release_date?.slice(0, 4) || "Year unknown"} · {movie.status || "Unlisted"}</small></span><span>{alreadyAdded ? "Already added" : "Add"}</span></button>;
             }) : null}
           </div>
-          {!archiveLoading && query.trim().length >= 2 && !matches.length && !searchTmdb && <div className="category-title-no-local"><span>No title in your database.</span><button className="secondary-button" type="button" onClick={() => setSearchTmdb(true)}>Search TMDB</button></div>}
-          {!archiveLoading && query.trim().length >= 2 && searchTmdb && !matches.length && <><p className="collection-status" role="status">{tmdbStatus || "Waiting for search…"}</p><div className="category-title-search-results">{tmdbResults.map((result) => <article className="category-title-search-result category-title-tmdb-result" key={`${result.media_type}:${result.external_id}`}><Poster src={result.poster_url} alt="" /><span><strong>{result.title}</strong><small>{result.media_type === "series" ? "Series" : "Movie"} · {result.release_date?.slice(0, 4) || "Year unknown"}</small></span><span className="category-title-result-actions">{result.media_type === "series" && <button type="button" disabled={busy} onClick={() => chooseTmdb(result, "seasons")}>Add seasons</button>}<button type="button" disabled={busy} onClick={() => chooseTmdb(result)}>{busy ? "Adding…" : "Add"}</button></span></article>)}</div></>}
+          {!archiveLoading && query.trim().length >= 2 && !searchTmdb && <div className="category-title-no-local"><span>{matches.length ? "Found in your database. Want to look on TMDB too?" : "No title in your database."}</span><button className="secondary-button" type="button" onClick={() => setSearchTmdb(true)}>Search TMDB</button></div>}
+          {!archiveLoading && query.trim().length >= 2 && searchTmdb && <><p className="collection-status" role="status">{tmdbStatus || "Waiting for search…"}</p><div className="category-title-search-results">{tmdbResults.map((result) => <article className="category-title-search-result category-title-tmdb-result" key={`${result.media_type}:${result.external_id}`}><Poster src={result.poster_url} alt="" /><span><strong>{result.title}</strong><small>{result.media_type === "series" ? "Series" : "Movie"} · {result.release_date?.slice(0, 4) || "Year unknown"}</small></span><span className="category-title-result-actions">{result.media_type === "series" && <button type="button" disabled={busy} onClick={() => chooseTmdb(result, "seasons")}>Add seasons</button>}<button type="button" disabled={busy} onClick={() => chooseTmdb(result)}>{busy ? "Adding…" : "Add"}</button></span></article>)}</div></>}
           {error && <p className="wm-field-error" role="alert">{error}</p>}
         </>
       )}

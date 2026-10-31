@@ -142,7 +142,7 @@ export default function SeriesDetailPage() {
               const movie = movieById.get(String(title.movieId));
               const watched = title.isWatched || watchedMovieIds.has(String(title.movieId)) || movie?.status === "watched";
               return (
-                <li className={`series-timeline-item ${draggedId === title.id ? "is-dragged" : ""}`} key={title.id} draggable={editing} onDragStart={() => setDraggedId(title.id)} onDragOver={(event) => { if (editing) event.preventDefault(); }} onDrop={(event) => { event.preventDefault(); moveTitle(draggedId, title.id); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)}>
+                <li className={`series-timeline-item ${watched ? "is-watched" : ""} ${draggedId === title.id ? "is-dragged" : ""}`} key={title.id} draggable={editing} onDragStart={() => setDraggedId(title.id)} onDragOver={(event) => { if (editing) event.preventDefault(); }} onDrop={(event) => { event.preventDefault(); moveTitle(draggedId, title.id); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)}>
                   <span className="series-timeline-node" aria-hidden="true"><span>{String(index + 1).padStart(2, "0")}</span></span>
                   <Link className="series-timeline-film" to={`/movies/${encodeURIComponent(movie?.id || title.movieId)}`} aria-label={`Open details for ${movie?.title || title.title}`}>
                     <Poster className="series-timeline-poster" src={movie?.poster_url || title.posterPath} alt={`${movie?.title || title.title} poster`} loading="lazy" />
@@ -157,7 +157,7 @@ export default function SeriesDetailPage() {
             })}
           </ol>
           </div>
-        ) : <EmptyState>This series is empty. Turn on Reorder to add films from All Movies.</EmptyState>}
+        ) : <EmptyState>Use Add Movie to add films from All Movies or TMDB.</EmptyState>}
         <Link className="series-back-link" to="/series">Back to all series</Link>
       </section>
       {editDetails && <CategoryFormModal existing={series} onClose={() => setEditDetails(false)} />}

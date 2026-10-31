@@ -96,6 +96,10 @@
 .series-timeline-item[draggable="true"] { cursor: grab; }
 .series-timeline-item:active { cursor: grabbing; }
 .series-timeline-item.is-dragged { opacity: 0.45; transform: scale(0.98); }
+.series-timeline-item.is-watched .series-timeline-film { padding: 11px 9px 13px; border: 1px solid rgba(188, 142, 48, 0.34); border-radius: 16px; background: linear-gradient(145deg, rgba(255, 244, 198, 0.92), rgba(245, 218, 147, 0.66) 52%, rgba(255, 251, 232, 0.94)); box-shadow: 0 10px 26px rgba(157, 116, 38, 0.09); }
+.series-timeline-item.is-watched .series-timeline-node { border-color: #c39337; background: linear-gradient(145deg, #ffefb3, #d8a744); }
+.series-timeline-item.is-watched .series-timeline-node span { color: #9a6a1d; }
+.series-timeline-item.is-watched .series-timeline-poster { box-shadow: 0 8px 20px rgba(145, 103, 27, 0.2); }
 .series-timeline-node { display: grid; position: relative; z-index: 1; width: 16px; height: 16px; place-items: center; margin: 0 auto 14px; border: 2px solid var(--accent); border-radius: 50%; background: var(--surface); }
 .series-timeline-node span { position: absolute; top: 20px; color: var(--accent); font-family: var(--font-serif); font-size: 1.08rem; }
 .series-timeline-film { display: grid; width: 100%; justify-items: center; gap: 11px; margin-top: 45px; color: var(--ink); text-align: center; text-decoration: none; }
