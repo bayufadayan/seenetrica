@@ -98,14 +98,26 @@
 .series-timeline-item.is-dragged { opacity: 0.45; transform: scale(0.98); }
 .series-timeline-node { display: grid; position: relative; z-index: 1; width: 16px; height: 16px; place-items: center; margin: 0 auto 14px; border: 2px solid var(--accent); border-radius: 50%; background: var(--surface); }
 .series-timeline-node span { position: absolute; top: 20px; color: var(--accent); font-family: var(--font-serif); font-size: 1.08rem; }
-.series-timeline-film { display: grid; width: 100%; min-height: 105px; grid-template-columns: 62px minmax(0, 1fr); align-items: center; gap: 12px; margin-top: 25px; padding: 10px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: rgba(255, 254, 250, 0.6); text-align: left; cursor: pointer; transition: border-color 150ms ease, transform 150ms ease, background 150ms ease; }
-.series-timeline-film:hover { border-color: rgba(23, 23, 21, 0.3); background: var(--white); transform: translateY(-2px); }
-.series-timeline-poster { display: block; width: 62px; height: 86px; border-radius: 6px; object-fit: cover; background: var(--line); }
-.series-timeline-film-copy { display: grid; min-width: 0; justify-items: start; gap: 5px; }
-.series-timeline-film-copy strong { display: -webkit-box; overflow: hidden; font-family: var(--font-serif); font-size: 0.96rem; font-weight: 500; line-height: 1.2; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-.series-timeline-film-copy > small { color: var(--muted); font-size: 0.62rem; }
-.series-timeline-film-copy > .series-note-indicator { color: var(--accent); }
-.series-watched-status { display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 0.62rem; }
+.series-timeline-film { display: grid; width: 100%; justify-items: center; gap: 11px; margin-top: 25px; color: var(--ink); text-align: center; text-decoration: none; }
+.series-timeline-film:hover .series-timeline-poster { transform: translateY(-3px); box-shadow: 0 13px 26px rgba(23, 23, 21, 0.2); }
+.series-timeline-film:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 8px; }
+.series-timeline-poster { display: block; width: 184px; height: 270px; border-radius: 9px; object-fit: cover; background: var(--line); box-shadow: 0 8px 18px rgba(23, 23, 21, 0.14); transition: transform 150ms ease, box-shadow 150ms ease; }
+.series-timeline-film-copy { display: grid; min-width: 0; justify-items: center; gap: 5px; }
+.series-timeline-film-copy strong { display: -webkit-box; overflow: hidden; max-width: 100%; font-family: var(--font-serif); font-size: 1.08rem; font-weight: 500; line-height: 1.2; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.series-timeline-film-copy > small { color: var(--muted); font-size: 0.66rem; }
+.series-note-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; margin: 10px auto 0; padding: 0 12px; border: 1px solid var(--line); border-radius: 999px; color: var(--ink); background: rgba(255, 254, 250, 0.7); cursor: pointer; font: inherit; font-size: 0.68rem; }
+.series-note-toggle:hover { border-color: rgba(23, 23, 21, 0.35); background: var(--white); }
+.series-note-toggle > span:last-child { color: var(--accent); font-size: 1rem; line-height: 1; }
+.series-note-bubble { position: relative; margin-top: 12px; padding: 13px; border: 1px solid var(--line); border-radius: 13px; color: var(--ink); background: var(--white); box-shadow: 0 7px 20px rgba(23, 23, 21, 0.07); }
+.series-note-bubble-tail { position: absolute; top: -6px; left: calc(50% - 6px); width: 11px; height: 11px; transform: rotate(45deg); border-top: 1px solid var(--line); border-left: 1px solid var(--line); background: var(--white); }
+.series-note-bubble p { position: relative; margin: 0; font-size: 0.74rem; line-height: 1.55; white-space: pre-wrap; overflow-wrap: anywhere; }
+.series-note-inline-editor { display: grid; position: relative; gap: 6px; color: var(--muted); font-size: 0.64rem; font-weight: 700; text-align: left; }
+.series-note-inline-editor textarea { width: 100%; resize: vertical; padding: 8px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--paper); font: inherit; font-size: 0.72rem; }
+.series-note-bubble-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 10px; }
+.series-note-bubble-actions button { display: inline-flex; align-items: center; gap: 5px; min-height: 30px; padding: 0 9px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: transparent; cursor: pointer; font: inherit; font-size: 0.62rem; }
+.series-note-bubble-actions button:hover { color: var(--ink); background: var(--paper); }
+.series-note-bubble-actions svg { width: 13px; height: 13px; }
+.series-watched-status { display: flex; width: max-content; align-items: center; gap: 4px; margin: 8px auto 0; color: var(--muted); font-size: 0.62rem; }
 .series-watched-status.is-watched { color: #55765d; }
 .series-watched-status svg { width: 13px; height: 13px; }
 .series-item-actions { display: flex; justify-content: center; gap: 3px; margin-top: 9px; }
@@ -169,8 +181,7 @@
   .series-detail-actions > button { min-height: 38px; padding-inline: 10px; font-size: 0.66rem; }
   .series-order-switch { min-height: 38px; padding-inline: 10px; font-size: 0.66rem; }
   .series-timeline-track { --series-item-width: 194px; --series-item-gap: 16px; }
-  .series-timeline-film { grid-template-columns: 52px minmax(0, 1fr); gap: 9px; padding: 8px; }
-  .series-timeline-poster { width: 52px; height: 74px; }
-  .series-timeline-film-copy strong { font-size: 0.88rem; }
+  .series-timeline-poster { width: 166px; height: 244px; }
+  .series-timeline-film-copy strong { font-size: 0.98rem; }
   .series-page-heading { align-items: flex-start; }
 }

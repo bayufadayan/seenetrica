@@ -26,6 +26,9 @@ export default function SeriesDetailPage() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTitleId, setSelectedTitleId] = useState(null);
+  const [expandedNoteId, setExpandedNoteId] = useState(null);
+  const [editingNoteId, setEditingNoteId] = useState(null);
+  const [noteDraft, setNoteDraft] = useState("");
   const [draggedId, setDraggedId] = useState(null);
   const titles = useMemo(() => categories.titles
     .filter((title) => title.categoryId === series?.id && !title.deletedAt)
@@ -63,6 +66,16 @@ export default function SeriesDetailPage() {
     try {
       await categories.deleteTitle(title.id);
       toast(`${title.title} removed from this series.`);
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  }
+
+  async function saveSeriesNote(title) {
+    try {
+      await categories.updateTitle(title.id, { note: noteDraft });
+      setEditingNoteId(null);
+      toast("Note saved.");
     } catch (error) {
       toast(error.message, "error");
     }
@@ -142,10 +155,13 @@ export default function SeriesDetailPage() {
               return (
                 <li className={`series-timeline-item ${draggedId === title.id ? "is-dragged" : ""}`} key={title.id} draggable={editing} onDragStart={() => setDraggedId(title.id)} onDragOver={(event) => { if (editing) event.preventDefault(); }} onDrop={(event) => { event.preventDefault(); moveTitle(draggedId, title.id); setDraggedId(null); }} onDragEnd={() => setDraggedId(null)}>
                   <span className="series-timeline-node" aria-hidden="true"><span>{String(index + 1).padStart(2, "0")}</span></span>
-                  <button className="series-timeline-film" type="button" onClick={() => setSelectedTitleId(title.id)} aria-label={`Open note for ${movie?.title || title.title}`}>
-                    <Poster className="series-timeline-poster" src={movie?.poster_url || title.posterPath} alt="" loading="lazy" />
-                    <span className="series-timeline-film-copy"><strong>{movie?.title || title.title}</strong><small>{(movie?.release_date || title.releaseDate)?.slice(0, 4) || "Year unknown"} · {movie?.media_type === "series" || title.type === "series" ? "Series" : "Movie"}</small>{title.note && <small className="series-note-indicator">Note saved</small>}<span className={`series-watched-status ${watched ? "is-watched" : ""}`}>{watched ? <><Check aria-hidden="true" /> Watched</> : "Not watched"}</span></span>
-                  </button>
+                  <Link className="series-timeline-film" to={`/movies/${encodeURIComponent(movie?.id || title.movieId)}`} aria-label={`Open details for ${movie?.title || title.title}`}>
+                    <Poster className="series-timeline-poster" src={movie?.poster_url || title.posterPath} alt={`${movie?.title || title.title} poster`} loading="lazy" />
+                    <span className="series-timeline-film-copy"><strong>{movie?.title || title.title}</strong><small>{(movie?.release_date || title.releaseDate)?.slice(0, 4) || "Year unknown"} · {movie?.media_type === "series" || title.type === "series" ? "Series" : "Movie"}</small></span>
+                  </Link>
+                  <button className="series-note-toggle" type="button" aria-expanded={expandedNoteId === title.id} onClick={() => { setExpandedNoteId((current) => current === title.id ? null : title.id); setEditingNoteId(null); setNoteDraft(title.note || ""); }}><span>{expandedNoteId === title.id ? "Hide notes" : "View notes"}</span><span aria-hidden="true">{expandedNoteId === title.id ? "−" : "+"}</span></button>
+                  {expandedNoteId === title.id && <div className="series-note-bubble"><span className="series-note-bubble-tail" aria-hidden="true" />{editingNoteId === title.id ? <label className="series-note-inline-editor"><span>Film note</span><textarea value={noteDraft} rows={4} maxLength={5000} autoFocus onChange={(event) => setNoteDraft(event.target.value)} placeholder="Write a note for this film…" /></label> : <p className={title.note ? "" : "series-note-empty"}>{title.note || "No note yet. Add a note for this film."}</p>}<div className="series-note-bubble-actions">{editingNoteId === title.id ? <><button type="button" onClick={() => saveSeriesNote(title)}><Save aria-hidden="true" /> Save</button><button type="button" onClick={() => { setEditingNoteId(null); setNoteDraft(title.note || ""); }}>Cancel</button></> : <button type="button" onClick={() => { setEditingNoteId(title.id); setNoteDraft(title.note || ""); }}><Pencil aria-hidden="true" /> {title.note ? "Edit note" : "Add note"}</button>}<button type="button" onClick={() => setSelectedTitleId(title.id)}>{watched ? "Log another viewing" : "Log viewing"}</button></div></div>}
+                  <span className={`series-watched-status ${watched ? "is-watched" : ""}`}>{watched ? <><Check aria-hidden="true" /> Watched</> : "Not watched"}</span>
                   {editing && <div className="series-item-actions"><span className="series-drag-handle" aria-hidden="true"><ArrowUpDown /></span><button type="button" aria-label={`Move ${title.title} left`} disabled={index === 0} onClick={() => moveBy(title, -1)}><ArrowLeft aria-hidden="true" /></button><button type="button" aria-label={`Move ${title.title} right`} disabled={index === titles.length - 1} onClick={() => moveBy(title, 1)}><ArrowRight aria-hidden="true" /></button><button type="button" aria-label={`Remove ${title.title} from this series`} onClick={() => removeMovie(title)}><Trash2 aria-hidden="true" /></button></div>}
                 </li>
               );
@@ -158,7 +174,7 @@ export default function SeriesDetailPage() {
       {editDetails && <CategoryFormModal existing={series} onClose={() => setEditDetails(false)} />}
       {deleteOpen && <Modal title="Delete this series?" onClose={() => setDeleteOpen(false)} className="series-delete-modal"><p><strong>{series.name}</strong> and its order and notes will be removed. The film records, categories, and watch history will stay in your library.</p><div className="form-actions"><button className="danger-button" type="button" onClick={deleteSeries}><Trash2 aria-hidden="true" /> Delete series</button><button className="secondary-button" type="button" onClick={() => setDeleteOpen(false)}>Cancel</button></div></Modal>}
       {pickerOpen && <SeriesMoviePicker movies={movies} usedIds={new Set(titles.map((title) => String(title.movieId)))} onAdd={addMovie} onClose={() => setPickerOpen(false)} />}
-      {selectedTitle && <SeriesNoteModal title={selectedTitle} movie={movieById.get(String(selectedTitle.movieId))} watched={selectedTitle.isWatched || watchedMovieIds.has(String(selectedTitle.movieId)) || movieById.get(String(selectedTitle.movieId))?.status === "watched"} onSaveNote={async (note) => { try { await categories.updateTitle(selectedTitle.id, { note }); toast("Note saved."); } catch (error) { toast(error.message, "error"); throw error; } }} onMarkWatched={markWatched} onClose={() => setSelectedTitleId(null)} />}
+      {selectedTitle && <SeriesViewingModal title={selectedTitle} movie={movieById.get(String(selectedTitle.movieId))} watched={selectedTitle.isWatched || watchedMovieIds.has(String(selectedTitle.movieId)) || movieById.get(String(selectedTitle.movieId))?.status === "watched"} onMarkWatched={markWatched} onClose={() => setSelectedTitleId(null)} />}
     </>
   );
 }
@@ -169,20 +185,11 @@ function SeriesMoviePicker({ movies, usedIds, onAdd, onClose }) {
   return <Modal title="Add films from All Movies" onClose={onClose} className="series-picker-modal"><label className="form-field"><span>Search your movie library</span><input type="search" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search titles" /></label><div className="series-picker-results">{results.map((movie) => <button className="series-picker-row" key={movie.id} type="button" onClick={() => onAdd(movie)}><Poster src={movie.poster_url} alt="" /><span><strong>{movie.title}</strong><small>{movie.release_date?.slice(0, 4) || "Year unknown"} · {movie.media_type || "movie"}</small></span><Plus aria-hidden="true" /></button>)}{!results.length && <p className="collection-status">No matching titles. Add the film to All Movies first.</p>}</div><div className="form-actions"><Link className="text-button" to="/add-movie">Add a missing film</Link><button className="secondary-button" type="button" onClick={onClose}>Done</button></div></Modal>;
 }
 
-function SeriesNoteModal({ title, movie, watched, onSaveNote, onMarkWatched, onClose }) {
-  const [note, setNote] = useState(title.note || "");
-  const [editingNote, setEditingNote] = useState(false);
+function SeriesViewingModal({ title, movie, watched, onMarkWatched, onClose }) {
   const [watchedAt, setWatchedAt] = useState(today());
   const [theater, setTheater] = useState(false);
   const [busy, setBusy] = useState(false);
   const displayTitle = movie?.title || title.title;
-
-  async function saveNote() {
-    setBusy(true);
-    try { await onSaveNote(note); setEditingNote(false); }
-    catch { /* The parent reports the save error and keeps the editor open. */ }
-    finally { setBusy(false); }
-  }
 
   async function saveViewing() {
     setBusy(true);
@@ -190,5 +197,5 @@ function SeriesNoteModal({ title, movie, watched, onSaveNote, onMarkWatched, onC
     finally { setBusy(false); }
   }
 
-  return <Modal title={`${displayTitle} · Note`} onClose={onClose} busy={busy} className="series-note-modal"><div className="series-note-meta">{movie?.release_date?.slice(0, 4) || title.releaseDate?.slice(0, 4) || "Year unknown"} · {movie?.media_type === "series" || title.type === "series" ? "Series" : "Movie"}</div>{editingNote ? <label className="form-field"><span>Film note</span><textarea value={note} maxLength={5000} rows={6} autoFocus onChange={(event) => setNote(event.target.value)} placeholder="Write your note for this film…" /></label> : <div className="series-note-text">{note.trim() || <span className="series-note-empty">No note yet. Add a note for this film.</span>}</div>}<div className="series-note-actions">{editingNote ? <><button className="primary-button" type="button" disabled={busy} onClick={saveNote}><Save aria-hidden="true" /> Save note</button><button className="text-button" type="button" disabled={busy} onClick={() => { setNote(title.note || ""); setEditingNote(false); }}>Cancel</button></> : <button className="secondary-button" type="button" onClick={() => setEditingNote(true)}><Pencil aria-hidden="true" /> {note ? "Edit note" : "Add note"}</button>}</div><div className="series-note-viewing"><h3>Viewing history</h3>{watched && <p className="series-already-watched"><Check aria-hidden="true" /> This film is already marked watched.</p>}<label className="form-field"><span>Watched on</span><input type="date" required value={watchedAt} onChange={(event) => setWatchedAt(event.target.value)} /></label><label className="checkbox-field"><input type="checkbox" checked={theater} onChange={(event) => setTheater(event.target.checked)} />Watched in a theater</label><button className="primary-button" type="button" disabled={busy || !watchedAt} onClick={saveViewing}>{busy ? "Saving…" : watched ? "Log another viewing" : "Mark watched"}</button><p className="series-note-hint">This viewing will be added to your History.</p></div></Modal>;
+  return <Modal title={`${displayTitle} · Viewing`} onClose={onClose} busy={busy} className="series-note-modal"><div className="series-note-meta">{movie?.release_date?.slice(0, 4) || title.releaseDate?.slice(0, 4) || "Year unknown"} · {movie?.media_type === "series" || title.type === "series" ? "Series" : "Movie"}</div><div className="series-note-viewing"><h3>Viewing history</h3>{watched && <p className="series-already-watched"><Check aria-hidden="true" /> This film is already marked watched.</p>}<label className="form-field"><span>Watched on</span><input type="date" required value={watchedAt} onChange={(event) => setWatchedAt(event.target.value)} /></label><label className="checkbox-field"><input type="checkbox" checked={theater} onChange={(event) => setTheater(event.target.checked)} />Watched in a theater</label><button className="primary-button" type="button" disabled={busy || !watchedAt} onClick={saveViewing}>{busy ? "Saving…" : watched ? "Log another viewing" : "Mark watched"}</button><p className="series-note-hint">This viewing will be added to your History.</p></div></Modal>;
 }
