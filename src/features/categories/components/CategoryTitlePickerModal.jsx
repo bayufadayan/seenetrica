@@ -55,6 +55,21 @@ function movieRecordFromTmdb(details) {
   };
 }
 
+function movieRecordFromSeason(details, draft) {
+  return {
+    ...movieRecordFromTmdb(details),
+    title: draft.title,
+    base_title: draft.baseTitle,
+    original_title: draft.originalTitle || details.original_title || details.title,
+    poster_url: draft.posterPath ? `https://image.tmdb.org/t/p/w500${draft.posterPath}` : null,
+    poster_path: draft.posterPath || null,
+    release_date: draft.releaseDate || null,
+    season_number: draft.seasonNumber,
+    season_tmdb_id: draft.seasonTmdbId,
+    identity_key: draft.identityKey,
+  };
+}
+
 export function CategoryTitlePickerModal({ titles, categoryName, sortOrder = 0, onSave, onClose }) {
   const { movies, loading: archiveLoading, refresh } = useArchive();
   const [query, setQuery] = useState("");
@@ -109,7 +124,10 @@ export function CategoryTitlePickerModal({ titles, categoryName, sortOrder = 0, 
   }
 
   async function getArchiveMovie(details) {
-    const existing = movies.find((movie) => movie.external_source === "tmdb" && String(movie.external_id) === String(details.external_id) && movie.media_type === details.media_type);
+    const existing = movies.find((movie) => movie.external_source === "tmdb"
+      && String(movie.external_id) === String(details.external_id)
+      && movie.media_type === details.media_type
+      && Number(movie.season_number || 0) === 0);
     if (existing) return existing;
     const pin = archiveService.askForPin();
     if (pin === null) return null;
@@ -148,17 +166,48 @@ export function CategoryTitlePickerModal({ titles, categoryName, sortOrder = 0, 
     setError("");
     try {
       const details = seasonDetails;
-      const movie = await getArchiveMovie(details);
-      if (!movie) {
-        setBusy(false);
-        return;
+      const seasonMovies = [];
+      const missingSeasons = drafts.filter((draft) => !movies.some((movie) => (
+        movie.external_source === "tmdb"
+        && String(movie.external_id) === String(details.external_id)
+        && movie.media_type === details.media_type
+        && Number(movie.season_number || 0) === Number(draft.seasonNumber)
+      )));
+      let pin = null;
+      if (missingSeasons.length) {
+        pin = archiveService.askForPin();
+        if (pin === null) {
+          setBusy(false);
+          return;
+        }
+        if (!pin) throw new Error("PIN is required to register seasons in All Movies.");
       }
-      const records = drafts.map((draft, index) => ({
-        ...draft,
-        movieId: movie.id,
-        sortOrder: sortOrder + index,
-        isWatched: movie.status === "watched",
-      }));
+
+      const records = [];
+      for (const [index, draft] of drafts.entries()) {
+        let movie = [...movies, ...seasonMovies].find((record) => (
+          record.external_source === "tmdb"
+          && String(record.external_id) === String(details.external_id)
+          && record.media_type === details.media_type
+          && Number(record.season_number || 0) === Number(draft.seasonNumber)
+        ));
+        if (!movie) {
+          const response = await archiveService.writeAction(
+            "createMovie",
+            { movie: movieRecordFromSeason(details, draft), allow_same_title: true },
+            pin,
+          );
+          movie = response.movie;
+          seasonMovies.push(movie);
+        }
+        records.push({
+          ...draft,
+          movieId: movie.id,
+          sortOrder: sortOrder + index,
+          isWatched: movie.status === "watched",
+        });
+      }
+      if (seasonMovies.length) await refresh();
       await onSave(records);
       onClose();
     } catch (nextError) {
