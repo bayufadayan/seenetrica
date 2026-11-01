@@ -12,6 +12,7 @@ import { CategoryTitlePickerModal } from "../features/categories/components/Cate
 import { useCategories } from "../features/categories/context/CategoriesProvider";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { today } from "../utils/formatters";
+import { createTimeline, normalizeTimelines } from "../features/categories/utils/timeline.util";
 import "../features/categories/styles/series.css";
 
 export default function SeriesDetailPage() {
@@ -25,15 +26,24 @@ export default function SeriesDetailPage() {
   const [editing, setEditing] = useState(false);
   const [editDetails, setEditDetails] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [timelineModalOpen, setTimelineModalOpen] = useState(false);
+  const [timelineModalMode, setTimelineModalMode] = useState("create");
+  const [timelineName, setTimelineName] = useState("");
+  const [activeTimelineId, setActiveTimelineId] = useState(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedTitleId, setSelectedTitleId] = useState(null);
   const [expandedNoteId, setExpandedNoteId] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [draggedId, setDraggedId] = useState(null);
-  const titles = useMemo(() => categories.titles
+  const allTitles = useMemo(() => categories.titles
     .filter((title) => title.categoryId === series?.id && !title.deletedAt)
     .sort((left, right) => left.sortOrder - right.sortOrder || left.title.localeCompare(right.title)), [categories.titles, series?.id]);
+  const timelines = useMemo(() => normalizeTimelines(series?.id, series?.timelines, "series"), [series?.id, series?.timelines]);
+  const activeTimeline = timelines.find((timeline) => timeline.id === activeTimelineId) || timelines[0];
+  const titles = useMemo(() => allTitles
+    .filter((title) => (title.timelineId || `${series?.id}:timeline:default`) === activeTimeline?.id)
+    .sort((left, right) => left.sortOrder - right.sortOrder || left.title.localeCompare(right.title)), [allTitles, activeTimeline?.id, series?.id]);
   const movieById = useMemo(() => new Map(movies.map((movie) => [String(movie.id), movie])), [movies]);
   const watchedMovieIds = useMemo(() => new Set(history.map((entry) => String(entry.movie_id))), [history]);
   const selectedTitle = titles.find((title) => title.id === selectedTitleId) || null;
@@ -41,13 +51,52 @@ export default function SeriesDetailPage() {
   async function addMovie(payload) {
     if (!series) return;
     try {
-      const records = Array.isArray(payload) ? payload : [payload];
+      const records = (Array.isArray(payload) ? payload : [payload]).map((record, index) => ({
+        ...record,
+        timelineId: activeTimeline.id,
+        sortOrder: titles.length + index,
+      }));
       if (records.length > 1) await categories.createTitles(series.id, records);
       else await categories.createTitle(series.id, records[0]);
       toast(`${records.length} ${records.length === 1 ? "title" : "titles"} added to ${series.name}.`);
     } catch (error) {
       toast(error.message, "error");
       throw error;
+    }
+  }
+
+  async function addTimeline(event) {
+    event.preventDefault();
+    const name = timelineName.trim();
+    if (!name) return;
+    try {
+      const timeline = createTimeline(name, timelines.length);
+      const nextTimelines = [...timelines, timeline];
+      await categories.updateCategory(series.id, { timelines: nextTimelines });
+      setActiveTimelineId(timeline.id);
+      setTimelineName("");
+      setTimelineModalOpen(false);
+      setEditing(false);
+      toast(`Timeline “${name}” created.`);
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  }
+
+  async function renameTimeline(event) {
+    event.preventDefault();
+    const name = timelineName.trim();
+    if (!name || !activeTimeline) return;
+    try {
+      const nextTimelines = timelines.map((timeline) => timeline.id === activeTimeline.id
+        ? { ...timeline, name, updatedAt: new Date().toISOString() }
+        : timeline);
+      await categories.updateCategory(series.id, { timelines: nextTimelines });
+      setTimelineName("");
+      setTimelineModalOpen(false);
+      toast(`Timeline renamed to “${name}”.`);
+    } catch (error) {
+      toast(error.message, "error");
     }
   }
 
@@ -125,7 +174,7 @@ export default function SeriesDetailPage() {
     <>
       <section className="page-shell series-detail-heading">
         <div className="series-detail-icon"><CategoryIcon category={series} /></div>
-        <div className="series-detail-copy"><p className="eyebrow">Watch order · {titles.length} titles</p><h1>{series.name}<span>.</span></h1><p className="page-hero-description">Films in your chosen order. Select a film to open its note.</p></div>
+        <div className="series-detail-copy"><p className="eyebrow">Watch order · {allTitles.length} titles · {timelines.length} timelines</p><h1>{series.name}<span>.</span></h1><p className="page-hero-description">Films in your chosen order. Select a film to open its note.</p></div>
         <div className="series-detail-actions">
           <label className="series-order-switch"><span>{editing ? "Reorder on" : "Reorder"}</span><input type="checkbox" role="switch" checked={editing} onChange={(event) => setEditing(event.target.checked)} /><span className="series-switch-track" aria-hidden="true" /></label>
           <button className="secondary-button" type="button" onClick={() => setEditDetails(true)}><Pencil aria-hidden="true" /> Name & image</button>
@@ -133,7 +182,17 @@ export default function SeriesDetailPage() {
         </div>
       </section>
       <section className="page-shell page-content series-detail-page">
-        <div className="series-order-heading"><span>{editing ? "Drag films to change their order" : "Your timeline · first to last"}</span><button className="secondary-button" type="button" onClick={() => setPickerOpen(true)}><Plus aria-hidden="true" /> Add Movie</button></div>
+        <div className="series-timeline-toolbar">
+          <div className="series-timeline-tabs" role="tablist" aria-label="Series timelines">
+            {timelines.map((timeline) => {
+              const count = allTitles.filter((title) => title.timelineId === timeline.id || (!title.timelineId && timeline.id === `${series.id}:timeline:default`)).length;
+              const selected = timeline.id === activeTimeline?.id;
+              return <button className={`series-timeline-tab ${selected ? "is-active" : ""}`} key={timeline.id} type="button" role="tab" aria-selected={selected} onClick={() => { setActiveTimelineId(timeline.id); setEditing(false); setExpandedNoteId(null); }}><span>{timeline.name}</span><small>{count}</small></button>;
+            })}
+            <button className="series-add-timeline" type="button" onClick={() => { setTimelineModalMode("create"); setTimelineName(""); setTimelineModalOpen(true); }}><Plus aria-hidden="true" /> New timeline</button>
+          </div>
+          <div className="series-order-heading"><span>{editing ? "Drag films to change their order" : `${activeTimeline?.name || "Timeline"} · first to last`}</span><div className="series-order-actions">{activeTimeline && <button className="secondary-button" type="button" onClick={() => { setTimelineModalMode("rename"); setTimelineName(activeTimeline.name); setTimelineModalOpen(true); }}><Pencil aria-hidden="true" /> Rename</button>}<button className="secondary-button" type="button" onClick={() => setPickerOpen(true)}><Plus aria-hidden="true" /> Add Movie</button></div></div>
+        </div>
         {archiveError && <p className="series-offline-note" role="status">Showing saved series. Movie details may be unavailable until the archive reconnects.</p>}
         {titles.length ? (
           <div className="series-timeline-scroll" role="region" aria-label="Series watch order">
@@ -165,7 +224,8 @@ export default function SeriesDetailPage() {
       </section>
       {editDetails && <CategoryFormModal existing={series} onClose={() => setEditDetails(false)} />}
       {deleteOpen && <Modal title="Delete this series?" onClose={() => setDeleteOpen(false)} className="series-delete-modal"><p><strong>{series.name}</strong> and its order and notes will be removed. The film records, categories, and watch history will stay in your library.</p><div className="form-actions"><button className="danger-button" type="button" onClick={deleteSeries}><Trash2 aria-hidden="true" /> Delete series</button><button className="secondary-button" type="button" onClick={() => setDeleteOpen(false)}>Cancel</button></div></Modal>}
-      {pickerOpen && <CategoryTitlePickerModal titles={titles} categoryName={series.name} sortOrder={titles.length} onSave={addMovie} onClose={() => setPickerOpen(false)} />}
+      {timelineModalOpen && <Modal title={timelineModalMode === "rename" ? "Rename timeline" : "New timeline"} onClose={() => setTimelineModalOpen(false)} className="series-timeline-modal"><form onSubmit={timelineModalMode === "rename" ? renameTimeline : addTimeline}><label className="form-field"><span>Timeline name</span><input autoFocus required maxLength={80} value={timelineName} onChange={(event) => setTimelineName(event.target.value)} placeholder="e.g. Release order" /></label><div className="form-actions"><button className="primary-button" type="submit">{timelineModalMode === "rename" ? "Save name" : "Create timeline"}</button><button className="text-button" type="button" onClick={() => setTimelineModalOpen(false)}>Cancel</button></div></form></Modal>}
+      {pickerOpen && <CategoryTitlePickerModal titles={titles} categoryName={activeTimeline?.name || series.name} sortOrder={titles.length} onSave={addMovie} onClose={() => setPickerOpen(false)} />}
       {selectedTitle && <SeriesViewingModal title={selectedTitle} movie={movieById.get(String(selectedTitle.movieId))} watched={selectedTitle.isWatched || watchedMovieIds.has(String(selectedTitle.movieId)) || movieById.get(String(selectedTitle.movieId))?.status === "watched"} onMarkWatched={markWatched} onClose={() => setSelectedTitleId(null)} />}
     </>
   );

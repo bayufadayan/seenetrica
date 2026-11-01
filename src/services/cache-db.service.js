@@ -1,14 +1,14 @@
 import { openDB } from "idb";
 
 export const CACHE_DB_NAME = "seenetrica-cache";
-export const CACHE_DB_VERSION = 1;
+export const CACHE_DB_VERSION = 2;
 
 let databasePromise;
 
 export function getCacheDatabase() {
   if (!databasePromise) {
     databasePromise = openDB(CACHE_DB_NAME, CACHE_DB_VERSION, {
-      upgrade(database) {
+      upgrade(database, _oldVersion, _newVersion, transaction) {
         if (!database.objectStoreNames.contains("categories")) {
           const store = database.createObjectStore("categories", { keyPath: "id" });
           store.createIndex("slug", "slug", { unique: true });
@@ -16,7 +16,13 @@ export function getCacheDatabase() {
         if (!database.objectStoreNames.contains("categoryTitles")) {
           const store = database.createObjectStore("categoryTitles", { keyPath: "id" });
           store.createIndex("categoryId", "categoryId");
-          store.createIndex("categoryIdentity", ["categoryId", "identityKey"], { unique: true });
+          store.createIndex("categoryTimelineIdentity", ["categoryId", "timelineId", "identityKey"], { unique: true });
+        } else {
+          const store = transaction.objectStore("categoryTitles");
+          if (store.indexNames.contains("categoryIdentity")) store.deleteIndex("categoryIdentity");
+          if (!store.indexNames.contains("categoryTimelineIdentity")) {
+            store.createIndex("categoryTimelineIdentity", ["categoryId", "timelineId", "identityKey"], { unique: true });
+          }
         }
         if (!database.objectStoreNames.contains("categoryOutbox")) {
           const store = database.createObjectStore("categoryOutbox", { keyPath: "id" });

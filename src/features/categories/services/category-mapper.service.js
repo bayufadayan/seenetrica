@@ -4,12 +4,15 @@ function nullableNumber(value) {
   return Number.isFinite(number) ? number : null;
 }
 
+import { defaultTimelineId, normalizeTimelines } from "../utils/timeline.util";
+
 export function categoryFromApi(record) {
   return {
     id: record.id,
     name: record.name,
     slug: record.slug,
     kind: record.kind || "category",
+    timelines: normalizeTimelines(record.id, record.timelines, record.kind || "category"),
     iconUrl: record.icon_url || null,
     iconPublicId: record.icon_public_id || null,
     sortOrder: Number(record.sort_order) || 0,
@@ -27,6 +30,7 @@ export function categoryToApi(record) {
     name: record.name,
     slug: record.slug,
     kind: record.kind || "category",
+    timelines: JSON.stringify(normalizeTimelines(record.id, record.timelines, record.kind || "category")),
     icon_url: record.iconUrl || null,
     icon_public_id: record.iconPublicId || null,
     sort_order: Number(record.sortOrder) || 0,
@@ -42,6 +46,7 @@ export function categoryTitleFromApi(record) {
   return {
     id: record.id,
     categoryId: record.category_id,
+    timelineId: record.timeline_id || defaultTimelineId(record.category_id),
     tmdbId: nullableNumber(record.tmdb_id),
     title: record.title,
     baseTitle: record.base_title || record.title,
@@ -69,6 +74,7 @@ export function categoryTitleToApi(record) {
   return {
     id: record.id,
     category_id: record.categoryId,
+    timeline_id: record.timelineId || defaultTimelineId(record.categoryId),
     tmdb_id: record.tmdbId,
     title: record.title,
     base_title: record.baseTitle,

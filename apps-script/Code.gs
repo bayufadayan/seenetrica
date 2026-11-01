@@ -73,6 +73,7 @@ const CATEGORY_HEADERS = [
   "name",
   "slug",
   "kind",
+  "timelines",
   "icon_url",
   "icon_public_id",
   "sort_order",
@@ -86,6 +87,7 @@ const CATEGORY_HEADERS = [
 const CATEGORY_TITLE_HEADERS = [
   "id",
   "category_id",
+  "timeline_id",
   "tmdb_id",
   "title",
   "base_title",
@@ -111,6 +113,7 @@ const CATEGORY_TITLE_HEADERS = [
 const CATEGORY_MOVIE_HEADERS = [
   "id",
   "category_id",
+  "timeline_id",
   "movie_id",
   "is_watched",
   "prerequisite_movie_ids",
@@ -160,7 +163,7 @@ const CATEGORY_ICON_FOLDER =
 
 const MAX_SYNC_RECORDS = 2000;
 
-const CATEGORIZED_SCHEMA_VERSION = "3";
+const CATEGORIZED_SCHEMA_VERSION = "4";
 
 const READ_CACHE_SECONDS = 20;
 
@@ -1278,6 +1281,19 @@ function normalizeCategoryInput(
     "Category icon public ID",
     500,
   );
+  const kind = source.kind === "series" ? "series" : "category";
+  const rawTimelines = arrayFromCell(source.timelines);
+  const timelines = kind === "series"
+    ? (rawTimelines.length
+      ? rawTimelines.map((timeline, index) => ({
+        id: requiredText(timeline.id, "Timeline ID", 120),
+        name: requiredText(String(timeline.name || "Unnamed").trim(), "Timeline name", 80),
+        sort_order: optionalNumber(timeline.sort_order ?? timeline.sortOrder ?? index, "Timeline order", { min: 0, max: 100000 }) || 0,
+        created_at: optionalTimestamp(timeline.created_at || timeline.createdAt, "Timeline creation time") || timestamp,
+        updated_at: optionalTimestamp(timeline.updated_at || timeline.updatedAt, "Timeline update time") || timestamp,
+      }))
+      : [{ id: `${id}:timeline:default`, name: "Unnamed", sort_order: 0, created_at: timestamp, updated_at: timestamp }])
+    : [];
 
   if (iconUrl || iconPublicId) {
     if (
@@ -1300,7 +1316,8 @@ function normalizeCategoryInput(
     id,
     name,
     slug,
-    kind: source.kind === "series" ? "series" : "category",
+    kind,
+    timelines: JSON.stringify(timelines),
     icon_url: iconUrl,
     icon_public_id: iconPublicId,
     sort_order:
@@ -1365,6 +1382,11 @@ function normalizeCategoryTitleInput(
     "Category ID",
     100,
   );
+  const timelineId = optionalText(
+    source.timeline_id !== undefined ? source.timeline_id : source.timelineId,
+    "Timeline ID",
+    120,
+  ) || `${categoryId}:timeline:default`;
   const mediaType = String(
     source.media_type ||
       source.type ||
@@ -1457,6 +1479,7 @@ function normalizeCategoryTitleInput(
   return {
     id,
     category_id: categoryId,
+    timeline_id: timelineId,
     tmdb_id: tmdbId,
     title,
     base_title: baseTitle,
@@ -1540,6 +1563,7 @@ function normalizeCategoryTitleInput(
 function categoryTitleForClient(record) {
   return {
     ...record,
+    timeline_id: record.timeline_id || `${record.category_id}:timeline:default`,
     tmdb_id: record.tmdb_id ? Number(record.tmdb_id) : null,
     season_number:
       record.season_number === null ||
@@ -1573,6 +1597,7 @@ function categoryMovieForClient(
   return {
     id: membership.id,
     category_id: membership.category_id,
+    timeline_id: membership.timeline_id || `${membership.category_id}:timeline:default`,
     tmdb_id: movie.external_id ? Number(movie.external_id) : null,
     title: movie.title,
     base_title:
@@ -1598,7 +1623,7 @@ function categoryMovieForClient(
     )
       .map((movieId) =>
         membershipIdByMovieId.get(
-          String(movieId),
+          `${membership.timeline_id || `${membership.category_id}:timeline:default`}::${movieId}`,
         ),
       )
       .filter(Boolean),
@@ -1664,7 +1689,7 @@ function buildSyncedCategoryTitles(
     (categoryMemberships) => {
       const membershipIdByMovieId = new Map(
         categoryMemberships.map((membership) => [
-          String(membership.movie_id),
+          `${membership.timeline_id || `${membership.category_id}:timeline:default`}::${membership.movie_id}`,
           membership.id,
         ]),
       );
@@ -1697,6 +1722,7 @@ function buildCategorizedSnapshot() {
     SHEET_NAMES.CATEGORIES,
   ).map((category) => ({
     ...category,
+    timelines: JSON.parse(normalizeCategoryInput(category, category).timelines),
     sort_order:
       Number(category.sort_order) || 0,
   }));
@@ -1963,7 +1989,7 @@ function mergeLegacyCategorizedChangesUnlocked(
   );
   const titleIndexByIdentity = new Map(
     titles.map((title, index) => [
-      `${title.category_id}::${title.identity_key}`,
+      `${title.category_id}::${title.timeline_id || `${title.category_id}:timeline:default`}::${title.identity_key}`,
       index,
     ]),
   );
@@ -1987,7 +2013,7 @@ function mergeLegacyCategorizedChangesUnlocked(
   normalizedChanges.forEach((normalized) => {
     const incomingId = String(normalized.id);
     const identity =
-      `${normalized.category_id}::${normalized.identity_key}`;
+      `${normalized.category_id}::${normalized.timeline_id}::${normalized.identity_key}`;
     let index = titleIndexById.has(incomingId)
       ? titleIndexById.get(incomingId)
       : titleIndexByIdentity.get(identity);
@@ -2002,7 +2028,7 @@ function mergeLegacyCategorizedChangesUnlocked(
     index = titles.length;
     titles.push(normalized);
     titleIndexById.set(incomingId, index);
-    titleIndexByIdentity.set(identity, index);
+      titleIndexByIdentity.set(identity, index);
     titleIdMap[incomingId] = incomingId;
   });
 
@@ -2224,7 +2250,7 @@ function validateCategoryMovieRelationships(
   );
   const membershipByCategoryMovie = new Map(
     activeMemberships.map((membership) => [
-      `${membership.category_id}::${membership.movie_id}`,
+      `${membership.category_id}::${membership.timeline_id || `${membership.category_id}:timeline:default`}::${membership.movie_id}`,
       membership,
     ]),
   );
@@ -2245,7 +2271,7 @@ function validateCategoryMovieRelationships(
     ).forEach((movieId) => {
       if (
         !membershipByCategoryMovie.has(
-          `${categoryId}::${movieId}`,
+          `${categoryId}::${membership.timeline_id || `${categoryId}:timeline:default`}::${movieId}`,
         )
       ) {
         throw new Error(
@@ -2261,7 +2287,7 @@ function validateCategoryMovieRelationships(
     visited,
   ) {
     const key =
-      `${membership.category_id}::${membership.movie_id}`;
+      `${membership.category_id}::${membership.timeline_id || `${membership.category_id}:timeline:default`}::${membership.movie_id}`;
 
     if (visiting.has(key)) {
       throw new Error(
@@ -2279,7 +2305,7 @@ function validateCategoryMovieRelationships(
     ).forEach((movieId) => {
       const prerequisite =
         membershipByCategoryMovie.get(
-          `${membership.category_id}::${movieId}`,
+          `${membership.category_id}::${membership.timeline_id || `${membership.category_id}:timeline:default`}::${movieId}`,
         );
 
       if (prerequisite) {
@@ -2329,7 +2355,7 @@ function mergeSyncedCategoryTitleChangesUnlocked(
   );
   const membershipIndexByCategoryMovie = new Map(
     memberships.map((membership, index) => [
-      `${membership.category_id}::${membership.movie_id}`,
+      `${membership.category_id}::${membership.timeline_id || `${membership.category_id}:timeline:default`}::${membership.movie_id}`,
       index,
     ]),
   );
@@ -2381,7 +2407,7 @@ function mergeSyncedCategoryTitleChangesUnlocked(
 
     const incomingId = String(title.id);
     const categoryMovieKey =
-      `${categoryId}::${movie.id}`;
+      `${categoryId}::${title.timeline_id || `${categoryId}:timeline:default`}::${movie.id}`;
     let membershipIndex =
       membershipIndexById.has(incomingId)
         ? membershipIndexById.get(incomingId)
@@ -2421,6 +2447,7 @@ function mergeSyncedCategoryTitleChangesUnlocked(
       ...(existingMembership || {}),
       id: membershipId,
       category_id: categoryId,
+      timeline_id: title.timeline_id || `${categoryId}:timeline:default`,
       movie_id: movie.id,
       is_watched: booleanFromCell(
         title.is_watched,
@@ -2715,7 +2742,7 @@ function syncCategoryLibrary(payload) {
     const membershipIndexByCategoryMovie =
       new Map(
         memberships.map((membership, index) => [
-          `${membership.category_id}::${membership.movie_id}`,
+          `${membership.category_id}::${membership.timeline_id || `${categoryId}:timeline:default`}::${membership.movie_id}`,
           index,
         ]),
       );
@@ -2773,7 +2800,7 @@ function syncCategoryLibrary(payload) {
         String(movie.id),
       );
       const membershipKey =
-        `${categoryId}::${movie.id}`;
+        `${categoryId}::${title.timeline_id || `${categoryId}:timeline:default`}::${movie.id}`;
       const existingIndex =
         membershipIndexByCategoryMovie.get(
           membershipKey,
@@ -2788,10 +2815,13 @@ function syncCategoryLibrary(payload) {
           ? existing.id
           : String(title.id),
         category_id: categoryId,
+        timeline_id: title.timeline_id || `${categoryId}:timeline:default`,
         movie_id: movie.id,
+        sort_order: Number(title.sort_order) || 0,
         is_watched: booleanFromCell(
           title.is_watched,
         ),
+        note: title.note || "",
         prerequisite_movie_ids: "[]",
         legacy_category_title_id: title.id,
         created_at:
@@ -2819,7 +2849,7 @@ function syncCategoryLibrary(payload) {
       );
       const membershipIndex =
         membershipIndexByCategoryMovie.get(
-          `${categoryId}::${movieId}`,
+          `${categoryId}::${title.timeline_id || `${categoryId}:timeline:default`}::${movieId}`,
         );
       const prerequisiteMovieIds = arrayFromCell(
         title.prerequisite_ids,

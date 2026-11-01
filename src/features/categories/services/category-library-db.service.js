@@ -1,5 +1,6 @@
 import { getCacheDatabase } from "../../../services/cache-db.service";
 import { createCategorySlug, normalizeCategoryName } from "../utils/category.util";
+import { normalizeTimelines } from "../utils/timeline.util";
 import {
   assertUniqueCategoryIdentities,
   normalizeCategoryTitle,
@@ -40,9 +41,14 @@ function mapCategoryId(record, categoryMap) {
 }
 
 export function remapCategoryTitle(record, categoryMap, titleMap) {
+  const categoryId = categoryMap[record.categoryId] || record.categoryId;
+  const timelineId = record.timelineId === `${record.categoryId}:timeline:default`
+    ? `${categoryId}:timeline:default`
+    : record.timelineId;
   return {
     ...mapCategoryId(record, categoryMap),
     id: titleMap[record.id] || record.id,
+    timelineId: timelineId || `${categoryId}:timeline:default`,
     prerequisiteIds: (record.prerequisiteIds || []).map((id) => titleMap[id] || id),
   };
 }
@@ -149,11 +155,13 @@ export const categoryLibraryDb = {
         throw new Error("A category with this slug already exists.");
       }
       const timestamp = now();
+      const id = payload.id || createId("local-category");
       const record = {
-        id: payload.id || createId("local-category"),
+        id,
         name,
         slug,
         kind: payload.kind === "series" ? "series" : "category",
+        timelines: normalizeTimelines(id, payload.timelines, payload.kind === "series" ? "series" : "category"),
         iconUrl: payload.iconUrl || null,
         iconPublicId: payload.iconPublicId || null,
         sortOrder: Number.isFinite(Number(payload.sortOrder))
@@ -196,6 +204,7 @@ export const categoryLibraryDb = {
         name,
         slug,
         kind: patch.kind === "series" ? "series" : (patch.kind === "category" ? "category" : (existing.kind || "category")),
+        timelines: normalizeTimelines(categoryId, patch.timelines ?? existing.timelines, patch.kind || existing.kind),
         updatedAt: now(),
       };
       await categoriesStore.put(record);
@@ -419,7 +428,7 @@ export const categoryLibraryDb = {
       snapshot.titles,
       localTitles,
       protectedTitles,
-      (record) => `${record.categoryId}::${record.identityKey}`,
+      (record) => `${record.categoryId}::${record.timelineId || `${record.categoryId}:timeline:default`}::${record.identityKey}`,
     );
     await replaceStore(categoriesStore, categories);
     await replaceStore(titlesStore, titles);
@@ -447,10 +456,17 @@ export const categoryLibraryDb = {
     const categoriesStore = transaction.objectStore("categories");
     const titlesStore = transaction.objectStore("categoryTitles");
     const outboxStore = transaction.objectStore("categoryOutbox");
-    const localCategories = (await categoriesStore.getAll()).map((record) => ({
-      ...record,
-      id: categoryMap[record.id] || record.id,
-    }));
+    const localCategories = (await categoriesStore.getAll()).map((record) => {
+      const id = categoryMap[record.id] || record.id;
+      return {
+        ...record,
+        id,
+        timelines: (record.timelines || []).map((timeline) => ({
+          ...timeline,
+          id: timeline.id === `${record.id}:timeline:default` ? `${id}:timeline:default` : timeline.id,
+        })),
+      };
+    });
     const localTitles = (await titlesStore.getAll()).map((record) => remapCategoryTitle(record, categoryMap, titleMap));
     const remainingOutbox = [];
     for (const operation of await outboxStore.getAll()) {
@@ -481,7 +497,7 @@ export const categoryLibraryDb = {
       snapshot.titles,
       localTitles,
       protectedTitles,
-      (record) => `${record.categoryId}::${record.identityKey}`,
+      (record) => `${record.categoryId}::${record.timelineId || `${record.categoryId}:timeline:default`}::${record.identityKey}`,
     );
     await replaceStore(categoriesStore, categories);
     await replaceStore(titlesStore, titles);

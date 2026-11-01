@@ -1,4 +1,5 @@
 import { createTitleIdentityKey } from "./title-draft.util";
+import { defaultTimelineId } from "./timeline.util";
 
 function now() {
   return new Date().toISOString();
@@ -41,6 +42,7 @@ export function normalizeCategoryTitle(categoryId, payload, existing = null) {
     ...(existing || {}),
     id: existing?.id || payload.id || createId("category-title"),
     categoryId,
+    timelineId: payload.timelineId || existing?.timelineId || defaultTimelineId(categoryId),
     tmdbId: movieId ? (payload.tmdbId !== null && payload.tmdbId !== undefined && Number.isFinite(Number(payload.tmdbId)) ? Number(payload.tmdbId) : null) : Number(payload.tmdbId),
     title,
     baseTitle,
@@ -99,11 +101,11 @@ export function assertUniqueCategoryIdentities(records, allTitles, ignoredIds = 
   const existing = new Set(
     allTitles
       .filter((title) => !title.deletedAt && !ignored.has(title.id))
-      .map((title) => `${title.categoryId}::${title.identityKey}`),
+      .map((title) => `${title.categoryId}::${title.timelineId || defaultTimelineId(title.categoryId)}::${title.identityKey}`),
   );
   const batch = new Set();
   for (const record of records) {
-    const key = `${record.categoryId}::${record.identityKey}`;
+    const key = `${record.categoryId}::${record.timelineId || defaultTimelineId(record.categoryId)}::${record.identityKey}`;
     if (existing.has(key)) throw new Error(`${record.title} is already in this category.`);
     if (batch.has(key)) throw new Error(`${record.title} appears more than once in this batch.`);
     batch.add(key);
