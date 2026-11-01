@@ -2,20 +2,24 @@ import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
 import { useBodyLock } from "../../hooks/useBodyLock";
 
-const focusable = "button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
+const focusable = "button:not([disabled]):not(.wm-modal-backdrop), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])";
 
 export function Modal({ title, children, onClose, busy = false, className = "" }) {
   const dialogRef = useRef(null);
   const previousFocus = useRef(typeof document === "undefined" ? null : document.activeElement);
+  const onCloseRef = useRef(onClose);
+  const busyRef = useRef(busy);
+  onCloseRef.current = onClose;
+  busyRef.current = busy;
   useBodyLock(true);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     const focusToRestore = previousFocus.current;
     const elements = () => [...(dialog?.querySelectorAll(focusable) || [])];
-    elements()[0]?.focus();
+    (dialog?.querySelector("[autofocus]") || elements()[0])?.focus();
     const keydown = (event) => {
-      if (event.key === "Escape" && !busy) onClose();
+      if (event.key === "Escape" && !busyRef.current) onCloseRef.current();
       if (event.key !== "Tab") return;
       const items = elements();
       if (!items.length) return;
@@ -34,7 +38,7 @@ export function Modal({ title, children, onClose, busy = false, className = "" }
       document.removeEventListener("keydown", keydown);
       focusToRestore?.focus?.();
     };
-  }, [busy, onClose]);
+  }, []);
 
   return (
     <div className={`wm-modal ${className}`} role="dialog" aria-modal="true" aria-labelledby="wm-modal-title">
