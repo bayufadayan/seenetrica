@@ -1,4 +1,4 @@
-import { Clapperboard, EllipsisVertical } from "lucide-react";
+import { Clapperboard, EllipsisVertical, Trophy } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./MoreMenu.css";
@@ -9,6 +9,7 @@ export function MoreMenu() {
   const triggerRef = useRef(null);
   const location = useLocation();
   const moviesActive = location.pathname === "/movies";
+  const leaderboardsActive = location.pathname === "/leaderboards";
 
   useEffect(() => {
     if (!open) return undefined;
@@ -59,6 +60,15 @@ export function MoreMenu() {
           >
             <Clapperboard aria-hidden="true" />
             <span>All Movies</span>
+          </Link>
+          <Link
+            className={`nav-category-item ${leaderboardsActive ? "is-active" : ""}`}
+            role="menuitem"
+            to="/leaderboards"
+            onClick={() => setOpen(false)}
+          >
+            <Trophy aria-hidden="true" />
+            <span>Leaderboards</span>
           </Link>
         </div>
       )}

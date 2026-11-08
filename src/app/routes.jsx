@@ -17,6 +17,7 @@ import PlayerPage from "../pages/PlayerPage";
 import SeriesPage from "../pages/SeriesPage";
 import SeriesDetailPage from "../pages/SeriesDetailPage";
 import CategoriesPage from "../pages/CategoriesPage";
+import LeaderboardsPage from "../pages/LeaderboardsPage";
 
 function LegacyDetailRedirect() {
   const [params] = useSearchParams();
@@ -39,6 +40,7 @@ export function AppRoutes() {
         <Route path="planned" element={<PlannedPage />} />
         <Route path="cinema" element={<CinemaPage />} />
         <Route path="movies" element={<AllMoviesPage />} />
+        <Route path="leaderboards" element={<LeaderboardsPage />} />
         <Route path="add-movie" element={<AddMoviePage />} />
         <Route path="log-viewing" element={<LogViewingPage />} />
         <Route path="movies/:movieId" element={<MovieDetailPage />} />
