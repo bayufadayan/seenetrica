@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { MovieCard } from "../../components/common/MovieCard";
 import { EmptyState } from "../../components/ui/States";
 import { formatDate, formatMonth } from "../../utils/formatters";
+import { annotateRewatchNumbers, getRewatchLabel } from "./rewatch.util";
 
 export function HistoryGroups({
   entries,
@@ -91,13 +92,14 @@ function HistoryCard({ entry }) {
         String(entry.watched_in_theater).toLowerCase() === "true"
       }
       subtitle={`${entry.movie.media_type} · ${formatDate(entry.watched_at)}`}
+      rewatchLabel={getRewatchLabel(entry.watchNumber)}
     />
   );
 }
 
 export function joinHistory(movies, history) {
   const movieMap = new Map(movies.map((movie) => [String(movie.id), movie]));
-  return history
+  return annotateRewatchNumbers(history)
     .map((entry) => ({
       ...entry,
       watched_at: String(entry.watched_at || "").slice(0, 10),

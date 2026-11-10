@@ -122,6 +122,14 @@
   height: 13px;
 }
 
+.cinema-entry-copy > .cinema-entry-screening-label {
+  flex-wrap: wrap;
+}
+
+.cinema-entry-screening-label .rewatch-label {
+  margin-top: 0;
+}
+
 .cinema-entry-date {
   display: grid;
   justify-items: end;

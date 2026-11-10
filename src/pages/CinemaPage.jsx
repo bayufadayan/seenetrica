@@ -11,6 +11,7 @@ import {
   buildCinemaEntries,
   filterCinemaEntries,
 } from "../features/history/cinema-view.util";
+import { getRewatchLabel } from "../features/history/rewatch.util";
 
 export default function CinemaPage() {
   useDocumentTitle("Cinema Diary");
@@ -89,9 +90,10 @@ export default function CinemaPage() {
                       · {formatRuntime(entry.movie.runtime_minutes)}
                     </p>
                     <h2>{entry.movie.title}</h2>
-                    <span>
+                    <span className="cinema-entry-screening-label">
                       <Ticket aria-hidden="true" />
                       Watched on the big screen
+                      {getRewatchLabel(entry.watchNumber) && <small className="rewatch-label">{getRewatchLabel(entry.watchNumber)}</small>}
                     </span>
                   </div>
                   <div className="cinema-entry-date">

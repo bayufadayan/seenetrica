@@ -606,6 +606,22 @@ kbd {
   text-transform: capitalize;
 }
 
+.rewatch-label {
+  display: inline-flex;
+  width: max-content;
+  align-items: center;
+  margin-top: 6px;
+  padding: 3px 8px;
+  border: 1px solid rgba(158, 114, 35, 0.28);
+  border-radius: 999px;
+  background: rgba(235, 218, 174, 0.25);
+  color: #80601e;
+  font-size: 0.61rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-transform: none;
+}
+
 .rating {
   display: inline-flex;
   flex-shrink: 0;

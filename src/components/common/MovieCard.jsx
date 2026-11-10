@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { formatRating } from "../../utils/formatters";
 import { Poster } from "../ui/Poster";
 
-export function MovieCard({ movie, subtitle, dateBadge, inTheater = false }) {
+export function MovieCard({ movie, subtitle, dateBadge, inTheater = false, rewatchLabel = "" }) {
   const detail = `/movies/${encodeURIComponent(movie.id)}`;
   const cardSubtitle =
     subtitle ||
@@ -36,6 +36,7 @@ export function MovieCard({ movie, subtitle, dateBadge, inTheater = false }) {
             {movie.title}
           </Link>
           <p className="movie-subtitle">{cardSubtitle}</p>
+          {rewatchLabel && <span className="rewatch-label">{rewatchLabel}</span>}
         </div>
         <span
           className="rating"

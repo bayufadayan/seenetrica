@@ -18,6 +18,7 @@ import {
 } from "../utils/formatters";
 import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { useEscape } from "../hooks/useEscape";
+import { annotateRewatchNumbers, getRewatchLabel } from "../features/history/rewatch.util";
 
 export default function MovieDetailPage() {
   const { movieId } = useParams();
@@ -82,7 +83,7 @@ export default function MovieDetailPage() {
   const viewings = useMemo(
     () =>
       movie
-        ? history
+        ? annotateRewatchNumbers(history)
             .filter((entry) => String(entry.movie_id) === String(movie.id))
             .sort((a, b) =>
               String(b.watched_at).localeCompare(String(a.watched_at)),
@@ -237,6 +238,11 @@ export default function MovieDetailPage() {
                           ? "Watched in a theater"
                           : "Watched elsewhere"}
                       </span>
+                      {getRewatchLabel(entry.watchNumber) && (
+                        <span className="rewatch-label">
+                          {getRewatchLabel(entry.watchNumber)}
+                        </span>
+                      )}
                     </div>
                     {booleanValue(entry.watched_in_theater) ? (
                       <Clapperboard aria-hidden="true" />
