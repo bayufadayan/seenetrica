@@ -17,6 +17,7 @@ import PlayerPage from "../pages/PlayerPage";
 import SeriesPage from "../pages/SeriesPage";
 import SeriesDetailPage from "../pages/SeriesDetailPage";
 import CategoriesPage from "../pages/CategoriesPage";
+import UnknownDateHistoryPage from "../pages/UnknownDateHistoryPage";
 import LeaderboardsPage from "../pages/LeaderboardsPage";
 
 function LegacyDetailRedirect() {
@@ -36,6 +37,7 @@ export function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="index.html" element={<Navigate replace to="/" />} />
         <Route path="history" element={<HistoryPage />} />
+        <Route path="history/unknown-date" element={<UnknownDateHistoryPage />} />
         <Route path="watchlist" element={<WatchlistPage />} />
         <Route path="planned" element={<PlannedPage />} />
         <Route path="cinema" element={<CinemaPage />} />

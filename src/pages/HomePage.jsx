@@ -200,6 +200,7 @@ export default function HomePage() {
               />
             </div>
           )}
+          <Link className="section-link" to="/history/unknown-date">Unknown date history</Link>
           <Link className="section-link" to="/history">
             View complete history
           </Link>

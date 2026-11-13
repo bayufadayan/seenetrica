@@ -106,7 +106,7 @@ export default function MovieDetailPage() {
         : [],
     [memories, movie],
   );
-  async function addViewing(event) {
+  async function addViewing(event, dateUnknown = false) {
     event.preventDefault();
     if (viewingBusy) return;
     const pin = archiveService.askForPin();
@@ -119,7 +119,7 @@ export default function MovieDetailPage() {
     try {
       await archiveService.writeAction(
         "addViewing",
-        { movie_id: movie.id, ...viewing },
+        { movie_id: movie.id, ...viewing, ...(dateUnknown ? { date_unknown: true, watched_at: "" } : {}) },
         pin,
       );
       await refresh();
@@ -296,6 +296,7 @@ export default function MovieDetailPage() {
                   <Plus aria-hidden="true" />
                   {viewingBusy ? "Adding…" : "Add viewing"}
                 </button>
+                <button className="secondary-button" type="button" disabled={viewingBusy} onClick={(event) => addViewing(event, true)}>Mark watched · date unknown</button>
               </div>
             </form>
           </section>

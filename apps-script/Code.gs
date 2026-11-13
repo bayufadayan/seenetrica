@@ -1114,7 +1114,7 @@ function normalizeViewingInput(input) {
       "Movie ID",
       50,
     ),
-    watched_at:
+    watched_at: input.date_unknown === true ? "" :
       optionalDate(
         input.watched_at,
         "Watched date",
