@@ -3405,36 +3405,56 @@ function getCategorizedData() {
 function updateFavorites(payload) {
   const kind = String(payload.kind || "");
   if (!["movie", "actor"].includes(kind)) throw new Error("Invalid favorite type.");
+  const parentId = String(payload.parent_id || "");
+  if (kind === "actor" && parentId) throw new Error("Actors cannot be placed in a franchise.");
   const lock = LockService.getScriptLock();
   lock.waitLock(10000);
   try {
-    const spreadsheet = getSpreadsheet();
-    let sheet = spreadsheet.getSheetByName(SHEET_NAMES.FAVORITES);
-    if (!sheet) {
-      sheet = spreadsheet.insertSheet(SHEET_NAMES.FAVORITES);
-      sheet.appendRow(["id", "kind", "item_id", "name", "image_url", "sort_order", "created_at"]);
-      sheet.setFrozenRows(1);
-    }
+    ensureSheetWithHeaders(SHEET_NAMES.FAVORITES, ["id", "kind", "item_id", "name", "image_url", "sort_order", "created_at", "entry_type", "parent_id"]);
     const all = readSheet(SHEET_NAMES.FAVORITES);
-    let list = all.filter((item) => item.kind === kind).sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
-    if (payload.operation === "add") {
+    if (parentId && !all.some((item) => String(item.id) === parentId && item.kind === "movie" && item.entry_type === "franchise" && !item.parent_id)) {
+      throw new Error("Franchise was not found. Refresh your favorites.");
+    }
+    const inScope = (item) => item.kind === kind && String(item.parent_id || "") === parentId;
+    let list = all.filter(inScope).sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+    let deletedFolderId = null;
+    let moviesById = null;
+    const addMovie = (itemId) => {
+      if (!moviesById) moviesById = new Map(readSheet(SHEET_NAMES.MOVIES).map((movie) => [String(movie.id), movie]));
+      const movie = moviesById.get(itemId);
+      if (!movie) throw new Error("Movie was not found. Sync your Series library and try again.");
+      if (!list.some((item) => item.entry_type !== "franchise" && String(item.item_id) === itemId)) {
+        list.push({ id: Utilities.getUuid(), kind: "movie", entry_type: "title", parent_id: parentId, item_id: itemId, name: String(movie.title || "Untitled"), image_url: movie.poster_url || "", created_at: nowString() });
+      }
+    };
+    if (payload.operation === "create_franchise") {
+      if (kind !== "movie" || parentId) throw new Error("Create franchises in the main movie favorites list.");
+      const name = requiredText(payload.name, "Franchise name", 150);
+      list.push({ id: Utilities.getUuid(), kind, entry_type: "franchise", parent_id: "", item_id: "", name, image_url: "", created_at: nowString() });
+    } else if (payload.operation === "rename_franchise") {
+      const folder = list.find((item) => String(item.id) === String(payload.id) && item.entry_type === "franchise");
+      if (!folder) throw new Error("Franchise was not found.");
+      folder.name = requiredText(payload.name, "Franchise name", 150);
+    } else if (payload.operation === "add_movies") {
+      if (kind !== "movie" || !Array.isArray(payload.movie_ids) || !payload.movie_ids.length || payload.movie_ids.length > 500) throw new Error("Choose between 1 and 500 titles.");
+      payload.movie_ids.map((id) => requiredText(String(id), "Movie ID", 120)).forEach(addMovie);
+    } else if (payload.operation === "add") {
       const itemId = requiredText(payload.item_id, "Item ID", 120);
       let name, imageUrl;
       if (kind === "movie") {
-        const movie = getRecordById(SHEET_NAMES.MOVIES, itemId);
-        if (!movie) throw new Error("Movie was not found.");
-        name = movie.title;
-        imageUrl = movie.poster_url || "";
+        addMovie(itemId);
       } else {
         if (!/^\d+$/.test(itemId)) throw new Error("Invalid TMDB actor ID.");
         name = requiredText(payload.name, "Actor name", 300);
         imageUrl = String(payload.image_url || "");
         if (imageUrl && !/^https:\/\/image\.tmdb\.org\/t\/p\/w500\/[a-zA-Z0-9._-]+$/.test(imageUrl)) throw new Error("Invalid actor image.");
       }
-      if (!list.some((item) => String(item.item_id) === itemId)) {
-        list.push({ id: Utilities.getUuid(), kind, item_id: itemId, name, image_url: imageUrl, created_at: nowString() });
+      if (kind === "actor" && !list.some((item) => String(item.item_id) === itemId)) {
+        list.push({ id: Utilities.getUuid(), kind, entry_type: "actor", parent_id: "", item_id: itemId, name, image_url: imageUrl, created_at: nowString() });
       }
     } else if (payload.operation === "remove") {
+      const removed = list.find((item) => String(item.id) === String(payload.id));
+      if (removed?.entry_type === "franchise") deletedFolderId = String(removed.id);
       list = list.filter((item) => String(item.id) !== String(payload.id));
     } else if (payload.operation === "reorder") {
       const ids = Array.isArray(payload.ids) ? payload.ids.map(String) : [];
@@ -3447,8 +3467,9 @@ function updateFavorites(payload) {
       throw new Error("Unknown favorite operation.");
     }
     list = list.map((item, index) => ({ ...item, sort_order: index + 1 }));
-    writeSheetRecords(SHEET_NAMES.FAVORITES, [...all.filter((item) => item.kind !== kind), ...list]);
-    return { favorites: list };
+    const favorites = [...all.filter((item) => !inScope(item) && (!deletedFolderId || String(item.parent_id || "") !== deletedFolderId)), ...list];
+    writeSheetRecords(SHEET_NAMES.FAVORITES, favorites);
+    return { favorites };
   } finally {
     lock.releaseLock();
   }

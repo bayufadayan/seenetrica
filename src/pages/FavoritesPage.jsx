@@ -31,7 +31,7 @@ export default function FavoritesPage({ kind }) {
   const movieMap = useMemo(() => new Map(movies.map((movie) => [String(movie.id), movie])), [movies]);
   const items = favorites.filter((item) => item.kind === kind).sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
   const selectedIds = new Set(items.map((item) => String(item.item_id)));
-  const candidates = actors ? results : movies.filter((movie) => movie.title.toLowerCase().includes(query.trim().toLowerCase()));
+  const candidates = actors ? results : movies.filter((movie) => String(movie.title ?? "").toLowerCase().includes(query.trim().toLowerCase()));
 
   async function mutate(data) {
     if (busy) return false;

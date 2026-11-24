@@ -5,6 +5,20 @@
 .favorites-caption, .favorites-order-hint { margin: 18px 0 0; color: var(--muted); font-size: .78rem; }
 .favorites-order-hint { margin-block: 24px 10px; }
 .favorites-heading > button { flex-shrink: 0; }
+.favorites-heading > div:first-child { min-width: 0; }
+.favorites-heading h1 { overflow-wrap: anywhere; }
+.favorites-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; max-width: 480px; }
+.favorites-actions > button { font-size: .78rem; min-height: 40px; }
+.favorites-actions .text-button { display: inline-flex; align-items: center; gap: 6px; }
+.favorites-actions .text-button svg { width: 14px; height: 14px; }
+.favorites-back { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 26px; color: var(--muted); font-size: .78rem; }
+.favorites-back svg { width: 15px; height: 15px; }
+.favorite-image.is-folder { position: relative; color: #956b25; border: 1px solid #d2b77e; background: #ede4cf; }
+.favorite-folder-badge { position: absolute; bottom: 5px; right: 5px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 6px; background: var(--paper); }
+.favorite-folder-badge svg { width: 16px; height: 16px; }
+.favorites-copy-preview { padding-left: 24px; max-height: 35vh; overflow-y: auto; font-size: .86rem; }
+.favorites-copy-preview li { padding: 10px 0 10px 4px; border-bottom: 1px solid var(--line); }
+.favorites-copy-preview small { display: block; color: var(--muted); }
 .favorites-list { padding: 0; margin: 0; list-style: none; }
 .favorite-row { display: grid; grid-template-columns: 58px 80px minmax(0, 1fr) auto; align-items: center; gap: 24px; padding: 22px 0; border-bottom: 1px solid var(--line); }
 .favorite-row.is-dragged { opacity: .4; }
@@ -37,6 +51,7 @@
 .favorites-candidate button { min-height: 36px; padding: 6px 12px; font-size: .75rem; }
 @media (max-width: 600px) {
   .favorites-heading { align-items: start; flex-direction: column; }
+  .favorites-actions { justify-content: flex-start; }
   .favorite-row { grid-template-columns: 32px 56px minmax(0, 1fr); gap: 12px; padding-block: 16px; }
   .favorite-rank { font-size: 1.4rem; }
   .favorite-image { width: 56px; height: 80px; }

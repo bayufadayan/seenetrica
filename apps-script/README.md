@@ -8,6 +8,14 @@ script, the sheet is created automatically on the first favorite save. Movie
 favorites reference library movie IDs; actor favorites reference TMDB person IDs.
 Each list keeps its own manually chosen order.
 
+Franchise folders add `entry_type` and `parent_id` columns to that same sheet.
+The updated script appends these columns automatically on the next favorite
+write, preserving existing rows. Empty `parent_id` means the main favorites
+list. Each franchise's children have an independent order. Copying a Series
+timeline appends references to its movies in that order; it does not create a
+live link to the source timeline. Removing a franchise removes only its favorite
+entries, not movie records or Series data.
+
 ## Deploying a change
 
 1. Replace the Apps Script project's `Code.gs` with this file.

@@ -82,7 +82,7 @@ export function ArchiveProvider({ children }) {
   }, []);
 
   return (
-    <ArchiveContext.Provider value={{ ...archive, loading, error, stale, refresh }}>
+    <ArchiveContext.Provider value={{ ...archive, loading, error, stale, refresh, applyFavorites: (favorites) => setArchive((current) => ({ ...current, favorites })) }}>
       {children}
     </ArchiveContext.Provider>
   );

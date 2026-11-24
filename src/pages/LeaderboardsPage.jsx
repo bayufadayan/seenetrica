@@ -32,7 +32,7 @@ export default function LeaderboardsPage() {
       const key = String(entry.movie.id);
       byMovie.set(key, { ...entry, rating });
     });
-    return [...byMovie.values()].sort((a, b) => b.rating - a.rating || a.movie.title.localeCompare(b.movie.title));
+    return [...byMovie.values()].sort((a, b) => b.rating - a.rating || String(a.movie.title ?? "").localeCompare(String(b.movie.title ?? "")));
   }, [entries, selectedYear]);
 
   return (
@@ -44,7 +44,7 @@ export default function LeaderboardsPage() {
           <p className="leaderboards-subtitle">Your highest rated watched titles, by release year.</p>
         </div>
         <label className="leaderboards-year">
-          <span>Year</span>
+          <span>Release year</span>
           <select aria-label="Leaderboard year" value={selectedYear} onChange={(event) => setYearChoice(event.target.value)} disabled={!years.length}>
             {years.length ? years.map((year) => <option key={year} value={year}>{year}</option>) : <option value="">No years yet</option>}
           </select>
@@ -58,7 +58,7 @@ export default function LeaderboardsPage() {
             {ranked.slice(0, 3).map((entry, index) => <FeaturedFilm entry={entry} rank={index + 1} key={entry.movie.id} />)}
           </section>
           {ranked.length > 3 && <section className="leaderboards-rest" aria-label="More ranked films">
-            <div className="leaderboards-list-heading"><h2>The rest of the list</h2><span>{ranked.length - 3} titles</span></div>
+            <div className="leaderboards-list-heading"><h2>More from {selectedYear}</h2><span>{ranked.length - 3} titles</span></div>
             <ol start={4}>
               {ranked.slice(3).map((entry, index) => <RankedFilm entry={entry} rank={index + 4} key={entry.movie.id} />)}
             </ol>
@@ -71,14 +71,17 @@ export default function LeaderboardsPage() {
 
 function FeaturedFilm({ entry, rank }) {
   return <article className={`leaderboard-featured-film leaderboard-rank-${rank}`}>
+    <div className="leaderboard-card-heading">
+      <span className="leaderboard-card-rank">{String(rank).padStart(2, "0")}</span>
+      {rank === 1 && <span className="leaderboard-place"><Trophy aria-hidden="true" /> Top rated</span>}
+      <span className="leaderboard-card-rule" aria-hidden="true" />
+    </div>
     <div className="leaderboard-poster-wrap">
       <Link to={`/movies/${encodeURIComponent(entry.movie.id)}`} aria-label={`Open ${entry.movie.title}`}>
-        <Poster src={entry.movie.poster_url} alt={`${entry.movie.title} poster`} loading="lazy" />
+        <Poster key={entry.movie.poster_url} src={entry.movie.poster_url} alt={`${entry.movie.title} poster`} loading="lazy" />
       </Link>
-      <span className="leaderboard-rank-badge">{rank === 1 ? <Trophy aria-label="First place" /> : <span>{String(rank).padStart(2, "0")}</span>}</span>
     </div>
     <div className="leaderboard-featured-meta">
-      <span className="leaderboard-place">{rank === 1 ? "TOP RATED" : `RANK ${String(rank).padStart(2, "0")}`}</span>
       <Link className="leaderboard-title" to={`/movies/${encodeURIComponent(entry.movie.id)}`}>{entry.movie.title}</Link>
       <span className="leaderboard-film-year">{entry.movie.release_date?.slice(0, 4) || "Year unknown"} · {entry.movie.media_type}</span>
       <span className="leaderboard-rating"><Star aria-hidden="true" fill="currentColor" /> {formatRating(entry.rating)} <small>/ 10</small></span>
