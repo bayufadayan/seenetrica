@@ -9,6 +9,7 @@ export function ArchiveProvider({ children }) {
     movies: [],
     history: [],
     memories: [],
+    favorites: [],
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

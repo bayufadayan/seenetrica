@@ -161,7 +161,7 @@ export const archiveService = {
     if (!Array.isArray(movies) || !Array.isArray(history)) {
       throw new Error("The archive returned an invalid data format.");
     }
-    const archive = { movies, history, memories };
+    const archive = { movies, history, memories, favorites: Array.isArray(data.favorites) ? data.favorites : [] };
     await cacheDb.putArchiveSnapshot(archive);
     return archive;
   },

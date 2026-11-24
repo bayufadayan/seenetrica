@@ -4,14 +4,14 @@ const {
   originalTitle,
 } = require("../../lib/tmdb-localization");
 
-async function searchTmdb(token, query, page, language) {
+async function searchTmdb(token, query, page, language, type = "multi") {
   const params = new URLSearchParams({
     query,
     include_adult: "false",
     language,
     page: String(page),
   });
-  const response = await fetch(`https://api.themoviedb.org/3/search/multi?${params}`, {
+  const response = await fetch(`https://api.themoviedb.org/3/search/${type}?${params}`, {
     headers: {
       accept: "application/json",
       Authorization: `Bearer ${token}`,
@@ -74,6 +74,19 @@ module.exports = async function handler(request, response) {
   const page = Number(pageValue);
 
   try {
+    if (request.query.type === "person") {
+      const people = await searchTmdb(token, query, page, "en-US", "person");
+      return response.status(200).json({
+        results: (people.results || []).filter((person) => person.known_for_department === "Acting").map((person) => ({
+          id: person.id,
+          name: person.name,
+          image_url: person.profile_path ? `https://image.tmdb.org/t/p/w500${person.profile_path}` : null,
+          known_for: (person.known_for || []).map((title) => title.title || title.name).filter(Boolean).join(" · "),
+        })),
+        page: people.page,
+        total_pages: people.total_pages,
+      });
+    }
     const [english, indonesian] = await Promise.all([
       searchTmdb(token, query, page, "en-US"),
       searchTmdb(token, query, page, "id-ID"),

@@ -13,6 +13,7 @@ const READ_CACHE_TTL_MS = 15_000;
 const READ_STALE_TTL_MS = 5 * 60_000;
 
 const ALLOWED_WRITE_ACTIONS = new Set([
+  "updateFavorites",
   "createMovie",
   "createMovies",
   "updateMovie",

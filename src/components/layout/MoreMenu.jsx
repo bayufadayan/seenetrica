@@ -1,4 +1,4 @@
-import { Clapperboard, EllipsisVertical, Trophy } from "lucide-react";
+import { Clapperboard, EllipsisVertical, Trophy, Heart, UserRound } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import "./MoreMenu.css";
@@ -40,7 +40,7 @@ export function MoreMenu() {
     <div className="nav-category nav-more" ref={rootRef}>
       <button
         ref={triggerRef}
-        className={`nav-destination is-icon-only ${moviesActive ? "is-active" : ""}`}
+        className={`nav-destination is-icon-only ${moviesActive || leaderboardsActive || location.pathname.startsWith("/favorites/") ? "is-active" : ""}`}
         type="button"
         aria-label="More navigation"
         title="More"
@@ -70,6 +70,8 @@ export function MoreMenu() {
             <Trophy aria-hidden="true" />
             <span>Leaderboards</span>
           </Link>
+          <Link className={`nav-category-item ${location.pathname === "/favorites/movies" ? "is-active" : ""}`} role="menuitem" to="/favorites/movies" onClick={() => setOpen(false)}><Heart aria-hidden="true" /><span>Favorite Movies</span></Link>
+          <Link className={`nav-category-item ${location.pathname === "/favorites/actors" ? "is-active" : ""}`} role="menuitem" to="/favorites/actors" onClick={() => setOpen(false)}><UserRound aria-hidden="true" /><span>Favorite Actors</span></Link>
         </div>
       )}
     </div>

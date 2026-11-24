@@ -9,6 +9,7 @@ const SHEET_NAMES = {
   CATEGORIES: "categories",
   CATEGORY_TITLES: "category_titles",
   CATEGORY_MOVIES: "category_movies",
+  FAVORITES: "favorites",
 };
 
 const INITIAL_CATEGORIES = [
@@ -3401,6 +3402,58 @@ function getCategorizedData() {
   return data;
 }
 
+function updateFavorites(payload) {
+  const kind = String(payload.kind || "");
+  if (!["movie", "actor"].includes(kind)) throw new Error("Invalid favorite type.");
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const spreadsheet = getSpreadsheet();
+    let sheet = spreadsheet.getSheetByName(SHEET_NAMES.FAVORITES);
+    if (!sheet) {
+      sheet = spreadsheet.insertSheet(SHEET_NAMES.FAVORITES);
+      sheet.appendRow(["id", "kind", "item_id", "name", "image_url", "sort_order", "created_at"]);
+      sheet.setFrozenRows(1);
+    }
+    const all = readSheet(SHEET_NAMES.FAVORITES);
+    let list = all.filter((item) => item.kind === kind).sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+    if (payload.operation === "add") {
+      const itemId = requiredText(payload.item_id, "Item ID", 120);
+      let name, imageUrl;
+      if (kind === "movie") {
+        const movie = getRecordById(SHEET_NAMES.MOVIES, itemId);
+        if (!movie) throw new Error("Movie was not found.");
+        name = movie.title;
+        imageUrl = movie.poster_url || "";
+      } else {
+        if (!/^\d+$/.test(itemId)) throw new Error("Invalid TMDB actor ID.");
+        name = requiredText(payload.name, "Actor name", 300);
+        imageUrl = String(payload.image_url || "");
+        if (imageUrl && !/^https:\/\/image\.tmdb\.org\/t\/p\/w500\/[a-zA-Z0-9._-]+$/.test(imageUrl)) throw new Error("Invalid actor image.");
+      }
+      if (!list.some((item) => String(item.item_id) === itemId)) {
+        list.push({ id: Utilities.getUuid(), kind, item_id: itemId, name, image_url: imageUrl, created_at: nowString() });
+      }
+    } else if (payload.operation === "remove") {
+      list = list.filter((item) => String(item.id) !== String(payload.id));
+    } else if (payload.operation === "reorder") {
+      const ids = Array.isArray(payload.ids) ? payload.ids.map(String) : [];
+      const byId = new Map(list.map((item) => [String(item.id), item]));
+      if (ids.length !== list.length || new Set(ids).size !== list.length || ids.some((id) => !byId.has(id))) {
+        throw new Error("Favorites changed on another device. Refresh and reorder again.");
+      }
+      list = ids.map((id) => byId.get(id));
+    } else {
+      throw new Error("Unknown favorite operation.");
+    }
+    list = list.map((item, index) => ({ ...item, sort_order: index + 1 }));
+    writeSheetRecords(SHEET_NAMES.FAVORITES, [...all.filter((item) => item.kind !== kind), ...list]);
+    return { favorites: list };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function getAllData() {
   const cached = readCachedData(
     READ_CACHE_KEYS.ALL,
@@ -3414,6 +3467,7 @@ function getAllData() {
   const categorized = getCategorizedData();
 
   const data = {
+    favorites: readOptionalSheet(SHEET_NAMES.FAVORITES),
     movies: readSheet(
       SHEET_NAMES.MOVIES,
     ),
@@ -4168,6 +4222,9 @@ function doPost(e) {
     let data;
 
     switch (body.action) {
+      case "updateFavorites":
+        data = updateFavorites(body.data || {});
+        break;
       case "createMovie":
         data = createMovie(
           body.data || {},

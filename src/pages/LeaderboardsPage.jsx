@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowUpRight, Medal, Star, Trophy } from "lucide-react";
 import { useArchive } from "../context/ArchiveContext";
-import { joinHistory } from "../features/history/HistoryGroups";
 import { LoadingState, ErrorState, EmptyState } from "../components/ui/States";
 import { Poster } from "../components/ui/Poster";
 import { formatRating } from "../utils/formatters";
@@ -12,9 +11,14 @@ import "./LeaderboardsPage.css";
 export default function LeaderboardsPage() {
   useDocumentTitle("Leaderboards");
   const { movies, history, loading, error } = useArchive();
-  const entries = useMemo(() => joinHistory(movies, history), [movies, history]);
+  const entries = useMemo(() => {
+    const watchedIds = new Set(history.map((entry) => String(entry.movie_id)));
+    return movies.filter((movie) => movie.status === "watched" || watchedIds.has(String(movie.id)))
+      .filter((movie) => /^\d{4}/.test(movie.release_date || ""))
+      .map((movie) => ({ movie, releaseYear: movie.release_date.slice(0, 4) }));
+  }, [movies, history]);
   const years = useMemo(
-    () => [...new Set(entries.map((entry) => entry.watched_at.slice(0, 4)))].sort().reverse(),
+    () => [...new Set(entries.map((entry) => entry.releaseYear))].sort().reverse(),
     [entries],
   );
   const [yearChoice, setYearChoice] = useState("");
@@ -22,12 +26,11 @@ export default function LeaderboardsPage() {
   const ranked = useMemo(() => {
     const byMovie = new Map();
     entries.forEach((entry) => {
-      if (entry.watched_at.slice(0, 4) !== selectedYear) return;
+      if (entry.releaseYear !== selectedYear) return;
       const rating = Number(entry.movie.rating);
       if (entry.movie.rating === "" || entry.movie.rating == null || !Number.isFinite(rating)) return;
       const key = String(entry.movie.id);
-      const current = byMovie.get(key);
-      if (!current || entry.watched_at > current.watched_at) byMovie.set(key, { ...entry, rating });
+      byMovie.set(key, { ...entry, rating });
     });
     return [...byMovie.values()].sort((a, b) => b.rating - a.rating || a.movie.title.localeCompare(b.movie.title));
   }, [entries, selectedYear]);
@@ -38,7 +41,7 @@ export default function LeaderboardsPage() {
         <div className="leaderboards-heading-copy">
           <p className="eyebrow"><Trophy aria-hidden="true" /> YOUR WATCHED FILMS</p>
           <h1>Best of <span>{selectedYear || "the year"}.</span></h1>
-          <p className="leaderboards-subtitle">The films you rated highest.</p>
+          <p className="leaderboards-subtitle">Your highest rated watched titles, by release year.</p>
         </div>
         <label className="leaderboards-year">
           <span>Year</span>

@@ -2,6 +2,12 @@
 
 `Code.gs` is the Google Apps Script source used by `/api/data`.
 
+Favorites use a `favorites` sheet with `id`, `kind`, `item_id`, `name`,
+`image_url`, `sort_order`, and `created_at` columns. After deploying the updated
+script, the sheet is created automatically on the first favorite save. Movie
+favorites reference library movie IDs; actor favorites reference TMDB person IDs.
+Each list keeps its own manually chosen order.
+
 ## Deploying a change
 
 1. Replace the Apps Script project's `Code.gs` with this file.
